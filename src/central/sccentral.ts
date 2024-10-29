@@ -6,6 +6,8 @@ export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
     private static openExistingEvent : string = "open-existing" ;
     private static createNewEvent: string = "create-new" ;
+    private static selectTeamForm: string = "select-team-form" ;
+    private static selectMatchForm: string = "select-match-form" ;
 
     constructor(win: BrowserWindow) {
         super(win) ;
@@ -17,7 +19,16 @@ export class SCCentral extends SCBase {
 
     public sendInfoData() : void {
         if (this.project_) {
-            this.win_.webContents.send('update-info', this.project_.info);
+            let obj = {
+                location_ : this.project_.location,
+                bakey_ : this.project_.info.bakey_,
+                teamform_ : this.project_.info.teamform_,
+                matchform_ : this.project_.info.matchform_,
+                tablets_ : this.project_.info.tablets_,
+                teams_ : this.project_.info.teams_,
+                matches_ : this.project_.info.matches_,
+            };
+            this.win_.webContents.send('update-info', obj);
         }
     }
 
@@ -72,6 +83,12 @@ export class SCCentral extends SCBase {
         else if (cmd === SCCentral.openExistingEvent) {
             this.openEvent() ;
         }
+        else if (cmd == SCCentral.selectMatchForm) {
+            this.selectMatchForm() ;
+        }
+        else if (cmd == SCCentral.selectTeamForm) {
+            this.selectTeamForm() ;
+        }
     }
 
     private createEvent() {
@@ -99,10 +116,62 @@ export class SCCentral extends SCBase {
         }) ;
     }
 
+    private selectTeamForm() {
+        var path = dialog.showOpenDialog({
+            title: "Select Team Form",
+            message: "Select team scouting form",
+            filters: [
+                {
+                    extensions: ["json"],
+                    name: "JSON file for team scouting form"
+                },
+                {
+                    extensions: ["html"],
+                    name: "HTML file for team scouting form"
+                }
+            ],
+            properties: [
+                'openFile'
+            ],
+        });
+
+        path.then((pathname) => {
+            if (!pathname.canceled) {
+                this.project_!.setMatchForm(pathname.filePaths[0]) ;
+            }
+        }) ;
+    }
+
+    private selectMatchForm() {
+        var path = dialog.showOpenDialog({
+            title: "Select Match Form",
+            message: "Select match scouting form",
+            filters: [
+                {
+                    extensions: ["json"],
+                    name: "JSON file for match scouting form"
+                },
+                {
+                    extensions: ["html"],
+                    name: "HTML file for match scouting form"
+                }
+            ],
+            properties: [
+                'openFile'
+            ],
+        });
+
+        path.then((pathname) => {
+            if (!pathname.canceled) {
+                this.project_!.setMatchForm(pathname.filePaths[0]) ;
+            }
+        }) ;
+    }    
+
     private openEvent() {
         var path = dialog.showOpenDialog({
             title: "Event descriptor file",
-            message: "Select even descriptor file",
+            message: "Select event descriptor file",
             filters: [
                 {
                     extensions: ["json"],

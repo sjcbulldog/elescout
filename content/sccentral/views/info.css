@@ -3,7 +3,11 @@
 }
 
 #info_main {
-    width: 100% ;
     height: 100% ;
-    background-color: aqua;
+}
+
+#info_location {
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
 }

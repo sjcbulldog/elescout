@@ -31,6 +31,20 @@ export class Project {
         return this.info_ ;
     }
 
+    public get location() : string {
+        return this.location_ ;
+    }
+
+    public setTeamForm(form: string) {
+        this.info_.teamform_ = form ;
+        this.writeEventFile() ;
+    }
+
+    public setMatchForm(form: string) {
+        this.info_.matchform_ = form ;
+        this.writeEventFile() ;        
+    }
+
     public static async createEvent(dir: string) : Promise<Project> {
         let ret: Promise<Project> = new Promise<Project>((resolve, reject) => {
             if (!fs.existsSync(dir)) {
@@ -51,7 +65,7 @@ export class Project {
             }
 
             let proj: Project = new Project(dir) ;
-            let err = proj.writeEventFile(dir) ;
+            let err = proj.writeEventFile() ;
             if (err) {
                 reject(err) ;
             }
@@ -100,13 +114,13 @@ export class Project {
         return ret ;
     }
 
-    private writeEventFile(dir: string) : Error | undefined {
+    private writeEventFile() : Error | undefined {
         let ret: Error | undefined = undefined ;
 
         const jsonString = JSON.stringify(this.info_);
 
         // Write the string to a file
-        let projfile = path.join(dir, Project.event_file_name) ;
+        let projfile = path.join(this.location_, Project.event_file_name) ;
         fs.writeFile(projfile, jsonString, (err) => {
             if (err) {
                 fs.rmSync(projfile) ;   
