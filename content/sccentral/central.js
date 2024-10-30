@@ -9,6 +9,9 @@ async function updateMainWindow(mtype) {
   else if (mainwintype === "info") {
     infoView() ;
   }
+  else if (mainwintype === "selevent") {
+    selectEventView() ;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function () {

@@ -14,6 +14,7 @@
   "dependencies": {
     "copyfiles": "^2.4.1",
     "electron-squirrel-startup": "^1.0.1",
+    "https": "^1.0.0",
     "typescript": "^5.6.3"
   },
   "devDependencies": {

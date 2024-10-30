@@ -40,7 +40,7 @@ function addbaykey(bakey, teams, matches) {
         cell.append(button) ;
 
         button.innerText = 'Load Event' ;
-        button.click = () => { window.scoutingAPI.send('execute-command', 'load-ba-event')} ;
+        button.onclick = () => { updateMainWindow("selevent")} ;
     }
 
     return row ;
@@ -66,7 +66,7 @@ function addteamform(teamform) {
     cell.append(button) ;
 
     button.innerText = 'Select Team Form' ;
-    button.click = () => { window.scoutingAPI.send('execute-command', 'select-team-form')} ;
+    button.onclick = () => { window.scoutingAPI.send('execute-command', 'select-team-form'); } ;
 
     return row ;
 }
@@ -91,7 +91,7 @@ function addmatchform(matchform) {
     cell.append(button) ;
 
     button.innerText = 'Select Match Form' ;
-    button.click = () => { window.scoutingAPI.send('execute-command', 'select-match-form')} ;
+    button.onclick = () => { window.scoutingAPI.send('execute-command', 'select-match-form')} ;
 
     return row ;
 }

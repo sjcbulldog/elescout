@@ -7,20 +7,29 @@ export async function executeCommand(...args: any[]) {
     }
 }
 
-export async function getTreeData() {
-    let obj ;
+export async function loadBaEventData(...args: any[]) {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.loadBaEventData(args) ;
+    }
+}
 
+export async function getTreeData() {
     if (scappbase) {
         scappbase.sendTreeData() ;
     }
 }
 
 export async function getInfoData() {
-    let obj ;
-
     if (scappbase && !scappbase.isScoutingTablet()) {
         let central : SCCentral = scappbase as SCCentral ;
         central.sendInfoData() ;
     }
 }
 
+export async function getSelectEventData() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendSelectEventData() ;
+    } 
+}

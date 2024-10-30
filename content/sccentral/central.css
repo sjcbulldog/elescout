@@ -42,11 +42,7 @@ html, body {
     width: 8px;
 }
 .container__right {
-    /* Take the remaining width */
     flex: 1;
-
-    /* Misc */
     align-items: center;
-    display: flex;
-    justify-content: center;
+    overflow-y: scroll;
 }

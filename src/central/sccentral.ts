@@ -1,16 +1,38 @@
 import { SCBase } from "../base/scbase";
+import { BlueAlliance } from "../bluealliance/ba";
+import { FRCEvent } from "../project/frcevent";
 import { Project } from "../project/project";
 import { BrowserWindow, dialog } from 'electron' ;
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
+    private ba_? : BlueAlliance = undefined ;
+    private baloading_ : boolean ;
+    private frcevents_? : FRCEvent[] = undefined ;
+
     private static openExistingEvent : string = "open-existing" ;
     private static createNewEvent: string = "create-new" ;
     private static selectTeamForm: string = "select-team-form" ;
     private static selectMatchForm: string = "select-match-form" ;
+    private static loadBAEvent: string = "load-ba-event" ;
 
     constructor(win: BrowserWindow) {
         super(win) ;
+
+        this.baloading_ = true ;
+        this.ba_ = new BlueAlliance() ;
+        this.ba_.init()
+            .then((up) => {
+                if (!up) {     
+                    this.ba_ = undefined ;
+                }
+                else {
+                    this.baloading_ = false ;
+                }
+            })
+            .catch((err) => {
+                this.ba_ = undefined ;
+            });
     }
 
     public basePage() : string  {
@@ -21,7 +43,7 @@ export class SCCentral extends SCBase {
         if (this.project_) {
             let obj = {
                 location_ : this.project_.location,
-                bakey_ : this.project_.info.bakey_,
+                bakey_ : this.project_.info.frcev_?.evkey,
                 teamform_ : this.project_.info.teamform_,
                 matchform_ : this.project_.info.matchform_,
                 tablets_ : this.project_.info.tablets_,
@@ -30,6 +52,61 @@ export class SCCentral extends SCBase {
             };
             this.win_.webContents.send('update-info', obj);
         }
+    }
+
+    public sendSelectEventData() : void {
+        if (this.project_ && this.isBAAvailable()) {
+            this.ba_?.getEvents()
+                .then((frcevs) => {
+                    this.frcevents_ = frcevs ;
+                    this.win_.webContents.send('select-event', frcevs) ;
+                })
+                .catch((err) => {
+                    let errobj : Error = err as Error ;
+                    dialog.showErrorBox("Load Blue Alliance Event", errobj.message) ;     
+                    this.win_.webContents.send('update-main', 'info') ;
+                }) ;
+
+        }
+        else {
+            this.win_.webContents.send('update-select-event-info', {}) ;
+        }
+    }
+
+    public loadBaEventData(args: any[]) : void {
+        if (!this.isBAAvailable()) {
+            let html = "The Blue Alliance site is not available." ;
+            this.win_.webContents.send('update-status-title', "Error Loading Event") ;
+            this.win_.webContents.send('update-status-html',  html) ;
+            this.win_.webContents.send('update-status-close-button', true) ;
+            return ;
+        }
+
+        let fev: FRCEvent | undefined = this.getEventFromKey(args[0]) ;        
+        if (fev) {
+            this.win_.webContents.send('update-status-title', "Loading event '" + fev.desc + "'") ;
+            this.project_!.loadBAEvent(this.win_, this.ba_!, fev)
+        }
+        else {
+            let html = "Event with key '" + args[0] + "' was not found.<br>No event was loaded" ;
+            this.win_.webContents.send('update-status-title', "Loading Blue Alliance Event") ;
+            this.win_.webContents.send('update-status-html',  html) ;
+            this.win_.webContents.send('update-status-close-button', true) ;
+        }
+    }
+
+    private getEventFromKey(key: string) : FRCEvent | undefined {
+        let ret: FRCEvent | undefined = undefined ;
+
+        if (this.frcevents_) {
+            ret = this.frcevents_.find((element) => element.evkey === key) ;
+        }
+
+        return ret;
+    }
+
+    private isBAAvailable() : boolean {
+        return this.ba_ !== undefined && !this.baloading_ ;
     }
 
     private requestTreeData() : any {
@@ -83,11 +160,27 @@ export class SCCentral extends SCBase {
         else if (cmd === SCCentral.openExistingEvent) {
             this.openEvent() ;
         }
-        else if (cmd == SCCentral.selectMatchForm) {
+        else if (cmd === SCCentral.selectMatchForm) {
             this.selectMatchForm() ;
         }
-        else if (cmd == SCCentral.selectTeamForm) {
+        else if (cmd === SCCentral.selectTeamForm) {
             this.selectTeamForm() ;
+        }
+        else if (cmd === SCCentral.loadBAEvent) {
+            this.loadBAEvent() ;
+        }
+    }
+
+    private loadBAEvent() {
+        if (this.isBAAvailable()) {
+            this.ba_?.getEvents()
+                .then((frcevs) => {
+                    this.win_.webContents.send('select-event', frcevs);
+                })
+                .catch((err) => {
+                    let errobj : Error = err as Error ;
+                    dialog.showErrorBox("Load Blue Alliance Event", errobj.message) ;                    
+                }) ;
         }
     }
 
@@ -137,7 +230,7 @@ export class SCCentral extends SCBase {
 
         path.then((pathname) => {
             if (!pathname.canceled) {
-                this.project_!.setMatchForm(pathname.filePaths[0]) ;
+                this.project_!.setTeamForm(pathname.filePaths[0]) ;
             }
         }) ;
     }

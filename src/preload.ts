@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld( "scoutingAPI", {
       let validChannels = [
         "get-tree-data", 
         "get-info-data",
+        "get-select-event-data",
+        "load-ba-event-data",
         "execute-command"
       ];
       if (validChannels.includes(channel)) {
@@ -28,7 +30,13 @@ contextBridge.exposeInMainWorld( "scoutingAPI", {
       let validChannels = [
         "update-tree", 
         "update-main",
-        "update-info"
+        "update-info",
+        "select-event",
+        "update-status-text",
+        "update-status-html",
+        "update-status-title",
+        "update-status-visible",
+        "update-status-close-button"
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.on(channel, (event, ...args) => func(...args));

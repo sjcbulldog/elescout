@@ -6,9 +6,12 @@ import * as path from 'path' ;
 import { Team } from './team';
 import { Match } from './match';
 import { Tablets } from './tablets';
+import { BlueAlliance } from '../bluealliance/ba';
+import { FRCEvent } from './frcevent';
+import { BrowserWindow } from 'electron';
 
 export class ProjectInfo {
-    public bakey_? : string ;
+    public frcev_? : FRCEvent ;
     public teamform_? : string ;
     public matchform_? : string ;
     public tablets_? : Tablets ;
@@ -36,12 +39,16 @@ export class Project {
     }
 
     public setTeamForm(form: string) {
-        this.info_.teamform_ = form ;
+        let teamform: string = path.join(this.location_, "teamform") + path.extname(form) ;
+        fs.copyFileSync(form, teamform) ;
+        this.info_.teamform_ = teamform ;
         this.writeEventFile() ;
     }
 
     public setMatchForm(form: string) {
-        this.info_.matchform_ = form ;
+        let matchform: string = path.join(this.location_, "matchform") + path.extname(form) ;
+        fs.copyFileSync(form, matchform) ;        
+        this.info_.matchform_ = matchform ;
         this.writeEventFile() ;        
     }
 
@@ -97,6 +104,46 @@ export class Project {
         }) ;
 
         return ret ;
+    }
+
+    public loadBAEvent(win: BrowserWindow, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>((resolve, reject) => {
+            this.info_.frcev_ = frcev ;
+            win.webContents.send('update-status-text', 'Loading teams from the event') ;
+            ba.getTeams(frcev.evkey)
+                .then((teams) => {
+                    
+                    this.info_.teams_ = teams ;
+                    let msg: string = teams.length + " teams loaded\n" ;
+                    msg += "Loading matches from the event" ;
+                    win.webContents.send('update-status-text', msg) ;
+
+                    ba.getMatches(frcev.evkey)
+                        .then((matches) => {
+                            if (matches.length > 0) {
+                                this.info_.matches_ = matches ;
+                            }
+
+                            let msg: string = teams.length + " teams loaded\n" ;
+                            msg += matches.length + " matches loaded\n" ;
+                            msg += "Event loaded sucessfully" ;
+                            win.webContents.send('update-status-text', msg) ;
+                            win.webContents.send('update-status-close-button', true) ;
+
+                        })
+                        .catch((err) => {
+                            this.info_.frcev_ = undefined ;
+                            this.info_.teams_ = undefined ;
+                            reject(err) ;
+                        })
+                })
+                .catch((err) => {
+                    this.info_.frcev_ = undefined ;
+                    reject(err) ;
+                }) ;
+        }) ;
+
+        return ret;
     }
 
     private readEventFile() : Error | undefined {
