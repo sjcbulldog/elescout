@@ -13,7 +13,7 @@ function updateTreeProcess(treedata) {
         for (let item of treedata) {
             let treeitem = document.createElement("p")
             treeitem.command = item.command;
-            treeitem.textContent = item.title
+            treeitem.textContent = item.title;
             treeitem.className = "treelistitem";
             tree.append(treeitem);
         }

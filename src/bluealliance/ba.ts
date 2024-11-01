@@ -111,6 +111,22 @@ export class BlueAlliance {
         }
     }
 
+    public async fakeGetMatchesNone(evkey: string) : Promise<Match[]> {
+        let ret: Promise<Match[]> = new Promise<Match[]>((resolve, reject) => {
+            resolve([]) ;
+        }) ;
+
+        return ret;
+    }
+
+    public async fakeGetMatchesPartial(evkey: string) : Promise<Match[]> {
+        let ret: Promise<Match[]> = new Promise<Match[]>((resolve, reject) => {
+            
+        }) ;
+
+        return ret;
+    }
+
     public async getMatches(evkey: string) : Promise<Match[]> {
         let ret: Promise<Match[]> = new Promise<Match[]>((resolve, reject) => {
             let query = "/event/" + evkey + "/matches" ;

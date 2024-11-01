@@ -9,6 +9,8 @@ import { Tablets } from './tablets';
 import { BlueAlliance } from '../bluealliance/ba';
 import { FRCEvent } from './frcevent';
 import { BrowserWindow } from 'electron';
+import { MatchData } from './matchdata';
+import { TeamData } from './teamdata';
 
 export class ProjectInfo {
     public frcev_? : FRCEvent ;
@@ -18,6 +20,8 @@ export class ProjectInfo {
     public tablets_? : Tablets ;
     public teams_? : Team[] ;
     public matches_? : Match[] ;
+    public matchdata_? : MatchData ;
+    public teamdata_? : TeamData ;
 
     public get name() : string | undefined {
         return this.frcev_ ? this.frcev_.desc : this.name_ ; 
@@ -33,6 +37,14 @@ export class Project {
     constructor(dir: string) {
         this.location_ = dir ;
         this.info_ = new ProjectInfo() ;
+    }
+
+    public get hasTeamData() : boolean {
+        return this.info_.teamdata_ != undefined ;
+    }
+
+    public get hasMatchData() : boolean {
+        return this.info_.matchdata_ != undefined ;
     }
 
     public get info() : ProjectInfo {
@@ -130,7 +142,7 @@ export class Project {
                         msg += "Loading matches from the event" ;
                         win.webContents.send('update-status-text', msg) ;
 
-                        ba.getMatches(frcev.evkey)
+                        ba.fakeGetMatchesNone(frcev.evkey)
                             .then((matches) => {
                                 if (matches.length > 0) {
                                     this.info_.matches_ = matches ;
@@ -149,7 +161,7 @@ export class Project {
                                     win.webContents.send('update-status-view-close-button', true) ;
                                 } else {
                                     let msg: string = teams.length + " teams loaded\n" ;
-                                    msg += matches.length + "No matches were present\n" ;
+                                    msg += "No matches were present\n" ;
                                     msg += "Fetch matches from the Blue Alliance after they are published\n" ;
                                     let err = this.writeEventFile() ;
                                     if (err) {
@@ -170,7 +182,8 @@ export class Project {
                             })
                     }
                     else {
-                        win.webContents.send('update-status-text', "Event has not teams assigned yet, cannot load event from Blue Alliance") ;
+                        this.info_.frcev_ = undefined ;
+                        win.webContents.send('update-status-text', "Event has no teams assigned yet, cannot load event from Blue Alliance") ;
                         win.webContents.send('update-status-view-close-button', true) ;
                     }
                 })

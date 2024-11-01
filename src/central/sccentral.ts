@@ -139,6 +139,12 @@ export class SCCentral extends SCBase {
         if (fev) {
             this.win_.webContents.send('update-status-title', "Loading event '" + fev.desc + "'") ;
             this.project_!.loadBAEvent(this.win_, this.ba_!, fev)
+                .then(() => {
+                    this.sendTreeData() ;
+                    this.win_.webContents.send("update-main", "info") ;
+                })
+                .catch((err) => {
+                }) ;
         }
         else {
             let html = "Event with key '" + args[0] + "' was not found.<br>No event was loaded" ;
@@ -205,7 +211,28 @@ export class SCCentral extends SCBase {
     }
 
     public sendTreeData() : void {
-        this.win_.webContents.send('update-tree', null);
+        let treedata = [] ;
+
+        treedata.push({type: "item", command: "view-help", "title" : "Help"}) ;
+
+        if (this.project_) {
+            treedata.push( { type: "seperator", title: "Teams"}) ;
+            treedata.push({ type: "item", command: "view-team-form", "title" : "Form"}) ;
+            treedata.push({ type: "item", command: "view-team-status", "title" : "Status"}) ;
+            if (this.project_.hasTeamData) {
+                treedata.push({ type: "item", command: "view-team-data", "title" : "Data"}) ;
+            }
+
+            treedata.push( { type: "seperator", title: "Match"}) ;
+            treedata.push({ type: "item", command: "view-match-form-red", "title" : "Red Form"}) ;
+            treedata.push({ type: "item", command: "view-match-form-blue", "title" : "Blue Form"}) ;
+            treedata.push({ type: "item", command: "view-match-status", "title" : "Status"}) ;
+            if (this.project_.hasMatchData) {
+                treedata.push({ type: "item", command: "view-match-data", "title" : "Data"}) ;
+            }
+        }
+
+        this.win_.webContents.send('update-tree', treedata);
     }
 
     public executeCommand(cmd: string) : void {
