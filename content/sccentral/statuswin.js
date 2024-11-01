@@ -5,10 +5,11 @@ let status_span = undefined ;
 let status_text = undefined ;
 let status_title = undefined ;
 
-function statusCreate(parent) {
+function statusCreate() {
     status_top = document.createElement('div') ;
     status_top.id = "status" ;
-    parent.append(status_top) ;
+    status_top.style.bo
+    $("#righttop").append(status_top) ;
 
     status_content = document.createElement('div') ;
     status_content.id = "modalcontent" ;
@@ -67,5 +68,5 @@ function statusShowCloseButton(show) {
 window.scoutingAPI.receive("update-status-text", (args)=>statusSetText(args)) ;
 window.scoutingAPI.receive("update-status-html", (args)=>statusSetHTML(args)) ;
 window.scoutingAPI.receive("update-status-title", (args) => statusSetTitle(args)) ;
-window.scoutingAPI.receive("update-status-visible", (args)=>statusHide()) ;
-window.scoutingAPI.receive("update-status-close-button", (args)=>statusShowCloseButton(args)) ;
+window.scoutingAPI.receive("update-status-visible", (args)=> { args ? statusShow() : statusHide() ; }) ;
+window.scoutingAPI.receive("update-status-view-close-button", (args)=>statusShowCloseButton(args)) ;

@@ -15,6 +15,9 @@ async function updateMainWindow(mtype) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+
+    statusCreate() ;
+
     // Query the element
     const resizer = document.getElementById('dragMe');
     const leftSide = resizer.previousElementSibling;

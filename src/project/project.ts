@@ -12,11 +12,16 @@ import { BrowserWindow } from 'electron';
 
 export class ProjectInfo {
     public frcev_? : FRCEvent ;
+    public name_? : string ;
     public teamform_? : string ;
     public matchform_? : string ;
     public tablets_? : Tablets ;
     public teams_? : Team[] ;
     public matches_? : Match[] ;
+
+    public get name() : string | undefined {
+        return this.frcev_ ? this.frcev_.desc : this.name_ ; 
+    }
 }
 
 export class Project {
@@ -106,36 +111,68 @@ export class Project {
         return ret ;
     }
 
+    public loadMatchData(win: BrowserWindow, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>((resolve, reject) => {
+        }) ;
+        
+        return ret;
+    }
+
     public loadBAEvent(win: BrowserWindow, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
         let ret: Promise<void> = new Promise<void>((resolve, reject) => {
             this.info_.frcev_ = frcev ;
             win.webContents.send('update-status-text', 'Loading teams from the event') ;
             ba.getTeams(frcev.evkey)
                 .then((teams) => {
-                    
-                    this.info_.teams_ = teams ;
-                    let msg: string = teams.length + " teams loaded\n" ;
-                    msg += "Loading matches from the event" ;
-                    win.webContents.send('update-status-text', msg) ;
+                    if (teams.length > 0) {
+                        this.info_.teams_ = teams ;
+                        let msg: string = teams.length + " teams loaded\n" ;
+                        msg += "Loading matches from the event" ;
+                        win.webContents.send('update-status-text', msg) ;
 
-                    ba.getMatches(frcev.evkey)
-                        .then((matches) => {
-                            if (matches.length > 0) {
-                                this.info_.matches_ = matches ;
-                            }
+                        ba.getMatches(frcev.evkey)
+                            .then((matches) => {
+                                if (matches.length > 0) {
+                                    this.info_.matches_ = matches ;
 
-                            let msg: string = teams.length + " teams loaded\n" ;
-                            msg += matches.length + " matches loaded\n" ;
-                            msg += "Event loaded sucessfully" ;
-                            win.webContents.send('update-status-text', msg) ;
-                            win.webContents.send('update-status-close-button', true) ;
-
-                        })
-                        .catch((err) => {
-                            this.info_.frcev_ = undefined ;
-                            this.info_.teams_ = undefined ;
-                            reject(err) ;
-                        })
+                                    let msg: string = teams.length + " teams loaded\n" ;
+                                    msg += matches.length + " matches loaded\n" ;
+                                    let err = this.writeEventFile() ;
+                                    if (err) {
+                                        msg += "Error saving the event file\n" ;
+                                    }
+                                    else {
+                                        msg += "Event file saved\n" ;
+                                    }
+                                    msg += "Event loaded sucessfully\n" ;
+                                    win.webContents.send('update-status-text', msg) ;
+                                    win.webContents.send('update-status-view-close-button', true) ;
+                                } else {
+                                    let msg: string = teams.length + " teams loaded\n" ;
+                                    msg += matches.length + "No matches were present\n" ;
+                                    msg += "Fetch matches from the Blue Alliance after they are published\n" ;
+                                    let err = this.writeEventFile() ;
+                                    if (err) {
+                                        msg += "Error saving the event file\n" ;
+                                    }
+                                    else {
+                                        msg += "Event file saved\n" ;
+                                    }
+                                    msg += "Event loaded sucessfully (without matches)\n" ;
+                                    win.webContents.send('update-status-text', msg) ;
+                                    win.webContents.send('update-status-view-close-button', true) ;                                    
+                                }
+                            })
+                            .catch((err) => {
+                                this.info_.frcev_ = undefined ;
+                                this.info_.teams_ = undefined ;
+                                reject(err) ;
+                            })
+                    }
+                    else {
+                        win.webContents.send('update-status-text', "Event has not teams assigned yet, cannot load event from Blue Alliance") ;
+                        win.webContents.send('update-status-view-close-button', true) ;
+                    }
                 })
                 .catch((err) => {
                     this.info_.frcev_ = undefined ;

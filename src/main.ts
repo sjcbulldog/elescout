@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, Menu } from "electron";
 import * as path from "path";
 import { SCBase } from "./base/scbase";
 import { SCScout } from "./scout/scscout";
@@ -39,6 +39,8 @@ function createWindow() : BrowserWindow {
       .then(() => {
       })
       .catch((e) => console.error(e));
+
+    Menu.setApplicationMenu(scappbase!.createMenu()) ;
 
     return win ;
 }

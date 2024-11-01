@@ -2,7 +2,7 @@ import { SCBase } from "../base/scbase";
 import { BlueAlliance } from "../bluealliance/ba";
 import { FRCEvent } from "../project/frcevent";
 import { Project } from "../project/project";
-import { BrowserWindow, dialog } from 'electron' ;
+import { app, BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
@@ -39,11 +39,64 @@ export class SCCentral extends SCBase {
         return "content/sccentral/central.html"
     }
 
+    public createMenu() : Menu | null {
+        let ret: Menu | null = new Menu() ;
+
+        let filemenu: MenuItem = new MenuItem( {
+            type: "submenu",
+            label: "File",
+            role: "fileMenu"
+        }) ;
+
+        let createitem: MenuItem = new MenuItem( {
+            type: "normal",
+            label: "Create Event ...",
+            id: "create-event",
+            click: () => { this.executeCommand(SCCentral.createNewEvent)}
+        }) ;
+        filemenu.submenu?.insert(0, createitem) ;
+
+        let openitem: MenuItem = new MenuItem( {
+            type: "normal",
+            label: "Open Event ...",
+            id: "open-event",
+            click: () => { this.executeCommand(SCCentral.openExistingEvent)}            
+        }) ;
+        filemenu.submenu?.insert(1, openitem) ;
+
+        filemenu.submenu?.insert(2, new MenuItem({type: "separator"}));
+
+        ret.append(filemenu) ;
+
+        let loadmenu: MenuItem = new MenuItem( {
+            type: "submenu",
+            label: "Import",
+            submenu: new Menu()            
+        }) ;
+
+        let downloadMatchData: MenuItem = new MenuItem( {
+            type: "normal",
+            label: "Match Data",
+            click: () => { this.downloadMatchData();}
+        }) ;
+        loadmenu.submenu?.insert(0, downloadMatchData) ;
+        ret.append(loadmenu) ;
+
+        let viewmenu: MenuItem = new MenuItem( {
+            type: "submenu",
+            role: "viewMenu"
+        }) ;
+        ret.append(viewmenu) ;
+
+        return ret;
+    }
+
     public sendInfoData() : void {
         if (this.project_) {
             let obj = {
                 location_ : this.project_.location,
                 bakey_ : this.project_.info.frcev_?.evkey,
+                name_ : this.project_.info.name,
                 teamform_ : this.project_.info.teamform_,
                 matchform_ : this.project_.info.matchform_,
                 tablets_ : this.project_.info.tablets_,
@@ -78,7 +131,7 @@ export class SCCentral extends SCBase {
             let html = "The Blue Alliance site is not available." ;
             this.win_.webContents.send('update-status-title', "Error Loading Event") ;
             this.win_.webContents.send('update-status-html',  html) ;
-            this.win_.webContents.send('update-status-close-button', true) ;
+            this.win_.webContents.send('update-status-view-close-button', true) ;
             return ;
         }
 
@@ -91,7 +144,45 @@ export class SCCentral extends SCBase {
             let html = "Event with key '" + args[0] + "' was not found.<br>No event was loaded" ;
             this.win_.webContents.send('update-status-title', "Loading Blue Alliance Event") ;
             this.win_.webContents.send('update-status-html',  html) ;
-            this.win_.webContents.send('update-status-close-button', true) ;
+            this.win_.webContents.send('update-status-view-close-button', true) ;
+        }
+    }
+
+    private downloadMatchData() {
+        if (!this.project_) {
+            let html = "Must create or open a project to import data." ;
+            this.win_.webContents.send('update-status-visible', true) ;
+            this.win_.webContents.send('update-status-title', "Error Importing Match Data") ;
+            this.win_.webContents.send('update-status-html',  html) ;
+            this.win_.webContents.send('update-status-view-close-button', true) ;
+            return ;            
+        }
+
+        if (!this.isBAAvailable()) {
+            let html = "The Blue Alliance site is not available." ;
+            this.win_.webContents.send('update-status-visible', true) ;
+            this.win_.webContents.send('update-status-title', "Error Importing Match Data") ;
+            this.win_.webContents.send('update-status-html',  html) ;
+            this.win_.webContents.send('update-status-view-close-button', true) ;
+            return ;
+        }
+
+        let fev: FRCEvent | undefined = this.project_?.info.frcev_ ;
+        if (fev) {
+            this.win_.webContents.send('update-status-visible', true) ;            
+            this.win_.webContents.send('update-status-title', "Loading match data for event '" + fev.desc + "'") ;
+            this.win_.webContents.send('update-status-html',  "Loading data ...") ;
+            this.project_!.loadMatchData(this.win_, this.ba_!, fev)
+                .then(() => {
+                    this.win_.webContents.send('update-status-view-close-button', true) ;                    
+                }) ;
+        }
+        else {
+            let html = "The event is not a blue alliance event" ;
+            this.win_.webContents.send('update-status-visible', true) ;
+            this.win_.webContents.send('update-status-title', "Load Match Data") ;
+            this.win_.webContents.send('update-status-html',  html) ;
+            this.win_.webContents.send('update-status-view-close-button', true) ;
         }
     }
 
@@ -109,47 +200,12 @@ export class SCCentral extends SCBase {
         return this.ba_ !== undefined && !this.baloading_ ;
     }
 
-    private requestTreeData() : any {
-        let obj = null ;
-        if (this.project_) {
-            obj = [
-                {
-                    "title" : "Create New Event",
-                    "command" : SCCentral.createNewEvent,
-                    "enabled": true
-                },
-                {
-                    "title" : "Open Existing Event",
-                    "command" : SCCentral.openExistingEvent,
-                    "enabled" : true
-                }
-            ];
-        }
-        else {
-            obj = [
-                {
-                    "title" : "Create New Event",
-                    "command" : SCCentral.createNewEvent,
-                    "enabled": true
-                },
-                {
-                    "title" : "Open Existing Event",
-                    "command" : SCCentral.openExistingEvent,
-                    "enabled" : true
-                }
-            ];
-        }
-
-        return obj ;
-    }
-
     public isScoutingTablet(): boolean {
         return false ;
     }
 
     public sendTreeData() : void {
-        let obj = this.requestTreeData() ;
-        this.win_.webContents.send('update-tree', obj);
+        this.win_.webContents.send('update-tree', null);
     }
 
     public executeCommand(cmd: string) : void {
@@ -197,6 +253,7 @@ export class SCCentral extends SCBase {
                 Project.createEvent(pathname.filePaths[0])
                     .then((p) => {
                         this.project_ = p ;
+                        this.win_.webContents.send('update-main', 'info') ;
                     })
                     .catch((err) => {
                         let errobj : Error = err as Error ;

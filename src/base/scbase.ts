@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, ipcRenderer } from "electron";
+import { BrowserWindow, ipcMain, ipcRenderer, Menu } from "electron";
 
 export abstract class SCBase {
     protected win_ : BrowserWindow ;
@@ -15,4 +15,5 @@ export abstract class SCBase {
     public abstract basePage() : string ;
     public abstract sendTreeData() : void ;
     public abstract executeCommand(cmd: string) : void ;
+    public abstract createMenu() : Menu | null ;
 }

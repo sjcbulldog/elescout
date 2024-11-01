@@ -158,13 +158,15 @@ export class BlueAlliance {
                             m.winner_ = t.winning_alliance ;
                         }
 
-                        if (t.score_breakdown.red) {
-                            this.extractBreakdown(m.red_score_breakdown_, t.score_breakdown.red) ;
-                        }
+                        if (t.score_breakdown) {
+                            if (t.score_breakdown.red) {
+                                this.extractBreakdown(m.red_score_breakdown_, t.score_breakdown.red) ;
+                            }
 
-                        if (t.score_breakdown.blue) {
-                            this.extractBreakdown(m.blue_score_breakdown_, t.score_breakdown.blue) ;
-                        }                        
+                            if (t.score_breakdown.blue) {
+                                this.extractBreakdown(m.blue_score_breakdown_, t.score_breakdown.blue) ;
+                            }              
+                        }          
 
                         result.push(m)
                     } 

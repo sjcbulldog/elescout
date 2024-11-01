@@ -1,13 +1,28 @@
-#info {
-    font-size: 40px ;
-}
-
 #info_main {
-    height: 100% ;
+    padding: 20px 10px;
+    border: 2px solid black;
+    border-radius: 10px;    
+    box-shadow: 10px 5px 5px lightgray;    
+    position: relative;
+    top: 25%;
+    width: max-content;
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 #info_location {
-    text-align: center;
     font-weight: bold;
-    font-size: 20px;
+    font-size: 18px;
+}
+
+#info_table {
+
+    width: 500px ;
+}
+
+.info_table_cell {
+    padding: 5px 10px;
 }

@@ -19,21 +19,38 @@ function addlocation(location) {
     return row ;
 }
 
-function addbaykey(bakey, teams, matches) {
+function addname(evname) {
+    let row = document.createElement('tr') ;
+
+    let label = document.createElement('td') ;
+    label.innerHTML = 'Name:  ' ;
+    label.className = "info_table_cell" ;
+    row.append(label) ;
+
+    let value = document.createElement('td')
+    value.className = "info_table_cell" ;
+    value.innerHTML = (evname ? evname : 'NONE') ;
+    row.append(value) ;
+
+    return row ;
+}
+
+function addbakey(bakey, teams, matches) {
     let row = document.createElement('tr') ;
 
     let label = document.createElement('td') ;
     label.innerHTML = 'Blue Alliance Key:  ' ;
+    label.className = "info_table_cell" ;
     row.append(label) ;
 
-    let value = document.createElement('div')
+    let value = document.createElement('td')
+    value.className = "info_table_cell" ;
     value.innerHTML = (bakey ? bakey : 'NONE') ;
-
-    row.append(label) ;
     row.append(value) ;
 
     if (!teams && !matches && !bakey) {
         let cell = document.createElement('td') ;
+        cell.className = "info_table_cell" ;
         row.append(cell) ;
 
         let  button = document.createElement('button') ;
@@ -51,15 +68,16 @@ function addteamform(teamform) {
 
     let label = document.createElement('td') ;
     label.innerHTML = 'Team Form:  ' ;
+    label.className = "info_table_cell" ;
     row.append(label) ;
 
-    let value = document.createElement('div')
+    let value = document.createElement('td');
     value.innerHTML = (teamform ? teamform : 'NONE') ;
-
-    row.append(label) ;
+    value.className = "info_table_cell" ;
     row.append(value) ;
 
     let cell = document.createElement('td') ;
+    cell.className = "info_table_cell" ;
     row.append(cell) ;
 
     let  button = document.createElement('button') ;
@@ -76,18 +94,19 @@ function addmatchform(matchform) {
 
     let label = document.createElement('td') ;
     label.innerHTML = 'Match Form:  ' ;
+    label.className = "info_table_cell" ;
     row.append(label) ;
 
-    let value = document.createElement('div')
+    let value = document.createElement('td');
     value.innerHTML = (matchform ? matchform : 'NONE') ;
-
-    row.append(label) ;
+    value.className = "info_table_cell" ;
     row.append(value) ;
 
     let cell = document.createElement('td') ;
+    cell.className = "info_table_cell" ;
     row.append(cell) ;
 
-    let  button = document.createElement('button') ;
+    let button = document.createElement('button') ;
     cell.append(button) ;
 
     button.innerText = 'Select Match Form' ;
@@ -101,18 +120,19 @@ function addtablets(tablets) {
 
     let label = document.createElement('td') ;
     label.innerHTML = 'Tablets:  ' ;
+    label.className = "info_table_cell" ;
     row.append(label) ;
 
-    let value = document.createElement('div')
+    let value = document.createElement('td')
     value.innerHTML = (tablets ? tablets.length : 'NOT ASSIGNED') ;
-
-    row.append(label) ;
+    value.className = "info_table_cell" ;
     row.append(value) ;
 
     let cell = document.createElement('td') ;
+    cell.className = "info_table_cell" ;
     row.append(cell) ;
 
-    let  button = document.createElement('button') ;
+    let button = document.createElement('button') ;
     cell.append(button) ;
 
     button.innerText = 'Assign Tablets' ;
@@ -126,15 +146,16 @@ function addteams(teams, bakey) {
 
     let label = document.createElement('td') ;
     label.innerHTML = 'Teams:  ' ;
+    label.className = "info_table_cell" ;
     row.append(label) ;
 
-    let value = document.createElement('div')
+    let value = document.createElement('td')
     value.innerHTML = (teams ? teams.length : 'No Teams') ;
-
-    row.append(label) ;
+    value.className = "info_table_cell" ;
     row.append(value) ;
 
     let cell = document.createElement('td') ;
+    cell.className = "info_table_cell" ;
     row.append(cell) ;
 
     if (!bakey) {
@@ -153,15 +174,16 @@ function addmatches(matches, bakey) {
     
     let label = document.createElement('td') ;
     label.innerHTML = 'Matches:  ' ;
+    label.className = "info_table_cell" ;
     row.append(label) ;
 
-    let value = document.createElement('div')
+    let value = document.createElement('tr')
+    value.className = "info_table_cell" ;
     value.innerHTML = (matches ? matches.length : 'No Matches') ;
-
-    row.append(label) ;
     row.append(value) ;
 
     let cell = document.createElement('td') ;
+    cell.className = "info_table_cell" ;
     row.append(cell) ;
 
     if (!bakey) {
@@ -183,12 +205,17 @@ function updateInfoView(info) {
     div.id = "info_main" ;
 
     let table = document.createElement("table") ;
+    table.id = "info_table" ;
     div.append(table) ;
 
     row = addlocation(info.location_) ;
+    row.id = "info_location" ;
     table.append(row) ;
 
-    row = addbaykey(info.bakey_, info.teams_, info.matches_) ;
+    row = addname(info.name_) ;
+    table.append(row) ;
+
+    row = addbakey(info.bakey_, info.teams_, info.matches_) ;
     table.append(row) ;
 
     row = addteamform(info.teamform_) ;

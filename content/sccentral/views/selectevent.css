@@ -3,20 +3,31 @@
     font-size: 18px;
 }
 
-#select-event-row-even {
+.select-event-header:hover {
+    cursor: pointer;
+}
+
+.select-event-row-even {
     background-color: antiquewhite;
 }
 
-#select-event-row-odd {
+.select-event-row-odd {
     background-color: lightgray
 }
 
-#select-selectable:hover {
+.select-event-row-odd:hover {
   color: #000;
   text-decoration: none;
   font-weight: bolder;
   cursor: pointer;
 }
+
+.select-event-row-even:hover {
+    color: #000;
+    text-decoration: none;
+    font-weight: bolder;
+    cursor: pointer;
+  }
 
 #select-event-sort-row {
     background-color: lightblue;
@@ -24,8 +35,4 @@
     justify-content: center;
     flex-wrap: wrap;
     align-items:first baseline ;
-}
-
-.select-event-sort-radio {
-    margin-left: 20px;
 }

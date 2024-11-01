@@ -36,7 +36,7 @@ contextBridge.exposeInMainWorld( "scoutingAPI", {
         "update-status-html",
         "update-status-title",
         "update-status-visible",
-        "update-status-close-button"
+        "update-status-view-close-button"
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.on(channel, (event, ...args) => func(...args));
