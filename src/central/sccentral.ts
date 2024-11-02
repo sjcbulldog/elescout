@@ -3,6 +3,7 @@ import { BlueAlliance } from "../bluealliance/ba";
 import { FRCEvent } from "../project/frcevent";
 import { Project } from "../project/project";
 import { app, BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
+import { Tablet } from "../project/tablet";
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
@@ -113,6 +114,13 @@ export class SCCentral extends SCBase {
     public sendTabletData() : void {
         if (this.project_) {
             this.win_.webContents.send('tablet-data', this.project_.info.tablets_) ;
+        }
+    }
+
+    public setTabletData(data: any[]) {
+        if (this.project_) {
+            this.project_.setTabletData(data) ;
+            this.win_.webContents.send('update-main', 'info') ;
         }
     }
 
@@ -339,6 +347,7 @@ export class SCCentral extends SCBase {
         path.then((pathname) => {
             if (!pathname.canceled) {
                 this.project_!.setTeamForm(pathname.filePaths[0]) ;
+                this.win_.webContents.send('update-main', 'info') ;
             }
         }) ;
     }
@@ -365,6 +374,7 @@ export class SCCentral extends SCBase {
         path.then((pathname) => {
             if (!pathname.canceled) {
                 this.project_!.setMatchForm(pathname.filePaths[0]) ;
+                this.win_.webContents.send('update-main', 'info') ;
             }
         }) ;
     }    
@@ -389,7 +399,7 @@ export class SCCentral extends SCBase {
                 Project.openEvent(pathname.filePaths[0])
                     .then((p) => {
                         this.project_ = p ;
-                        this.win_.webContents.send('update-main', 'info', p) ;
+                        this.win_.webContents.send('update-main', 'info') ;
                         this.sendTreeData() ;
                     })
                     .catch((err) => {

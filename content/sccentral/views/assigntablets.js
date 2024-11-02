@@ -109,16 +109,14 @@ function allowDrop(ev) {
     ev.preventDefault();
 }
   
-function drag(ev) {
-    ev.dataTransfer.setData("text", ev.target.id);
+function startdrag(ev) {
+    let tabname = ev.target.id ;
+    ev.dataTransfer.setData("text", tabname);
+
+    ev.dataTransfer.dropEffect = "move" ;
+    console.log("dragging " + tabname) ;
 }
   
-function dropmatch(ev) {
-    ev.preventDefault();
-    let tabname = ev.dataTransfer.getData("text");
-    setTabletToType(tabname, matchName) ;
-}
-
 function setTabletToType(tablet, type) {
     if (frctablets) {
         for(let i = 0 ; i < frctablets.length ; i++) {
@@ -131,10 +129,20 @@ function setTabletToType(tablet, type) {
     }
 }
 
-function dropteam(ev) {
+function dropmatch(ev) {
     ev.preventDefault();
     let tabname = ev.dataTransfer.getData("text");
     setTabletToType(tabname, matchName) ;
+}
+
+function dropteam(ev) {
+    ev.preventDefault();
+    let tabname = ev.dataTransfer.getData("text");
+    setTabletToType(tabname, teamName) ;
+}
+
+function saveData() {
+    window.scoutingAPI.send("set-tablet-data", frctablets);
 }
 
 function placeTablets() {
@@ -156,7 +164,7 @@ function placeTablets() {
         }
         else {
             p.draggable = true ;
-            p.ondrag = drag;
+            p.ondragstart = startdrag;
             $("#assign-tablets-available-holder").append(p); 
         }
     }
@@ -198,14 +206,18 @@ function updateTablets(data) {
     
     let save = document.createElement('button') ;
     save.innerText = 'Save' ;
+    save.onclick = saveData ;
     buttondiv.append(save) ;
 
     let discard = document.createElement('button') ;
     discard.innerText = 'Discard' ;
+    discard.onclick = () => { updateMainWindow("info") ; }
     buttondiv.append(discard) ;
 
     $("#rightcontent").empty() ;
     $("#rightcontent").append(topdiv) ;
+
+    placeTablets() ;
 }
 
 window.scoutingAPI.receive("tablet-data", (args)=>updateTablets(args)) ;

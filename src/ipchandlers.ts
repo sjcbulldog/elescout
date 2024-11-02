@@ -40,5 +40,12 @@ export async function getTabletData() {
         central.sendTabletData() ;
     } 
 }
+export async function setTabletData(...args: any[]) {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.setTabletData(args[0]) ;
+    } 
+}
+
 
 

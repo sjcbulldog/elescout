@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld( "scoutingAPI", {
         "get-info-data",
         "get-select-event-data",
         "get-tablet-data",
+        "set-tablet-data",
         "load-ba-event-data",
         "execute-command"
       ];

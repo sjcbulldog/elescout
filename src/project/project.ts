@@ -131,7 +131,38 @@ export class Project {
     }
 
     public areTabletsValid() : boolean {
-        return false;
+        let matchcnt = 0 ;
+        let teamcnt = 0 ;
+
+        if (this.info.tablets_) {
+            for(let tablet of this.info.tablets_) {
+                if (tablet && tablet.purpose === "team") {
+                    teamcnt++ ;
+                }
+
+                if (tablet && tablet.purpose === "match") {
+                    matchcnt++ ;
+                }
+            }
+
+        }
+
+        return teamcnt >= 1 && matchcnt >= 6 ;
+    }
+
+    public setTabletData(data:any[]) {
+        this.info.tablets_ = [] ;
+        for(let tab of data) {
+            let t = new Tablet(tab.name) ;
+            if (tab.purpose) {
+                t.purpose = tab.purpose ;
+            }
+
+            this.info.tablets_!.push(t) ;
+        }
+
+        this.writeEventFile() ;
+        
     }
 
     public loadBAEvent(win: BrowserWindow, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
