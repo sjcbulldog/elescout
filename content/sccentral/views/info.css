@@ -16,6 +16,7 @@
 #info_location {
     font-weight: bold;
     font-size: 18px;
+    text-align: center;
 }
 
 #info_table {
@@ -23,6 +24,6 @@
     width: 500px ;
 }
 
-.info_table_cell {
+.info-table-cell {
     padding: 5px 10px;
 }

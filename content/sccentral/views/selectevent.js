@@ -45,13 +45,7 @@ function displayEvents(table)
         data.push(frcev.start_date) ;
         data.push(frcev.desc) ;
 
-        let row = bwgTableAddRow(evtable, data) ;
-        if ((tabrow % 2) == 0) {
-            row.className = "select-event-row-even"
-        }
-        else {
-            row.className = "select-event-row-odd"
-        }
+        let row = evtable.addRow(data) ;
         row.onclick = () => { loadBAEvent(frcev.evkey, frcev.desc);}
         
         tabrow++ ;
@@ -72,56 +66,20 @@ function dateCompareFn(a, b) {
     return a.desc.localeCompare(b.desc) ;
 }
 
-function dateSort() {
-    frcevs.sort(dateCompareFn) ;
-}
-
-function distCompareFn(a, b) {
-    let da = "" ;
-    let db = "" ;
-
-    if (a && a.district) {
-        da = a.district.display_name ;
-    }
-
-    if (b && b.district) {
-        db = b.district.display_name ;
-    }
-
-    let ret = da.localeCompare(db) ;
-
-    if (ret != 0) {
-        return ret ;
-    }
-
-    return a.desc.localeCompare(b.desc) ;
-}
-
-function distSort() {
-    frcevs.sort(distCompareFn) ;
-}
-
-function nameSort() {
-    frcevs.sort((a, b) => { 
-        return a.desc.localeCompare(b.desc) ;
-    }) ;
-}
-
 function updateSelectEvent(data) {
     frcevs = data ;
     
     let topdiv = document.createElement('div') ;
     topdiv.id = 'select-event-top-div' ;
 
-    evtable = bwgTableCreate(["Key", "District", "Date", "Name"], "select-event-table") ;
-    topdiv.append(bwgTableGetTableElem(evtable)) ;
+    evtable = bwgTableCreate(["Key", "District", "Date", "Name"], "select-event") ;
+    topdiv.append(evtable.top) ;
 
     $("#rightcontent").empty() ;
     $("#rightcontent").append(topdiv) ;
 
     displayEvents(evtable) ;
-
-    bwgTableSetSortOrder(0) ;
+    evtable.setSortOrder(1) ;
 }
 
 window.scoutingAPI.receive("select-event", (args)=>updateSelectEvent(args)) ;

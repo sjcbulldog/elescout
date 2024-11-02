@@ -33,3 +33,12 @@ export async function getSelectEventData() {
         central.sendSelectEventData() ;
     } 
 }
+
+export async function getTabletData() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendTabletData() ;
+    } 
+}
+
+

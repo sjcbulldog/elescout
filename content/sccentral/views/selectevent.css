@@ -1,9 +1,6 @@
-.select-event-header {
+.select-event-header-row {
     font-weight: bold ;
     font-size: 18px;
-}
-
-.select-event-header:hover {
     cursor: pointer;
 }
 
@@ -28,11 +25,3 @@
     font-weight: bolder;
     cursor: pointer;
   }
-
-#select-event-sort-row {
-    background-color: lightblue;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    align-items:first baseline ;
-}

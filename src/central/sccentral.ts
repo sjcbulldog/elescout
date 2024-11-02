@@ -14,7 +14,9 @@ export class SCCentral extends SCBase {
     private static createNewEvent: string = "create-new" ;
     private static selectTeamForm: string = "select-team-form" ;
     private static selectMatchForm: string = "select-match-form" ;
+    private static assignTablets: string = "assign-tablets" ;
     private static loadBAEvent: string = "load-ba-event" ;
+    private static viewInit: string = "view-init" ;
 
     constructor(win: BrowserWindow) {
         super(win) ;
@@ -96,14 +98,21 @@ export class SCCentral extends SCBase {
             let obj = {
                 location_ : this.project_.location,
                 bakey_ : this.project_.info.frcev_?.evkey,
-                name_ : this.project_.info.name,
+                name_ : this.project_.info.frcev_?.desc,
                 teamform_ : this.project_.info.teamform_,
                 matchform_ : this.project_.info.matchform_,
                 tablets_ : this.project_.info.tablets_,
+                tablets_valid_ : this.project_.areTabletsValid(),
                 teams_ : this.project_.info.teams_,
                 matches_ : this.project_.info.matches_,
             };
             this.win_.webContents.send('update-info', obj);
+        }
+    }
+
+    public sendTabletData() : void {
+        if (this.project_) {
+            this.win_.webContents.send('tablet-data', this.project_.info.tablets_) ;
         }
     }
 
@@ -216,14 +225,15 @@ export class SCCentral extends SCBase {
         treedata.push({type: "item", command: "view-help", "title" : "Help"}) ;
 
         if (this.project_) {
-            treedata.push( { type: "seperator", title: "Teams"}) ;
+            treedata.push({type: "item", command: "view-init", "title" : "Event Overview"}) ;
+            treedata.push( { type: "separator", title: "Teams"}) ;
             treedata.push({ type: "item", command: "view-team-form", "title" : "Form"}) ;
             treedata.push({ type: "item", command: "view-team-status", "title" : "Status"}) ;
             if (this.project_.hasTeamData) {
                 treedata.push({ type: "item", command: "view-team-data", "title" : "Data"}) ;
             }
 
-            treedata.push( { type: "seperator", title: "Match"}) ;
+            treedata.push( { type: "separator", title: "Match"}) ;
             treedata.push({ type: "item", command: "view-match-form-red", "title" : "Red Form"}) ;
             treedata.push({ type: "item", command: "view-match-form-blue", "title" : "Blue Form"}) ;
             treedata.push({ type: "item", command: "view-match-status", "title" : "Status"}) ;
@@ -252,6 +262,20 @@ export class SCCentral extends SCBase {
         else if (cmd === SCCentral.loadBAEvent) {
             this.loadBAEvent() ;
         }
+        else if (cmd === SCCentral.assignTablets) {
+            this.assignTablets() ;
+        }
+        else if (cmd === SCCentral.viewInit) {
+            this.viewEventOverview() ;
+        }
+    }
+
+    private viewEventOverview() {
+        this.win_.webContents.send('update-main', 'info') ;
+    }
+
+    private assignTablets() {
+        this.win_.webContents.send('update-main', 'tablets') ;
     }
 
     private loadBAEvent() {
@@ -366,6 +390,7 @@ export class SCCentral extends SCBase {
                     .then((p) => {
                         this.project_ = p ;
                         this.win_.webContents.send('update-main', 'info', p) ;
+                        this.sendTreeData() ;
                     })
                     .catch((err) => {
                         let errobj : Error = err as Error ;

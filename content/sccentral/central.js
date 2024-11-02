@@ -12,6 +12,9 @@ async function updateMainWindow(mtype) {
   else if (mainwintype === "selevent") {
     selectEventView() ;
   }
+  else if (mainwintype === "tablets") {
+    assignTabletView() ;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function () {

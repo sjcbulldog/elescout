@@ -4,7 +4,7 @@ import { SCBase } from "./base/scbase";
 import { SCScout } from "./scout/scscout";
 import { SCCentral } from "./central/sccentral";
 import { ContentManager } from "./cmgr";
-import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData } from "./ipchandlers" ;
+import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData } from "./ipchandlers" ;
 
 let cmgr: ContentManager = new ContentManager() ;
 export let scappbase : SCBase | undefined = undefined ;
@@ -16,8 +16,9 @@ function createWindow() : BrowserWindow {
       webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-          preload: path.join(__dirname, 'preload.js')
-      }
+          preload: path.join(__dirname, 'preload.js'),
+      },
+      title: "XeroScout",
     });
     win.maximize() ;
 
@@ -49,6 +50,7 @@ app.on("ready", () => {
     ipcMain.on('get-tree-data', getTreeData);
     ipcMain.on('get-info-data', getInfoData) ;
     ipcMain.on('get-select-event-data', getSelectEventData) ;
+    ipcMain.on('get-tablet-data', getTabletData) ;
     ipcMain.on('execute-command', (event, ...args) => { executeCommand(...args)}) ;
     ipcMain.on('load-ba-event-data', (event, ...args) => { loadBaEventData(...args)}) ;
     createWindow() ;

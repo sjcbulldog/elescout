@@ -5,7 +5,7 @@ import * as fs from 'fs' ;
 import * as path from 'path' ;
 import { Team } from './team';
 import { Match } from './match';
-import { Tablets } from './tablets';
+import { Tablet } from './tablet';
 import { BlueAlliance } from '../bluealliance/ba';
 import { FRCEvent } from './frcevent';
 import { BrowserWindow } from 'electron';
@@ -17,7 +17,7 @@ export class ProjectInfo {
     public name_? : string ;
     public teamform_? : string ;
     public matchform_? : string ;
-    public tablets_? : Tablets ;
+    public tablets_? : Tablet[] ;
     public teams_? : Team[] ;
     public matches_? : Match[] ;
     public matchdata_? : MatchData ;
@@ -130,6 +130,10 @@ export class Project {
         return ret;
     }
 
+    public areTabletsValid() : boolean {
+        return false;
+    }
+
     public loadBAEvent(win: BrowserWindow, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
         let ret: Promise<void> = new Promise<void>((resolve, reject) => {
             this.info_.frcev_ = frcev ;
@@ -142,7 +146,7 @@ export class Project {
                         msg += "Loading matches from the event" ;
                         win.webContents.send('update-status-text', msg) ;
 
-                        ba.fakeGetMatchesNone(frcev.evkey)
+                        ba.getMatches(frcev.evkey)
                             .then((matches) => {
                                 if (matches.length > 0) {
                                     this.info_.matches_ = matches ;
@@ -159,6 +163,7 @@ export class Project {
                                     msg += "Event loaded sucessfully\n" ;
                                     win.webContents.send('update-status-text', msg) ;
                                     win.webContents.send('update-status-view-close-button', true) ;
+                                    resolve() ;
                                 } else {
                                     let msg: string = teams.length + " teams loaded\n" ;
                                     msg += "No matches were present\n" ;
@@ -172,7 +177,8 @@ export class Project {
                                     }
                                     msg += "Event loaded sucessfully (without matches)\n" ;
                                     win.webContents.send('update-status-text', msg) ;
-                                    win.webContents.send('update-status-view-close-button', true) ;                                    
+                                    win.webContents.send('update-status-view-close-button', true) ;              
+                                    resolve() ;                                                          
                                 }
                             })
                             .catch((err) => {

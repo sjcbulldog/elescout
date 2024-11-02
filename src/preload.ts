@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld( "scoutingAPI", {
         "get-tree-data", 
         "get-info-data",
         "get-select-event-data",
+        "get-tablet-data",
         "load-ba-event-data",
         "execute-command"
       ];
@@ -32,6 +33,7 @@ contextBridge.exposeInMainWorld( "scoutingAPI", {
         "update-main",
         "update-info",
         "select-event",
+        "tablet-data",
         "update-status-text",
         "update-status-html",
         "update-status-title",

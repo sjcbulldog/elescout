@@ -13,8 +13,14 @@ function updateTreeProcess(treedata) {
         for (let item of treedata) {
             let treeitem = document.createElement("p")
             treeitem.command = item.command;
-            treeitem.textContent = item.title;
-            treeitem.className = "treelistitem";
+            if (item.type === "item") {
+                treeitem.className = "treelistitem";
+                treeitem.textContent = item.title;
+            }
+            else if (item.type === "separator") {
+                treeitem.className = "treelistseparator" ;
+                treeitem.textContent = "---- " + item.title + " ----";
+            }
             tree.append(treeitem);
         }
 
