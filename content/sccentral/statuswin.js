@@ -48,6 +48,10 @@ function statusSetText(text) {
     status_text.innerText = text ;
 }
 
+function statusGetText() {
+    return status_text.innerText ;
+}
+
 function statusSetHTML(html) {
     status_text.innerHTML = html ;
 }
@@ -65,8 +69,8 @@ function statusShowCloseButton(show) {
     }
 }
 
-window.scoutingAPI.receive("update-status-text", (args)=>statusSetText(args)) ;
-window.scoutingAPI.receive("update-status-html", (args)=>statusSetHTML(args)) ;
-window.scoutingAPI.receive("update-status-title", (args) => statusSetTitle(args)) ;
-window.scoutingAPI.receive("update-status-visible", (args)=> { args ? statusShow() : statusHide() ; }) ;
-window.scoutingAPI.receive("update-status-view-close-button", (args)=>statusShowCloseButton(args)) ;
+window.scoutingAPI.receive("set-status-text", (args)=>statusSetText(args)) ;
+window.scoutingAPI.receive("set-status-html", (args)=>statusSetHTML(args)) ;
+window.scoutingAPI.receive("set-status-title", (args) => statusSetTitle(args)) ;
+window.scoutingAPI.receive("set-status-visible", (args)=> { args ? statusShow() : statusHide() ; }) ;
+window.scoutingAPI.receive("set-status-close-button-visible", (args)=>statusShowCloseButton(args)) ;

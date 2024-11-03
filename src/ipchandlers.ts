@@ -30,7 +30,7 @@ export async function getInfoData() {
 export async function getSelectEventData() {
     if (scappbase && !scappbase.isScoutingTablet()) {
         let central : SCCentral = scappbase as SCCentral ;
-        central.sendSelectEventData() ;
+        central.sendEventData() ;
     } 
 }
 
@@ -40,6 +40,7 @@ export async function getTabletData() {
         central.sendTabletData() ;
     } 
 }
+
 export async function setTabletData(...args: any[]) {
     if (scappbase && !scappbase.isScoutingTablet()) {
         let central : SCCentral = scappbase as SCCentral ;
@@ -47,5 +48,16 @@ export async function setTabletData(...args: any[]) {
     } 
 }
 
+export async function getTeamData() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendTeamData() ;
+    } 
+}
 
-
+export async function setTeamData(...args: any[]) {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.setTeamData(args[0]) ;
+    } 
+}

@@ -1,10 +1,12 @@
-let mainwintype = "empty" ;
 
 async function updateMainWindow(mtype) {
   mainwintype = mtype ;
   
   if (mainwintype === "empty") {
-    emptyView() ;
+    emptyView("No Event Loaded") ;
+  }
+  else if (mainwintype === "error") {
+    emptyView("Internal Error Occurred") ;
   }
   else if (mainwintype === "info") {
     infoView() ;
@@ -14,6 +16,22 @@ async function updateMainWindow(mtype) {
   }
   else if (mainwintype === "tablets") {
     assignTabletView() ;
+  }
+  else if (mainwintype === "editteams") {
+    editTeamsView() ;
+  }
+  else {
+    emptyView('Unknown view \'' + mainwintype + '\'') ;
+  }
+}
+
+function updateView(args) {
+  let view = args[0] ;
+  if (view === undefined) {
+    updateMainWindow("error") ;
+  }
+  else {
+    updateMainWindow(view) ;
   }
 }
 
@@ -80,8 +98,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Attach the handler
     resizer.addEventListener('mousedown', mouseDownHandler);
 
-    updateTree() ;
-    updateMainWindow("empty", null) ;
+    updateNav() ;
+    updateView(["empty"]) ;
 });
 
-window.scoutingAPI.receive("update-main", (args)=>updateMainWindow(args)) ;
+
+window.scoutingAPI.receive("update-main-window-view", (args)=>updateView(args)) ;

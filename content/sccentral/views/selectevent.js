@@ -10,7 +10,7 @@ function selectEventView() {
     div.id = "selectevent" ;
     $("#rightcontent").append(div) ;
 
-    window.scoutingAPI.send("get-select-event-data");
+    window.scoutingAPI.send("get-event-data");
 }
 
 function loadBAEvent(key, desc) {
@@ -67,12 +67,12 @@ function dateCompareFn(a, b) {
 }
 
 function updateSelectEvent(data) {
-    frcevs = data ;
+    frcevs = data[0] ;
     
     let topdiv = document.createElement('div') ;
     topdiv.id = 'select-event-top-div' ;
 
-    evtable = bwgTableCreate(["Key", "District", "Date", "Name"], "select-event") ;
+    evtable = new BwgTable(["Key", "District", "Date", "Name"], { prefix: "select-event", sortable: true }) ;
     topdiv.append(evtable.top) ;
 
     $("#rightcontent").empty() ;
@@ -82,4 +82,4 @@ function updateSelectEvent(data) {
     evtable.setSortOrder(1) ;
 }
 
-window.scoutingAPI.receive("select-event", (args)=>updateSelectEvent(args)) ;
+window.scoutingAPI.receive("send-event-data", (args)=>updateSelectEvent(args)) ;

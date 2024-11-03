@@ -1,3 +1,5 @@
+const minRequiredNumberTeams = 24 ;
+
 function infoView() {
     $("#rightcontent").empty() ;
     let div = document.createElement("div") ;
@@ -8,18 +10,18 @@ function infoView() {
     window.scoutingAPI.send("get-info-data");
 }
 
-function addlocation(location) {
+function addlocation(info) {
     let row = document.createElement('tr') ;
     let loc = document.createElement('td') ;
     loc.id = "info_location"
-    loc.innerText = location ;    
+    loc.innerText = info.location_ ;    
     loc.colSpan = 3 ;
     row.append(loc) ;
 
     return row ;
 }
 
-function addname(evname) {
+function addname(info) {
     let row = document.createElement('tr') ;
 
     let label = document.createElement('td') ;
@@ -29,13 +31,13 @@ function addname(evname) {
 
     let value = document.createElement('td')
     value.className = "info-table-cell" ;
-    value.innerHTML = (evname ? evname : 'NONE') ;
+    value.innerHTML = (info.name_ ? info.name_ : 'NONE') ;
     row.append(value) ;
 
     return row ;
 }
 
-function addbakey(bakey, teams, matches) {
+function addbakey(info) {
     let row = document.createElement('tr') ;
 
     let label = document.createElement('td') ;
@@ -45,10 +47,10 @@ function addbakey(bakey, teams, matches) {
 
     let value = document.createElement('td')
     value.className = "info-table-cell" ;
-    value.innerHTML = (bakey ? bakey : 'NONE') ;
+    value.innerHTML = (info.bakey_ ? info.bakey_ : 'NONE') ;
     row.append(value) ;
 
-    if (!teams && !matches && !bakey) {
+    if (!info.teams_ && !info.matches_ && !info.bakey_) {
         let cell = document.createElement('td') ;
         cell.className = "info-table-cell" ;
         row.append(cell) ;
@@ -63,7 +65,7 @@ function addbakey(bakey, teams, matches) {
     return row ;
 }
 
-function addteamform(teamform) {
+function addteamform(info) {
     let row = document.createElement('tr') ;
 
     let label = document.createElement('td') ;
@@ -72,7 +74,7 @@ function addteamform(teamform) {
     row.append(label) ;
 
     let value = document.createElement('td');
-    value.innerHTML = (teamform ? teamform : 'NONE') ;
+    value.innerHTML = (info.teamform_ ? info.teamform_ : 'NONE') ;
     value.className = "info-table-cell" ;
     row.append(value) ;
 
@@ -80,14 +82,16 @@ function addteamform(teamform) {
     cell.className = "info-table-cell" ;
     row.append(cell) ;
 
-    let button = document.createElement('button') ;
-    cell.append(button) ;
+    if (!info.locked_) {
+        let button = document.createElement('button') ;
+        cell.append(button) ;
 
-    button.innerText = 'Select Team Form' ;
-    button.onclick = () => { window.scoutingAPI.send('execute-command', 'select-team-form'); } ;
+        button.innerText = 'Select Team Form' ;
+        button.onclick = () => { window.scoutingAPI.send('execute-command', 'select-team-form'); } ;
+    }
 
     cell = document.createElement('td') ;
-    if (teamform) {
+    if (info.teamform_) {
         cell.innerHTML = "&check;"
         cell.style.color = "green" ;
     }
@@ -100,7 +104,7 @@ function addteamform(teamform) {
     return row ;
 }
 
-function addmatchform(matchform) {
+function addmatchform(info) {
     let row = document.createElement('tr') ;
 
     let label = document.createElement('td') ;
@@ -109,7 +113,7 @@ function addmatchform(matchform) {
     row.append(label) ;
 
     let value = document.createElement('td');
-    value.innerHTML = (matchform ? matchform : 'NONE') ;
+    value.innerHTML = (info.matchform_ ? info.matchform_ : 'NONE') ;
     value.className = "info-table-cell" ;
     row.append(value) ;
 
@@ -117,14 +121,16 @@ function addmatchform(matchform) {
     cell.className = "info-table-cell" ;
     row.append(cell) ;
 
+    if (!info.locked_) {
     let button = document.createElement('button') ;
-    cell.append(button) ;
+        cell.append(button) ;
 
-    button.innerText = 'Select Match Form' ;
-    button.onclick = () => { window.scoutingAPI.send('execute-command', 'select-match-form')} ;
+        button.innerText = 'Select Match Form' ;
+        button.onclick = () => { window.scoutingAPI.send('execute-command', 'select-match-form')} ;
+    }
 
     cell = document.createElement('td') ;
-    if (matchform) {
+    if (info.matchform_) {
         cell.innerHTML = "&check;"
         cell.style.color = "green" ;
     }
@@ -137,7 +143,7 @@ function addmatchform(matchform) {
     return row ;
 }
 
-function addtablets(tablets, tabletsvalid) {
+function addtablets(info) {
     let row = document.createElement('tr') ;
 
     let label = document.createElement('td') ;
@@ -146,7 +152,7 @@ function addtablets(tablets, tabletsvalid) {
     row.append(label) ;
 
     let value = document.createElement('td')
-    value.innerHTML = (tablets ? tablets.length : 'NOT ASSIGNED') ;
+    value.innerHTML = (info.tablets_ ? info.tablets_.length : 'NOT ASSIGNED') ;
     value.className = "info-table-cell" ;
     row.append(value) ;
 
@@ -154,15 +160,17 @@ function addtablets(tablets, tabletsvalid) {
     cell.className = "info-table-cell" ;
     row.append(cell) ;
 
-    let button = document.createElement('button') ;
-    cell.append(button) ;
+    if (!info.locked_) {
+        let button = document.createElement('button') ;
+        cell.append(button) ;
 
-    button.innerText = 'Assign Tablets' ;
-    button.onclick = () => { window.scoutingAPI.send('execute-command', 'assign-tablets')} ;
+        button.innerText = 'Assign Tablets' ;
+        button.onclick = () => { window.scoutingAPI.send('execute-command', 'assign-tablets')} ;
+    }
 
     cell = document.createElement('td') ;
 
-    if (tabletsvalid) {
+    if (info.tablets_valid_) {
         cell.innerHTML = "&check;"
         cell.style.color = "green" ;
     }
@@ -175,7 +183,7 @@ function addtablets(tablets, tabletsvalid) {
     return row ;
 }
 
-function addteams(teams, bakey) {
+function addteams(info) {
     let row = document.createElement('tr') ;
 
     let label = document.createElement('td') ;
@@ -184,7 +192,7 @@ function addteams(teams, bakey) {
     row.append(label) ;
 
     let value = document.createElement('td')
-    value.innerHTML = (teams ? teams.length : 'No Teams') ;
+    value.innerHTML = (info.teams_ ? info.teams_.length : 'No Teams') ;
     value.className = "info-table-cell" ;
     row.append(value) ;
 
@@ -192,16 +200,16 @@ function addteams(teams, bakey) {
     cell.className = "info-table-cell" ;
     row.append(cell) ;
 
-    if (!bakey) {
+    if (!info.bakey_ && !info.locked_) {
         let  button = document.createElement('button') ;
         cell.append(button) ;
 
         button.innerText = 'Edit Teams' ;
-        button.click = () => { window.scoutingAPI.send('execute-command', 'edit-teams')} ;
+        button.onclick = () => { window.scoutingAPI.send('execute-command', 'edit-teams')} ;
     }
     
     cell = document.createElement('td') ;
-    if (teams) {
+    if (info.teams_ && info.teams_.length >= minRequiredNumberTeams) {
         cell.innerHTML = "&check;"
         cell.style.color = "green" ;
     }
@@ -214,7 +222,7 @@ function addteams(teams, bakey) {
     return row ;
 }
 
-function addmatches(matches, bakey) {
+function addmatches(info) {
     let row = document.createElement('tr') ;
     
     let label = document.createElement('td') ;
@@ -224,23 +232,64 @@ function addmatches(matches, bakey) {
 
     let value = document.createElement('td')
     value.className = "info-table-cell" ;
-    value.innerHTML = (matches ? matches.length : 'No Matches') ;
+    value.innerHTML = (info.matches_ ? info.matches_.length : 'No Matches') ;
     row.append(value) ;
 
     let cell = document.createElement('td') ;
     cell.className = "info-table-cell" ;
     row.append(cell) ;
 
-    if (!bakey) {
+    if (!info.bakey_ && info.teams_ && info.teams_.length >= minRequiredNumberTeams) {
         let  button = document.createElement('button') ;
         cell.append(button) ;
 
         button.innerText = 'Edit Matches' ;
-        button.click = () => { window.scoutingAPI.send('execute-command', 'edit-matches')} ;
+        button.onclick = () => { window.scoutingAPI.send('execute-command', 'edit-matches')} ;
     }
 
     cell = document.createElement('td') ;
-    if (matches) {
+    if (info.matches_) {
+        cell.innerHTML = "&check;"
+        cell.style.color = "green" ;
+    }
+    else {
+        cell.innerHTML = "&cross;"
+        cell.style.color = "red" ;
+    }
+    row.append(cell) ;     
+
+    return row ;
+}
+
+function addLocked(info) {
+    let row = document.createElement('tr') ;
+    
+    let label = document.createElement('td') ;
+    label.innerHTML = 'Locked:  ' ;
+    label.className = "info-table-cell" ;
+    row.append(label) ;
+
+    let value = document.createElement('td')
+    value.className = "info-table-cell" ;
+    value.innerHTML = (info.locked_ ? "Locked" : "Unlocked") ;
+    row.append(value) ;
+
+    let cell = document.createElement('td') ;
+    cell.className = "info-table-cell" ;
+    row.append(cell) ;
+
+    if (info.matches_ && info.teams_ && info.teamform_ && info.matchform_ && !info.locked_) {
+        let  button = document.createElement('button') ;
+        cell.append(button) ;
+
+        button.innerText = 'Lock Event' ;
+        button.onclick = () => { 
+            window.scoutingAPI.send('execute-command', 'lock-event')
+        } ;
+    }
+
+    cell = document.createElement('td') ;
+    if (info.locked_) {
         cell.innerHTML = "&check;"
         cell.style.color = "green" ;
     }
@@ -264,32 +313,35 @@ function updateInfoView(info) {
     table.id = "info_table" ;
     div.append(table) ;
 
-    row = addlocation(info.location_) ;
+    row = addlocation(info) ;
     row.id = "info_location" ;
     table.append(row) ;
 
-    row = addname(info.name_) ;
+    row = addname(info) ;
     table.append(row) ;
 
-    row = addbakey(info.bakey_, info.teams_, info.matches_) ;
+    row = addbakey(info) ;
     table.append(row) ;
 
-    row = addteamform(info.teamform_) ;
+    row = addteamform(info) ;
     table.append(row) ;
 
-    row = addmatchform(info.matchform_) ;
+    row = addmatchform(info) ;
     table.append(row) ;
 
-    row = addtablets(info.tablets_, info.tablets_valid_) ;
+    row = addtablets(info) ;
     table.append(row) ;
 
-    row = addteams(info.teams_, info.bakey_) ;
+    row = addteams(info) ;
     table.append(row) ;
 
-    row = addmatches(info.matches_, info.bakey_) ;
+    row = addmatches(info) ;
+    table.append(row) ;
+
+    row = addLocked(info) ;
     table.append(row) ;
     
     $("#rightcontent").append(div) ;
 }
 
-window.scoutingAPI.receive("update-info", (args)=>updateInfoView(args)) ;
+window.scoutingAPI.receive("send-info-data", (args)=>updateInfoView(args[0])) ;

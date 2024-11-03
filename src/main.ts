@@ -4,7 +4,7 @@ import { SCBase } from "./base/scbase";
 import { SCScout } from "./scout/scscout";
 import { SCCentral } from "./central/sccentral";
 import { ContentManager } from "./cmgr";
-import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, setTabletData } from "./ipchandlers" ;
+import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, setTabletData, getTeamData, setTeamData } from "./ipchandlers" ;
 
 let cmgr: ContentManager = new ContentManager() ;
 export let scappbase : SCBase | undefined = undefined ;
@@ -47,13 +47,15 @@ function createWindow() : BrowserWindow {
 }
 
 app.on("ready", () => {
-    ipcMain.on('get-tree-data', getTreeData);
+    ipcMain.on('get-nav-data', getTreeData);
     ipcMain.on('get-info-data', getInfoData) ;
-    ipcMain.on('get-select-event-data', getSelectEventData) ;
+    ipcMain.on('get-event-data', getSelectEventData) ;
     ipcMain.on('get-tablet-data', getTabletData) ;
     ipcMain.on('set-tablet-data', (event, ...args) => { setTabletData(...args)}) ;
-    ipcMain.on('execute-command', (event, ...args) => { executeCommand(...args)}) ;
+    ipcMain.on('get-team-data', getTeamData) ;
+    ipcMain.on('set-team-data', (event, ...args) => { setTeamData(...args)}) ;
     ipcMain.on('load-ba-event-data', (event, ...args) => { loadBaEventData(...args)}) ;
+    ipcMain.on('execute-command', (event, ...args) => { executeCommand(...args)}) ;
     createWindow() ;
 }) ;
 

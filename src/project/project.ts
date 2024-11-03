@@ -11,6 +11,7 @@ import { FRCEvent } from './frcevent';
 import { BrowserWindow } from 'electron';
 import { MatchData } from './matchdata';
 import { TeamData } from './teamdata';
+import { SCBase } from '../base/scbase';
 
 export class ProjectInfo {
     public frcev_? : FRCEvent ;
@@ -22,6 +23,11 @@ export class ProjectInfo {
     public matches_? : Match[] ;
     public matchdata_? : MatchData ;
     public teamdata_? : TeamData ;
+    public locked_ : boolean ;
+
+    constructor() {
+        this.locked_ = false ;
+    }
 
     public get name() : string | undefined {
         return this.frcev_ ? this.frcev_.desc : this.name_ ; 
@@ -53,6 +59,13 @@ export class Project {
 
     public get location() : string {
         return this.location_ ;
+    }
+
+    public lockEvent() : void {
+        if (this.info_.matches_ && this.info_.teams_ && this.info_.teamform_ && this.info_.matchform_) {
+            this.info_.locked_ = true ;
+            this.writeEventFile() ;
+        }
     }
 
     public setTeamForm(form: string) {
@@ -150,6 +163,15 @@ export class Project {
         return teamcnt >= 1 && matchcnt >= 6 ;
     }
 
+    public setTeamData(data: any[]) {
+        this.info_.teams_ = [] ;
+        for(let d of data) {
+            let team = new Team("", d.number_, "", d.nickname_, "", "", "", "", "", "", "", 0, 0) ;
+            this.info_.teams_.push(team) ;
+        }
+        this.writeEventFile() ;
+    }
+
     public setTabletData(data:any[]) {
         this.info.tablets_ = [] ;
         for(let tab of data) {
@@ -158,24 +180,23 @@ export class Project {
                 t.purpose = tab.purpose ;
             }
 
-            this.info.tablets_!.push(t) ;
+            this.info.tablets_.push(t) ;
         }
 
         this.writeEventFile() ;
-        
     }
 
-    public loadBAEvent(win: BrowserWindow, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
+    public loadBAEvent(base: SCBase, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
         let ret: Promise<void> = new Promise<void>((resolve, reject) => {
             this.info_.frcev_ = frcev ;
-            win.webContents.send('update-status-text', 'Loading teams from the event') ;
+            base.sendToRenderer('set-status-text', 'Loading teams from the event') ;
             ba.getTeams(frcev.evkey)
                 .then((teams) => {
                     if (teams.length > 0) {
                         this.info_.teams_ = teams ;
                         let msg: string = teams.length + " teams loaded\n" ;
                         msg += "Loading matches from the event" ;
-                        win.webContents.send('update-status-text', msg) ;
+                        base.sendToRenderer('set-status-text', msg) ;
 
                         ba.getMatches(frcev.evkey)
                             .then((matches) => {
@@ -192,8 +213,8 @@ export class Project {
                                         msg += "Event file saved\n" ;
                                     }
                                     msg += "Event loaded sucessfully\n" ;
-                                    win.webContents.send('update-status-text', msg) ;
-                                    win.webContents.send('update-status-view-close-button', true) ;
+                                    base.sendToRenderer('set-status-text', msg) ;
+                                    base.sendToRenderer('set-status-close-button-visible', true) ;
                                     resolve() ;
                                 } else {
                                     let msg: string = teams.length + " teams loaded\n" ;
@@ -207,8 +228,8 @@ export class Project {
                                         msg += "Event file saved\n" ;
                                     }
                                     msg += "Event loaded sucessfully (without matches)\n" ;
-                                    win.webContents.send('update-status-text', msg) ;
-                                    win.webContents.send('update-status-view-close-button', true) ;              
+                                    base.sendToRenderer('set-status-text', msg) ;
+                                    base.sendToRenderer('set-status-close-button-visible', true) ;              
                                     resolve() ;                                                          
                                 }
                             })
@@ -220,8 +241,8 @@ export class Project {
                     }
                     else {
                         this.info_.frcev_ = undefined ;
-                        win.webContents.send('update-status-text', "Event has no teams assigned yet, cannot load event from Blue Alliance") ;
-                        win.webContents.send('update-status-view-close-button', true) ;
+                        base.sendToRenderer('set-status-text', "Event has no teams assigned yet, cannot load event from Blue Alliance") ;
+                        base.sendToRenderer('set-status-close-button-visible', true) ;
                     }
                 })
                 .catch((err) => {

@@ -11,8 +11,8 @@ export class SCScout extends SCBase {
     }
 
     public sendTreeData() : any {
-        this.win_.webContents.send('update-tree', null);
-    }    
+        this.sendToRenderer('send-tree-data', null);
+    }   
 
     public executeCommand(cmd: string) : void {   
     }

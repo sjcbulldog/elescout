@@ -210,7 +210,7 @@ function updateTablets(data) {
     buttondiv.append(save) ;
 
     let discard = document.createElement('button') ;
-    discard.innerText = 'Discard' ;
+    discard.innerText = 'Cancel' ;
     discard.onclick = () => { updateMainWindow("info") ; }
     buttondiv.append(discard) ;
 
@@ -220,4 +220,4 @@ function updateTablets(data) {
     placeTablets() ;
 }
 
-window.scoutingAPI.receive("tablet-data", (args)=>updateTablets(args)) ;
+window.scoutingAPI.receive("send-tablet-data", (args)=>updateTablets(args[0])) ;

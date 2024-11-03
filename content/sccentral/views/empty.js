@@ -1,4 +1,4 @@
-function emptyView() {
+function emptyView(message) {
     $("#rightcontent").empty() ;
 
     let div = document.createElement("div") ;
@@ -6,7 +6,7 @@ function emptyView() {
 
     let span = document.createElement("span") ;
     span.id = "empty-span" ;
-    span.innerHTML = "<b>No Event Loaded</b>" ;
+    span.innerHTML = "<b>" + message + "</b>" ;
     
     div.append(span);
     $("#rightcontent").append(div) ;
