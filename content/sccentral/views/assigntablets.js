@@ -33,7 +33,7 @@ function findNewTabletName() {
     let name ;
 
     while (true) {
-        name = "New Tablet " + num ;
+        name = "Tablet " + num ;
         if (!doesTabletExist(name))
             break ;
         num++ ;

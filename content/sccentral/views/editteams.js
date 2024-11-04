@@ -56,7 +56,7 @@ function editTeamsReportError(err) {
     statusSetText(text) ;
 }
 
-function checkData(data) {
+function checkTeamsData(data) {
     let ret = true ;
     let seen = [] ;
 
@@ -92,12 +92,16 @@ function checkData(data) {
 
 function saveTeamData() {
     let data = getDataFromTable() ;
-    if (checkData(data)) {
+    if (checkTeamsData(data)) {
         window.scoutingAPI.send('set-team-data', data) ;
     }
     else {
         statusShowCloseButton(true) ;
     }
+}
+
+function importTeams() {
+    window.scoutingAPI.send('execute-command', 'import-teams') ;
 }
 
 function editTeamCreateButtonBar() {
@@ -108,6 +112,11 @@ function editTeamCreateButtonBar() {
     add.innerText = 'Add Team' ;
     buttondiv.append(add) ;
     add.onclick = addNewTeam;
+
+    let impbut = document.createElement('button') ;
+    impbut.innerText = 'Import Teams' ;
+    buttondiv.append(impbut) ;
+    impbut.onclick = importTeams;
     
     let save = document.createElement('button') ;
     save.innerText = 'Save' ;
@@ -128,7 +137,7 @@ function updateTeamsView(info) {
     let div = document.createElement('div') ;
     div.id = 'edit-teams';
 
-    teamtable = new BwgTable(['Row', 'Number', 'Nick Name'], { prefix: 'create-teams', editable: true} ) ;
+    teamtable = new BwgTable(['Row', 'Number', 'Nick Name'], { prefix: 'create-teams', editable: [false, true, true]} ) ;
     div.append(teamtable.top) ;
 
     let hr = document.createElement('hr') ;

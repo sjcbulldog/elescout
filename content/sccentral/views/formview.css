@@ -1,0 +1,70 @@
+.formtab {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+}
+.formtab button {
+    font-weight: bolder;
+    font-size : 24px;
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+}
+
+/* Change background color of buttons on hover */
+.formtab button:hover {
+    background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.formtab button.active {
+    background-color: #ccc;
+}
+
+/* Style the tab content */
+.formtabcontent {
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-top: none;
+}
+
+.form-item-label {
+    font-size : 36px;
+}
+
+.form-item-text {
+    margin: 5px 20px ;
+    font-size : 36px;
+}
+
+.form-item-choice {
+    margin: 5px 20px ;
+    font-size : 36px;
+}
+
+.form-item-boolean {
+    margin: 5px 20px ;
+    width: 36px;
+    height: 36px ;
+}
+
+.form-item-updown {
+    margin: 5px 20px ;
+    font-size : 36px;
+}
+
+.form-item-updown-button {
+    margin: 5px 20px ;
+    width: 40px;
+    font-size : 36px;
+}
+
+.form-item-updown-div {
+    display:flex; 
+    flex-direction: row; 
+}

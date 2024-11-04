@@ -1,0 +1,15 @@
+.create-matches-header-row-cell {
+    padding: 5px 20px ;
+}
+
+.create-matches-cell {
+    text-align: center;
+}
+
+.create-matches-row-even {
+    background-color: antiquewhite;
+}
+
+.create-matches-row-odd {
+    background-color: lightgray
+}

@@ -16,7 +16,7 @@ export async function loadBaEventData(...args: any[]) {
 
 export async function getTreeData() {
     if (scappbase) {
-        scappbase.sendTreeData() ;
+        scappbase.sendNavData() ;
     }
 }
 
@@ -59,5 +59,33 @@ export async function setTeamData(...args: any[]) {
     if (scappbase && !scappbase.isScoutingTablet()) {
         let central : SCCentral = scappbase as SCCentral ;
         central.setTeamData(args[0]) ;
+    } 
+}
+
+export async function getMatchData() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendMatchData() ;
+    } 
+}
+
+export async function setMatchData(...args: any[]) {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.setMatchData(args[0]) ;
+    } 
+}
+
+export async function getTeamForm() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendTeamForm() ;
+    } 
+}
+
+export async function getMatchForm() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendMatchForm() ;
     } 
 }

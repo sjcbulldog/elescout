@@ -2,9 +2,9 @@ import { SCBase } from '../base/scbase';
 import { BlueAlliance } from '../bluealliance/ba';
 import { FRCEvent } from '../project/frcevent';
 import { Project } from '../project/project';
-import { app, BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
-import { Tablet } from '../project/tablet';
-import { Team } from '../project/team';
+import { BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
+import Papa from 'papaparse';
+import * as fs from 'fs' ;
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
@@ -21,6 +21,16 @@ export class SCCentral extends SCBase {
     private static viewInit: string = 'view-init' ;
     private static lockEvent: string = 'lock-event' ;
     private static editTeams: string = 'edit-teams' ;
+    private static editMatches : string = 'edit-matches' ;
+    private static importTeams: string = 'import-teams' ;
+    private static importMatches: string = 'import-matches' ;
+    private static viewTeamForm: string = 'view-team-form' ;
+    private static viewTeamStatus: string = 'view-team-status' ;
+    private static viewTeamData: string = "view-team-data" ;
+    private static viewMatchForm: string = 'view-match-form' ;
+    private static viewMatchStatus: string = 'view-match-status' ;
+    private static viewMatchData: string = "view-match-data" ;
+    private static viewHelp: string = "view-help" ;
 
     constructor(win: BrowserWindow) {
         super(win) ;
@@ -97,6 +107,52 @@ export class SCCentral extends SCBase {
         return ret;
     }
 
+    public sendTeamForm() {
+        let ret = {
+            formjson: null,
+            errormsg: "",
+        } ;
+
+        if (this.project_?.info.teamform_) {
+            let jsonstr = fs.readFileSync(this.project_.info.teamform_).toLocaleString() ;
+            try { 
+                let jsonobj = JSON.parse(jsonstr) ;
+                ret.formjson = jsonobj ;
+            }
+            catch(err) {
+                let errobj = err as Error ;
+                ret.errormsg = errobj.message ;
+            }
+        }
+        else {
+            ret.errormsg = "No team form has been set" ;
+        }
+        this.sendToRenderer('send-team-form', ret) ;
+    }
+
+    public sendMatchForm() {
+        let ret = {
+            formjson: null,
+            errormsg: "",
+        } ;
+
+        if (this.project_?.info.matchform_) {
+            let jsonstr = fs.readFileSync(this.project_.info.matchform_).toLocaleString() ;
+            try { 
+                let jsonobj = JSON.parse(jsonstr) ;
+                ret.formjson = jsonobj ;
+            }
+            catch(err) {
+                let errobj = err as Error ;
+                ret.errormsg = errobj.message ;
+            }
+        }
+        else {
+            ret.errormsg = "No match form has been set" ;
+        }
+        this.sendToRenderer('send-match-form', ret) ;
+    }
+
     private shortenString(str: string | undefined) : string | undefined {
         let ret: string | undefined ;
 
@@ -156,6 +212,39 @@ export class SCCentral extends SCBase {
         }
     }
 
+    public setMatchData(data: any[]) {
+        if (this.project_) {
+            this.project_.setMatchData(data) ;
+            this.sendToRenderer('update-main-window-view', 'info') ;
+        }
+    }
+
+    public sendMatchData() : void {
+        if (this.project_) {
+            let data = [] ;
+            if (this.project_.info.matches_) {
+                for(let t of this.project_.info.matches_) {
+                    let d = {
+                        type_ : t.comp_level_,
+                        number_ : t.match_number_,
+                        red_: [
+                            t.red_alliance_?.teams_[0],
+                            t.red_alliance_?.teams_[1],
+                            t.red_alliance_?.teams_[2],
+                        ],
+                        blue_: [
+                            t.blue_alliance_?.teams_[0],
+                            t.blue_alliance_?.teams_[1],
+                            t.blue_alliance_?.teams_[2],
+                        ]
+                    }
+                    data.push(d) ;
+                }
+            }
+            this.sendToRenderer('send-match-data', data, this.project_.info.teams_) ;
+        }
+    }
+
     public sendEventData() : void {
         if (this.project_ && this.isBAAvailable()) {
             this.ba_?.getEvents()
@@ -187,7 +276,7 @@ export class SCCentral extends SCBase {
             this.sendToRenderer('set-status-title', 'Loading event \'' + fev.desc + '\'') ;
             this.project_!.loadBAEvent(this, this.ba_!, fev)
                 .then(() => {
-                    this.sendTreeData() ;
+                    this.sendNavData() ;
                     this.setView('info') ;
                 })
                 .catch((err) => {
@@ -254,26 +343,25 @@ export class SCCentral extends SCBase {
         return false ;
     }
 
-    public sendTreeData() : void {
+    public sendNavData() : void {
         let treedata = [] ;
 
-        treedata.push({type: 'item', command: 'view-help', 'title' : 'Help'}) ;
+        treedata.push({type: 'item', command: SCCentral.viewHelp, 'title' : 'Help'}) ;
 
         if (this.project_) {
-            treedata.push({type: 'item', command: 'view-init', 'title' : 'Event Overview'}) ;
+            treedata.push({type: 'item', command: SCCentral.viewInit, 'title' : 'Event Overview'}) ;
             treedata.push( { type: 'separator', title: 'Teams'}) ;
-            treedata.push({ type: 'item', command: 'view-team-form', 'title' : 'Form'}) ;
-            treedata.push({ type: 'item', command: 'view-team-status', 'title' : 'Status'}) ;
+            treedata.push({ type: 'item', command: SCCentral.viewTeamForm, 'title' : 'Form'}) ;
+            treedata.push({ type: 'item', command: SCCentral.viewTeamStatus, 'title' : 'Status'}) ;
             if (this.project_.hasTeamData) {
-                treedata.push({ type: 'item', command: 'view-team-data', 'title' : 'Data'}) ;
+                treedata.push({ type: 'item', command: SCCentral.viewTeamData, 'title' : 'Data'}) ;
             }
 
             treedata.push( { type: 'separator', title: 'Match'}) ;
-            treedata.push({ type: 'item', command: 'view-match-form-red', 'title' : 'Red Form'}) ;
-            treedata.push({ type: 'item', command: 'view-match-form-blue', 'title' : 'Blue Form'}) ;
-            treedata.push({ type: 'item', command: 'view-match-status', 'title' : 'Status'}) ;
+            treedata.push({ type: 'item', command: SCCentral.viewMatchForm, 'title' : 'Form'}) ;
+            treedata.push({ type: 'item', command: SCCentral.viewMatchStatus, 'title' : 'Status'}) ;
             if (this.project_.hasMatchData) {
-                treedata.push({ type: 'item', command: 'view-match-data', 'title' : 'Data'}) ;
+                treedata.push({ type: 'item', command: SCCentral.viewMatchData, 'title' : 'Data'}) ;
             }
         }
 
@@ -283,7 +371,7 @@ export class SCCentral extends SCBase {
     public executeCommand(cmd: string) : void {
         if (cmd === SCCentral.createNewEvent) {
             this.createEvent() ;
-            this.sendTreeData() ;
+            this.sendNavData() ;
         }
         else if (cmd === SCCentral.openExistingEvent) {
             this.openEvent() ;
@@ -310,7 +398,173 @@ export class SCCentral extends SCBase {
         else if (cmd === SCCentral.editTeams) {
             this.setView('editteams') ;
         }
+        else if (cmd === SCCentral.editMatches) {
+            this.setView('editmatches') ;
+        }
+        else if (cmd === SCCentral.importTeams) {
+            this.importTeams() ;
+        }
+        else if (cmd === SCCentral.importMatches) {
+            this.importMatches() ;
+        }
+        else if (cmd === SCCentral.viewTeamForm) {
+            this.setView('teamform') ;
+        }
+        else if (cmd === SCCentral.viewMatchForm) {
+            this.setView('matchform') ;
+        }
     }
+
+    private importTeams() {
+        var path = dialog.showOpenDialog({
+            title: 'Import Teams',
+            message: 'Select teams CVS file',
+            filters: [
+                {
+                    extensions: ['csv'],
+                    name: 'CSV File'
+                }
+            ],
+            properties: [
+                'openFile'
+            ],
+        });
+
+        path.then((pathname) => {
+            if (!pathname.canceled) {
+                this.importTeamsFromFile(pathname.filePaths[0]) ;
+            }
+        })
+        .catch((err) => {
+            dialog.showErrorBox('Import Teams Error', err.message) ;
+        }) ;                
+    }
+
+    private importMatches() {
+        var path = dialog.showOpenDialog({
+            title: 'Import Matches',
+            message: 'Select Matches CVS file',
+            filters: [
+                {
+                    extensions: ['csv'],
+                    name: 'CSV File'
+                }
+            ],
+            properties: [
+                'openFile'
+            ],
+        });
+
+        path.then((pathname) => {
+            if (!pathname.canceled) {
+                this.importMatchesFromFile(pathname.filePaths[0]) ;
+            }
+        })
+        .catch((err) => {
+            dialog.showErrorBox('Import Matches Error', err.message) ;
+        }) ;                
+    }
+
+    private importTeamsFromFile(filename: string) {
+        interface TeamData {
+            number_ : Number ;
+            nickname_ : string ;
+          }
+          
+          const file = fs.readFileSync(filename, 'utf8');
+          
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader(header, index) {
+                let ret = header ;
+
+                if (index == 0) {
+                    ret = 'number_' ;
+                }
+                else if (index == 1) {
+                    ret = 'nickname_' ;
+                }
+        
+                return ret ;
+            },
+            complete: (results) => {
+              this.sendToRenderer('send-team-data', results.data) ;
+            },
+            error: (error: any) => {
+                let errobj: Error = error as Error ;
+                dialog.showErrorBox("Error Importing Teams", errobj.message) ;
+            },
+          });
+    }
+
+    private transformData(data: any[]) : any[] {
+        let result: any[] = [] ;
+
+        for(let entry of data) {
+            let obj = {
+                type_: entry.type_,
+                number_ : entry.number_,
+                red_: [ entry.r1_, entry.r2_, entry.r3_],
+                blue_: [ entry.b1_, entry.b2_, entry.b3_]
+            }
+
+            result.push(obj) ;
+        }
+
+        return result ;
+    }
+
+    private importMatchesFromFile(filename: string) {
+        interface TeamData {
+            number_ : Number ;
+            nickname_ : string ;
+          }
+          
+          const file = fs.readFileSync(filename, 'utf8');
+          
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader(header, index) {
+                let ret = header ;
+
+                if (index == 0) {
+                    ret = 'type_' ;
+                }
+                else if (index == 1) {
+                    ret = 'number_' ;
+                }
+                else if (index == 2) {
+                    ret = 'r1_' ;
+                }
+                else if (index == 3) {
+                    ret = 'r2_' ;
+                }
+                else if (index == 4) {
+                    ret = 'r3_' ;
+                }
+                else if (index == 5) {
+                    ret = 'b1_' ;
+                }
+                else if (index == 6) {
+                    ret = 'b2_' ;
+                }
+                else if (index == 7) {
+                    ret = 'b3_' ;
+                }
+        
+                return ret ;
+            },
+            complete: (results) => {
+              this.sendToRenderer('send-match-data', this.transformData(results.data), this.project_!.info.teams_) ;
+            },
+            error: (error: any) => {
+                let errobj: Error = error as Error ;
+                dialog.showErrorBox("Error Importing Teams", errobj.message) ;
+            },
+          });
+    }    
 
     private loadBAEvent() {
         if (this.isBAAvailable()) {
@@ -426,7 +680,7 @@ export class SCCentral extends SCBase {
                     .then((p) => {
                         this.project_ = p ;
                         this.setView('info') ;
-                        this.sendTreeData() ;
+                        this.sendNavData() ;
                     })
                     .catch((err) => {
                         let errobj : Error = err as Error ;

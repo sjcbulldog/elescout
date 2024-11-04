@@ -1,10 +1,21 @@
 import { BrowserWindow, ipcMain, ipcRenderer, Menu } from "electron";
+import * as path from 'path' ;
+import * as fs from 'fs' ;
 
 export abstract class SCBase {
     protected win_ : BrowserWindow ;
 
     protected constructor(win: BrowserWindow) {
         this.win_ = win;
+    }
+
+    public abstract basePage() : string ;
+    public abstract sendNavData() : void ;
+    public abstract executeCommand(cmd: string) : void ;
+    public abstract createMenu() : Menu | null ;
+
+    public isScoutingTablet() : boolean { 
+        return true ;
     }
 
     public sendToRenderer(ev: string, ...args: any[]) {
@@ -17,13 +28,7 @@ export abstract class SCBase {
         this.win_.webContents.send(ev, args) ;
     }
 
-    public setView(view: string) {
+    protected setView(view: string) {
         this.sendToRenderer('update-main-window-view', view) ;
     }
-
-    public isScoutingTablet() : boolean { return true ;}
-    public abstract basePage() : string ;
-    public abstract sendTreeData() : void ;
-    public abstract executeCommand(cmd: string) : void ;
-    public abstract createMenu() : Menu | null ;
 }

@@ -17,11 +17,22 @@ class BwgTable {
             this.sortable = false;
         }
 
+        this.editable = [] ;
         if (options && options.editable) {
-            this.editable = true;
+            if (Array.isArray(options.editable) && options.editable.length == columns.length) {
+                this.editable = options.editable ;
+            }
+            else {
+                for(let i = 0 ; i < columns.length ; i++) {
+                    this.editable.push(true) ;
+                }
+            }
+
         }
         else {
-            this.editable = false;
+            for(let i = 0 ; i < columns.length ; i++) {
+                this.editable.push(false) ;
+            }
         }
 
         this.columnlables = columns;
@@ -49,6 +60,7 @@ class BwgTable {
         let colno = 1;
         for (let hdr of this.columnlables) {
             let colhdr = document.createElement("th");
+            colhdr.className = this.classPrefix + "-header-row-cell" ;
             this.table.append(colhdr);
             colhdr.columnNum = colno++;
             colhdr.onclick = (event) => { this.changeSort(event); };
@@ -75,14 +87,16 @@ class BwgTable {
         let tr = document.createElement("tr");
         this.rows.push(tr);
 
+        let colno = 0 ;
         for (let delem of data) {
             let td = document.createElement("td");
             td.innerText = delem;
             td.className = this.classPrefix + "-cell";
-            if (this.editable) {
+            if (this.editable[colno]) {
                 td.contentEditable = true;
             }
             tr.append(td);
+            colno++ ;
         }
         return tr;
     }

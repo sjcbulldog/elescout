@@ -1,6 +1,6 @@
 import { ClientRequest, IncomingMessage, net } from 'electron';
 import * as https from 'https' ;
-import { Match, MatchAlliance } from '../project/match';
+import { Match, MatchAlliance, MatchResult } from '../project/match';
 import { Team } from '../project/team';
 import { FRCEvent } from '../project/frcevent';
 import { ObjectFlags } from 'typescript';
@@ -150,7 +150,10 @@ export class BlueAlliance {
                         }     
 
                         if (t.alliances.red.score) {
-                            m.red_alliance_.score_ = t.alliances.red.score ;
+                            if (!m.results_) {
+                                m.results_ = new MatchResult() ;
+                            }
+                            m.results_.red_score_ = t.alliances.red.score ;
                         }
                         
                         m.blue_alliance_ = new MatchAlliance() ;
@@ -167,20 +170,32 @@ export class BlueAlliance {
                         }                         
 
                         if (t.alliances.blue.score) {
-                            m.blue_alliance_.score_ = t.alliances.blue.score ;
+                            if (!m.results_) {
+                                m.results_ = new MatchResult() ;
+                            }
+                            m.results_.blue_score_ = t.alliances.blue.score ;
                         }           
                         
                         if (t.winning_alliance) {
-                            m.winner_ = t.winning_alliance ;
+                            if (!m.results_) {
+                                m.results_ = new MatchResult() ;
+                            }
+                            m.results_.winner_ = t.winning_alliance ;
                         }
 
                         if (t.score_breakdown) {
                             if (t.score_breakdown.red) {
-                                this.extractBreakdown(m.red_score_breakdown_, t.score_breakdown.red) ;
+                                if (!m.results_) {
+                                    m.results_ = new MatchResult() ;
+                                }
+                                this.extractBreakdown(m.results_.red_score_breakdown_, t.score_breakdown.red) ;
                             }
 
                             if (t.score_breakdown.blue) {
-                                this.extractBreakdown(m.blue_score_breakdown_, t.score_breakdown.blue) ;
+                                if (!m.results_) {
+                                    m.results_ = new MatchResult() ;
+                                }                                
+                                this.extractBreakdown(m.results_.blue_score_breakdown_, t.score_breakdown.blue) ;
                             }              
                         }          
 

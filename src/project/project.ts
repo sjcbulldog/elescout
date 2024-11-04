@@ -4,7 +4,7 @@
 import * as fs from 'fs' ;
 import * as path from 'path' ;
 import { Team } from './team';
-import { Match } from './match';
+import { Match, MatchResult } from './match';
 import { Tablet } from './tablet';
 import { BlueAlliance } from '../bluealliance/ba';
 import { FRCEvent } from './frcevent';
@@ -21,6 +21,7 @@ export class ProjectInfo {
     public tablets_? : Tablet[] ;
     public teams_? : Team[] ;
     public matches_? : Match[] ;
+    public results_? : MatchResult[] ;
     public matchdata_? : MatchData ;
     public teamdata_? : TeamData ;
     public locked_ : boolean ;
@@ -168,6 +169,17 @@ export class Project {
         for(let d of data) {
             let team = new Team("", d.number_, "", d.nickname_, "", "", "", "", "", "", "", 0, 0) ;
             this.info_.teams_.push(team) ;
+        }
+        this.writeEventFile() ;
+    }
+
+    public setMatchData(data: any[]) {
+        this.info.matches_ = []; 
+        for(let d of data) {
+            let match = new Match("", d.type_, 1, d.number_) ;
+            match.red_alliance_ = { teams_ : d.red_ , surragate_teams_ : [], dq_teams_ : [] } ;
+            match.blue_alliance_ = { teams_ : d.blue_ , surragate_teams_ : [], dq_teams_ : [] } ;
+            this.info.matches_.push(match) ;
         }
         this.writeEventFile() ;
     }

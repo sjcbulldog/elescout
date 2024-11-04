@@ -10,7 +10,7 @@ export class SCScout extends SCBase {
         return "content/scscouter/scouter.html"
     }
 
-    public sendTreeData() : any {
+    public sendNavData() : any {
         this.sendToRenderer('send-tree-data', null);
     }   
 

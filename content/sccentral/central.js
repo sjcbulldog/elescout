@@ -20,6 +20,15 @@ async function updateMainWindow(mtype) {
   else if (mainwintype === "editteams") {
     editTeamsView() ;
   }
+  else if (mainwintype === "editmatches") {
+    editMatchView() ;
+  }
+  else if (mainwintype === "teamform") {
+    teamFormView() ;
+  }
+  else if (mainwintype === "matchform") {
+    matchFormView() ;
+  }
   else {
     emptyView('Unknown view \'' + mainwintype + '\'') ;
   }
