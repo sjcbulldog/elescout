@@ -28,7 +28,8 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'load-ba-event-data',
         'execute-command',
         'get-team-form',
-        'get-match-form'
+        'get-match-form',
+        'get-team-status'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.send(channel, data);
@@ -45,6 +46,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-match-data',
         'send-team-form',
         'send-match-form',
+        'send-team-status',
         'set-status-text',
         'set-status-html',
         'set-status-title',

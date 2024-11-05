@@ -110,7 +110,7 @@ function allowDrop(ev) {
 }
   
 function startdrag(ev) {
-    let tabname = ev.target.id ;
+    let tabname = ev.target.innerText ;
     ev.dataTransfer.setData("text", tabname);
     ev.dataTransfer.dropEffect = "move" ;
 }
@@ -130,13 +130,13 @@ function setTabletToType(tablet, type) {
 function dropmatch(ev) {
     ev.preventDefault();
     let tabname = ev.dataTransfer.getData("text");
-    setTabletToType(tabname, matchName) ;
+    setTabletToType(tabname, tabletMatch) ;
 }
 
 function dropteam(ev) {
     ev.preventDefault();
     let tabname = ev.dataTransfer.getData("text");
-    setTabletToType(tabname, teamName) ;
+    setTabletToType(tabname, tabletTeam) ;
 }
 
 function saveData() {

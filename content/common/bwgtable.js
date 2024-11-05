@@ -17,6 +17,13 @@ class BwgTable {
             this.sortable = false;
         }
 
+        if (options && options.sortfun) {
+            this.sortfun = options.sortfun ;
+        }
+        else {
+            this.sortfun = undefined ;
+        }
+
         this.editable = [] ;
         if (options && options.editable) {
             if (Array.isArray(options.editable) && options.editable.length == columns.length) {
@@ -81,7 +88,7 @@ class BwgTable {
 
     addRow(data) {
         if (!data || data.length !== this.columnheaders.length) {
-            return;
+            return undefined ;
         }
 
         let tr = document.createElement("tr");
@@ -157,17 +164,24 @@ class BwgTable {
             return this.compareFun(a, b);
         });
     }
+
     compareFun(a, b) {
         let ret = 0;
+
         let index = Math.abs(this.sortOrder) - 1;
 
         let astr = a.cells[index].innerText;
         let bstr = b.cells[index].innerText;
 
-        if (this.sortOrder < 0) {
-            ret = bstr.localeCompare(astr);
-        } else {
-            ret = astr.localeCompare(bstr);
+        if (this.sortfun) {
+            ret = this.sortfun(this.sortOrder, astr, bstr) ;
+        }
+        else {
+            if (this.sortOrder < 0) {
+                ret = bstr.localeCompare(astr);
+            } else {
+                ret = astr.localeCompare(bstr);
+            }
         }
 
         return ret;

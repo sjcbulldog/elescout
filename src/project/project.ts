@@ -278,6 +278,25 @@ export class Project {
         return ret;
     }
 
+    public hasTeamScoutingResults(number: number) : boolean {
+        return true;
+    }
+
+    public findTeamByNumber(number: number) : Team | undefined {
+        let ret: Team | undefined ;
+
+        if (this.info_.teams_) {
+            for(let t of this.info_.teams_) {
+                if (t.number_ === number) {
+                    ret = t ;
+                    break ;
+                }
+            }   
+        }
+
+        return ret ;
+    }
+
     private getTabletsForPurpose(purpose: string) : Tablet[] {
         let ret: Tablet[] = [] ;
 

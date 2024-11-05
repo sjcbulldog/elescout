@@ -4,7 +4,7 @@ import { SCBase } from "./base/scbase";
 import { SCScout } from "./scout/scscout";
 import { SCCentral } from "./central/sccentral";
 import { ContentManager } from "./cmgr";
-import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm } from "./ipchandlers" ;
+import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm, getTeamStatus } from "./ipchandlers" ;
 import { SCCoach } from "./coach/sccoach";
 
 let cmgr: ContentManager = new ContentManager() ;
@@ -68,6 +68,7 @@ app.on("ready", () => {
     ipcMain.on('get-match-data', getMatchData);
     ipcMain.on('get-team-form', getTeamForm);
     ipcMain.on('get-match-form', getMatchForm);
+    ipcMain.on('get-team-status', getTeamStatus) ;
     ipcMain.on('set-team-data', (event, ...args) => { setTeamData(...args)}) ;
     ipcMain.on('set-match-data', (event, ...args) => { setMatchData(...args)}) ;
     ipcMain.on('load-ba-event-data', (event, ...args) => { loadBaEventData(...args)}) ;

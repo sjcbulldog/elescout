@@ -5,6 +5,7 @@ import { Project } from '../project/project';
 import { BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
 import Papa from 'papaparse';
 import * as fs from 'fs' ;
+import { Team } from '../project/team';
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
@@ -128,6 +129,29 @@ export class SCCentral extends SCBase {
             ret.errormsg = "No team form has been set" ;
         }
         this.sendToRenderer('send-team-form', ret) ;
+    }
+
+    public sendTeamStatus() {
+        interface data {
+            number: number,
+            status: string,
+            tablet: string,
+            teamname: string
+        }
+
+        let ret : data[] = [] ;
+
+        if (this.project_ && this.project_.info.teamassignments_) {
+            for(let t of this.project_.info.teamassignments_) {
+                let status: string = (this.project_.hasTeamScoutingResults(t.team) ? "Y" : "N") ;
+                let team: Team | undefined = this.project_.findTeamByNumber(t.team) ;
+                if (team) {
+                    ret.push({ number: t.team, status: status, tablet: t.tablet, teamname: team.nickname_ }) ;
+                }
+            }
+        }
+
+        this.sendToRenderer('send-team-status', ret) ;
     }
 
     public sendMatchForm() {
@@ -412,6 +436,9 @@ export class SCCentral extends SCBase {
         }
         else if (cmd === SCCentral.viewMatchForm) {
             this.setView('matchform') ;
+        }
+        else if (cmd === SCCentral.viewTeamStatus) {
+            this.setView('teamstatus') ;
         }
     }
 

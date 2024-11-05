@@ -29,6 +29,9 @@ async function updateMainWindow(mtype) {
   else if (mainwintype === "matchform") {
     matchFormView() ;
   }
+  else if (mainwintype === "teamstatus") {
+    teamStatus() ;
+  }
   else {
     emptyView('Unknown view \'' + mainwintype + '\'') ;
   }

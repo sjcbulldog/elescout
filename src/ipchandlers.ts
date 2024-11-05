@@ -89,3 +89,10 @@ export async function getMatchForm() {
         central.sendMatchForm() ;
     } 
 }
+
+export async function getTeamStatus() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendTeamStatus() ;
+    } 
+}

@@ -1,5 +1,3 @@
-let matchsections = [] ;
-
 function matchFormView() {
     $("#rightcontent").empty() ;
     let div = document.createElement("div") ;
@@ -21,10 +19,6 @@ function updateMatchForm(obj) {
     else {
         formViewJsonToForm(div, obj.formjson, 'match') ;
     }
-}
-
-function updateMatchFormSections(sections) {
-    matchsections = sections ;
 }
 
 window.scoutingAPI.receive("send-match-form", (args)=>updateMatchForm(args[0])) ;

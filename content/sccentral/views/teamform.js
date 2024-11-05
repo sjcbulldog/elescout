@@ -1,5 +1,3 @@
-let teamsections = [] ;
-
 function teamFormView() {
     $("#rightcontent").empty() ;
     let div = document.createElement("div") ;
