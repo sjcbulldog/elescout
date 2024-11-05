@@ -3,9 +3,6 @@ let availholder ;
 let matchholder ;
 let teamholder ;
 
-const matchName = "match" ;
-const teamName = "team" ;
-
 function assignTabletView() {
     $("#rightcontent").empty() ;
     let div = document.createElement("div") ;
@@ -112,9 +109,7 @@ function allowDrop(ev) {
 function startdrag(ev) {
     let tabname = ev.target.id ;
     ev.dataTransfer.setData("text", tabname);
-
     ev.dataTransfer.dropEffect = "move" ;
-    console.log("dragging " + tabname) ;
 }
   
 function setTabletToType(tablet, type) {
@@ -142,7 +137,40 @@ function dropteam(ev) {
 }
 
 function saveData() {
+    frctablets = [] ;
+
+    for(let t of availholder.childNodes) {
+        let obj = {
+            name: t.innerText,
+            purpose: undefined
+        }
+        frctablets.push(obj) ;
+    }
+
+    for(let t of teamholder.childNodes) {
+        let obj = {
+            name: t.innerText,
+            purpose: tabletTeam
+        }
+        frctablets.push(obj) ;
+    }
+
+    for(let t of matchholder.childNodes) {
+        let obj = {
+            name: t.innerText,
+            purpose: tabletMatch
+        }
+        frctablets.push(obj) ;
+    }    
     window.scoutingAPI.send("set-tablet-data", frctablets);
+}
+
+function resetTablets() {
+    for(let t of frctablets) {
+        t.purpose = undefined ;
+    }
+
+    placeTablets() ;
 }
 
 function placeTablets() {
@@ -152,15 +180,17 @@ function placeTablets() {
 
     for(let tablet of frctablets) {
         let p = document.createElement("p") ;
-        p.id = tablet.name ;
         p.innerText = tablet.name ;
         p.className = "assign-tablets-list-item";
 
-        if (tablet.purpose === "team") {
+
+        if (tablet.purpose === tabletTeam) {
             $("#assign-tablets-team-holder").append(p);
+            p.contentEditable = true ;
         }
-        else if (tablet.purpose === "match") {
+        else if (tablet.purpose === tabletMatch) {
             $("#assign-tablets-match-holder").append(p); 
+            p.contentEditable = true ;
         }
         else {
             p.draggable = true ;
@@ -203,6 +233,11 @@ function updateTablets(data) {
     add.innerText = 'Add Tablet' ;
     buttondiv.append(add) ;
     add.onclick = addTablet;
+
+    let reset = document.createElement('button') ;
+    reset.innerText = 'Unassign Tablets' ;
+    buttondiv.append(reset) ;
+    reset.onclick = resetTablets;
     
     let save = document.createElement('button') ;
     save.innerText = 'Save' ;

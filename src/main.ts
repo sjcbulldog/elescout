@@ -7,6 +7,7 @@ import { ContentManager } from "./cmgr";
 import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm } from "./ipchandlers" ;
 
 let cmgr: ContentManager = new ContentManager() ;
+
 export let scappbase : SCBase | undefined = undefined ;
 
 function createWindow() : BrowserWindow {

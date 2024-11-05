@@ -4,7 +4,7 @@
   "description": "Electron based scouting program",
   "main": "dist/main.js",
   "scripts": {
-    "compile": "tsc && copyfiles content/*.html content/*.css content/*.js content/*/*.html content/*/*.css content/*/*.js content/*/*/*.js content/*/*/*.css dist",
+    "compile": "tsc && copyfiles content/*.html content/*.css content/*.js content/*/*.html content/*/*.css content/*/*.js content/*/*/*.js content/*/*/*.css dist && copyfiles dist/strconst.js content/common",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make"
@@ -16,6 +16,8 @@
     "copyfiles": "^2.4.1",
     "electron-squirrel-startup": "^1.0.1",
     "https": "^1.0.0",
+    "multicast-dns": "^7.2.5",
+    "net": "^1.0.2",
     "papaparse": "^5.4.1",
     "typescript": "^5.6.3"
   },

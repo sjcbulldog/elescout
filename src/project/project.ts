@@ -65,6 +65,7 @@ export class Project {
     public lockEvent() : void {
         if (this.info_.matches_ && this.info_.teams_ && this.info_.teamform_ && this.info_.matchform_) {
             this.info_.locked_ = true ;
+            this.generateTabletSchedule() ;
             this.writeEventFile() ;
         }
     }
@@ -264,6 +265,23 @@ export class Project {
         }) ;
 
         return ret;
+    }
+
+    private getTabletsForPurpose(purpose: string) : Tablet[] {
+        let ret: Tablet[] = [] ;
+
+        if (this.info_.tablets_) {
+            for(let t of this.info_.tablets_) {
+                if (t.purpose && t.purpose === purpose) {
+                    ret.push(t) ;
+                }
+            }
+        }
+        return ret ;
+    }
+
+    private generateTabletSchedule() {
+        // Get tablets
     }
 
     private readEventFile() : Error | undefined {
