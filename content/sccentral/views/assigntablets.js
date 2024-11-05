@@ -3,6 +3,9 @@ let availholder ;
 let matchholder ;
 let teamholder ;
 
+const tabletTeam = "team" ;
+const tabletMatch = "match" ;
+
 function assignTabletView() {
     $("#rightcontent").empty() ;
     let div = document.createElement("div") ;
@@ -173,6 +176,11 @@ function resetTablets() {
     placeTablets() ;
 }
 
+function removeAll() {
+    frctablets = [] ;
+    placeTablets() ;
+}
+
 function placeTablets() {
     $("#assign-tablets-available-holder").empty() ;
     $("#assign-tablets-match-holder").empty() ;
@@ -238,6 +246,11 @@ function updateTablets(data) {
     reset.innerText = 'Unassign Tablets' ;
     buttondiv.append(reset) ;
     reset.onclick = resetTablets;
+
+    let removeall = document.createElement('button') ;
+    removeall.innerText = 'Remove All' ;
+    buttondiv.append(removeall) ;
+    removeall.onclick = removeAll;
     
     let save = document.createElement('button') ;
     save.innerText = 'Save' ;

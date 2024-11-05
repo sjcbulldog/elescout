@@ -5,6 +5,7 @@ import { SCScout } from "./scout/scscout";
 import { SCCentral } from "./central/sccentral";
 import { ContentManager } from "./cmgr";
 import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm } from "./ipchandlers" ;
+import { SCCoach } from "./coach/sccoach";
 
 let cmgr: ContentManager = new ContentManager() ;
 
@@ -21,17 +22,27 @@ function createWindow() : BrowserWindow {
       },
       title: "XeroScout",
     });
+
     win.maximize() ;
 
     if (process.argv.length > 2) {
         if (process.argv[2] === "scout") {
             scappbase = new SCScout(win) ;
         }
-        else {
-            scappbase = new SCCentral(win) ;
+        else if (process.argv[2] === "coach") {
+            scappbase = new SCCoach(win) ;
         }
     }
-    
+
+    if (!scappbase) {
+        scappbase = new SCCentral(win) ;
+    }
+
+    if (!scappbase) {
+        console.log(process.argv) ;
+        console.log("No App Created") ;
+    }
+
     if (!scappbase) {
         app.exit(1) ;
     }     

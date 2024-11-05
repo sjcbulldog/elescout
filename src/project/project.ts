@@ -12,6 +12,8 @@ import { BrowserWindow } from 'electron';
 import { MatchData } from './matchdata';
 import { TeamData } from './teamdata';
 import { SCBase } from '../base/scbase';
+import { TeamTablet } from './teamtablet';
+import { MatchTablet } from './matchtablet';
 
 export class ProjectInfo {
     public frcev_? : FRCEvent ;
@@ -24,6 +26,8 @@ export class ProjectInfo {
     public results_? : MatchResult[] ;
     public matchdata_? : MatchData ;
     public teamdata_? : TeamData ;
+    public teamassignments_?: TeamTablet[] ;
+    public matchassignements_?: MatchTablet[] ;
     public locked_ : boolean ;
 
     constructor() {
@@ -37,6 +41,8 @@ export class ProjectInfo {
 
 export class Project {
     private static event_file_name : string  = "event.json" ;
+    private static tabletTeam: string = "team" ;
+    private static tabletMatch: string = "match" ;
 
     private location_ : string ;
     private info_ : ProjectInfo ;
@@ -63,10 +69,15 @@ export class Project {
     }
 
     public lockEvent() : void {
-        if (this.info_.matches_ && this.info_.teams_ && this.info_.teamform_ && this.info_.matchform_) {
-            this.info_.locked_ = true ;
-            this.generateTabletSchedule() ;
-            this.writeEventFile() ;
+        if (this.info_.matches_ && this.info_.teams_ && this.info_.teamform_ && this.info_.matchform_ && this.areTabletsValid()) {
+            if (this.generateTabletSchedule()) {
+                this.info_.locked_ = true ;
+                this.writeEventFile() ;
+            }
+            else {
+                this.info_.teamassignments_ = undefined ;
+                this.info_.matchassignements_ = undefined ;
+            }
         }
     }
 
@@ -151,11 +162,11 @@ export class Project {
 
         if (this.info.tablets_) {
             for(let tablet of this.info.tablets_) {
-                if (tablet && tablet.purpose === "team") {
+                if (tablet && tablet.purpose && tablet.purpose === Project.tabletTeam) {
                     teamcnt++ ;
                 }
 
-                if (tablet && tablet.purpose === "match") {
+                if (tablet && tablet.purpose && tablet.purpose === Project.tabletMatch) {
                     matchcnt++ ;
                 }
             }
@@ -280,8 +291,81 @@ export class Project {
         return ret ;
     }
 
-    private generateTabletSchedule() {
-        // Get tablets
+    private generateTabletSchedule() : boolean {
+        let teamtab: Tablet[] = this.getTabletsForPurpose(Project.tabletTeam) ;
+        let matchtab: Tablet[] = this.getTabletsForPurpose(Project.tabletMatch) ;
+
+        if (teamtab.length < 1 || !this.info_.teams_ || matchtab.length < 6 || !this.info_.matches_) {
+            return false;
+        }
+
+        let index = 0 ;
+        this.info_.teamassignments_ = [] ;
+        for(let t of this.info_.teams_) {
+            let assignment = new TeamTablet(t.number_, teamtab[index].name) ;
+            this.info_.teamassignments_.push(assignment);
+            index++ ;
+            if (index >= teamtab.length) {
+                index = 0 ;
+            }
+        }
+
+        let ma:MatchTablet ;
+        index = 0 ;
+        this.info_.matchassignements_ = [] ;
+
+        for(let m of this.info_.matches_) {
+            //
+            // This should never happen.
+            //
+            if (!m.red_alliance_ || !m.blue_alliance_) {
+                return false ;
+            }
+
+            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.red_alliance_.teams_[0], matchtab[index].name) ;
+            index++ ;
+            if (index >= matchtab.length) {
+                index = 0 ;
+            }
+            this.info_.matchassignements_.push(ma) ;
+
+            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.red_alliance_.teams_[1], matchtab[index].name) ;
+            index++ ;
+            if (index >= matchtab.length) {
+                index = 0 ;
+            }       
+            this.info_.matchassignements_.push(ma) ;
+
+            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.red_alliance_.teams_[2], matchtab[index].name) ;
+            index++ ;
+            if (index >= matchtab.length) {
+                index = 0 ;
+            }
+            this.info_.matchassignements_.push(ma) ;
+
+            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.blue_alliance_.teams_[0], matchtab[index].name) ;
+            index++ ;
+            if (index >= matchtab.length) {
+                index = 0 ;
+            }
+            this.info_.matchassignements_.push(ma) ;
+
+            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.blue_alliance_.teams_[1], matchtab[index].name) ;
+            index++ ;
+            if (index >= matchtab.length) {
+                index = 0 ;
+            }            
+            this.info_.matchassignements_.push(ma) ;
+
+            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.blue_alliance_.teams_[2], matchtab[index].name) ;
+            index++ ;
+            if (index >= matchtab.length) {
+                index = 0 ;
+            }
+            this.info_.matchassignements_.push(ma) ;
+        }
+
+        return true ;
     }
 
     private readEventFile() : Error | undefined {

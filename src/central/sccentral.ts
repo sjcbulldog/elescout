@@ -42,7 +42,7 @@ export class SCCentral extends SCBase {
                 if (!up) {     
                     this.ba_ = undefined ;
                 }
-                else {
+                else {                    
                     this.baloading_ = false ;
                 }
             })
@@ -415,6 +415,10 @@ export class SCCentral extends SCBase {
         }
     }
 
+    public setStatusMessage(msg: string) {
+        this.sendToRenderer('set-status-bar-message', msg) ;
+    }
+
     private importTeams() {
         var path = dialog.showOpenDialog({
             title: 'Import Teams',
@@ -564,7 +568,7 @@ export class SCCentral extends SCBase {
                 dialog.showErrorBox("Error Importing Teams", errobj.message) ;
             },
           });
-    }    
+    }
 
     private loadBAEvent() {
         if (this.isBAAvailable()) {
@@ -681,6 +685,7 @@ export class SCCentral extends SCBase {
                         this.project_ = p ;
                         this.setView('info') ;
                         this.sendNavData() ;
+                        this.setStatusMessage('Event Loaded - Blue Alliance Available') ;
                     })
                     .catch((err) => {
                         let errobj : Error = err as Error ;

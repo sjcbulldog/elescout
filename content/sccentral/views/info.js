@@ -239,7 +239,7 @@ function addmatches(info) {
     cell.className = "info-table-cell" ;
     row.append(cell) ;
 
-    if (!info.bakey_ && info.teams_ && info.teams_.length >= minRequiredNumberTeams) {
+    if (!info.bakey_ && info.teams_ && info.teams_.length >= minRequiredNumberTeams && !info.locked_) {
         let  button = document.createElement('button') ;
         cell.append(button) ;
 

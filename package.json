@@ -1,10 +1,10 @@
 {
-  "name": "elescout",
+  "name": "xeroscout2",
   "version": "1.0.0",
   "description": "Electron based scouting program",
   "main": "dist/main.js",
   "scripts": {
-    "compile": "tsc && copyfiles content/*.html content/*.css content/*.js content/*/*.html content/*/*.css content/*/*.js content/*/*/*.js content/*/*/*.css dist && copyfiles dist/strconst.js content/common",
+    "compile": "tsc && copyfiles content/*.html content/*.css content/*.js content/*/*.html content/*/*.css content/*/*.js content/*/*/*.js content/*/*/*.css dist",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make"
@@ -12,11 +12,8 @@
   "author": "Jack (Butch) Griffin",
   "license": "ISC",
   "dependencies": {
-    "@types/papaparse": "^5.3.15",
     "copyfiles": "^2.4.1",
-    "electron-squirrel-startup": "^1.0.1",
     "https": "^1.0.0",
-    "multicast-dns": "^7.2.5",
     "net": "^1.0.2",
     "papaparse": "^5.4.1",
     "typescript": "^5.6.3"
@@ -30,6 +27,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.5.0",
     "@electron-forge/plugin-fuses": "^7.5.0",
     "@electron/fuses": "^1.8.0",
+    "@types/papaparse": "^5.3.15",
     "electron": "^33.0.2"
   }
 }

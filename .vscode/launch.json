@@ -32,6 +32,22 @@
         ],
         "outputCapture": "std",
         "preLaunchTask": "npm: compile"
-      }      
+      },
+      {
+        "name": "Debug Coach",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder}",
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+        "windows": {
+          "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+        },
+        "args" : [
+          ".",
+          "coach"
+        ],
+        "outputCapture": "std",
+        "preLaunchTask": "npm: compile"
+      }         
     ]
   }

@@ -1,7 +1,7 @@
 export class MatchAlliance {
-    public teams_ : string[] ;
-    public surragate_teams_: string[] ;
-    public dq_teams_ : string[] ;
+    public teams_ : number[] ;
+    public surragate_teams_: number[] ;
+    public dq_teams_ : number[] ;
 
     public constructor() {
         this.teams_ = [] ;

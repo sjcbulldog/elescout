@@ -111,5 +111,9 @@ document.addEventListener('DOMContentLoaded', function () {
     updateView(["empty"]) ;
 });
 
+function updateStatusBar(args) {
+  $("#statusbar").innerText = "XYZZY" ;
+}
 
 window.scoutingAPI.receive("update-main-window-view", (args)=>updateView(args)) ;
+window.scoutingAPI.receive("set-status-bar-message", (args)=>updateStatusBar(args)) ;
