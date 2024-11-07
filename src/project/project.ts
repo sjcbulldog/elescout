@@ -14,6 +14,7 @@ import { TeamData } from './teamdata';
 import { SCBase } from '../base/scbase';
 import { TeamTablet } from './teamtablet';
 import { MatchTablet } from './matchtablet';
+import * as sqlite3 from 'sqlite3' ;
 
 export class ProjectInfo {
     public frcev_? : FRCEvent ;
@@ -29,6 +30,8 @@ export class ProjectInfo {
     public teamassignments_?: TeamTablet[] ;
     public matchassignements_?: MatchTablet[] ;
     public locked_ : boolean ;
+    public teamdb_?: sqlite3.Database ;
+    public matchdb_?: sqlite3.Database ;
 
     constructor() {
         this.locked_ = false ;
@@ -41,6 +44,8 @@ export class ProjectInfo {
 
 export class Project {
     private static event_file_name : string  = "event.json" ;
+    private static team_db_file_name: string = "teamdb" ;
+    private static match_db_file_name: string = "matchdb" ;
     private static tabletTeam: string = "team" ;
     private static tabletMatch: string = "match" ;
 
@@ -50,6 +55,9 @@ export class Project {
     constructor(dir: string) {
         this.location_ = dir ;
         this.info_ = new ProjectInfo() ;
+
+        let teamdbfile = path.join(this.location_, Project.team_db_file_name) ;
+        let matchdbfile = path.join(this.location) ;
     }
 
     public get hasTeamData() : boolean {
@@ -149,8 +157,32 @@ export class Project {
         return ret ;
     }
 
-    public loadMatchData(win: BrowserWindow, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
+    private xferTeamDataToDB() {
+        if (this.info_.teams_) {
+            for(let team of this.info_.teams_!) {
+                let sql = 'create table teams (' ;
+            }
+        }
+    }
+
+    private xferMatchResultsToDB() {
+
+    }
+
+    public loadMatchData(base: SCBase, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
         let ret: Promise<void> = new Promise<void>((resolve, reject) => {
+            ba.getMatches(frcev.evkey)
+            .then((matches) => {
+                if (matches.length > 0) {
+                    this.info_.matches_ = matches ;
+                    resolve() ;
+                }
+            })
+            .catch((err) => {
+                this.info_.frcev_ = undefined ;
+                this.info_.teams_ = undefined ;
+                reject(err) ;
+            })
         }) ;
         
         return ret;
@@ -217,51 +249,31 @@ export class Project {
             ba.getTeams(frcev.evkey)
                 .then((teams) => {
                     if (teams.length > 0) {
+                        this.xferTeamDataToDB() ;
                         this.info_.teams_ = teams ;
                         let msg: string = teams.length + " teams loaded\n" ;
                         msg += "Loading matches from the event" ;
                         base.sendToRenderer('set-status-text', msg) ;
-
-                        ba.getMatches(frcev.evkey)
-                            .then((matches) => {
-                                if (matches.length > 0) {
-                                    this.info_.matches_ = matches ;
-
-                                    let msg: string = teams.length + " teams loaded\n" ;
-                                    msg += matches.length + " matches loaded\n" ;
-                                    let err = this.writeEventFile() ;
-                                    if (err) {
-                                        msg += "Error saving the event file\n" ;
-                                    }
-                                    else {
-                                        msg += "Event file saved\n" ;
-                                    }
-                                    msg += "Event loaded sucessfully\n" ;
-                                    base.sendToRenderer('set-status-text', msg) ;
-                                    base.sendToRenderer('set-status-close-button-visible', true) ;
-                                    resolve() ;
-                                } else {
-                                    let msg: string = teams.length + " teams loaded\n" ;
-                                    msg += "No matches were present\n" ;
-                                    msg += "Fetch matches from the Blue Alliance after they are published\n" ;
-                                    let err = this.writeEventFile() ;
-                                    if (err) {
-                                        msg += "Error saving the event file\n" ;
-                                    }
-                                    else {
-                                        msg += "Event file saved\n" ;
-                                    }
-                                    msg += "Event loaded sucessfully (without matches)\n" ;
-                                    base.sendToRenderer('set-status-text', msg) ;
-                                    base.sendToRenderer('set-status-close-button-visible', true) ;              
-                                    resolve() ;                                                          
+                        this.loadMatchData(base, ba, frcev)
+                            .then(() => {
+                                this.xferMatchResultsToDB() ;
+                                let msg: string = teams.length + " teams loaded\n" ;
+                                msg += this.info.matches_!.length + " matches loaded\n" ;
+                                let err = this.writeEventFile() ;
+                                if (err) {
+                                    msg += "Error saving the event file - " + err.message + '\n' ;
                                 }
+                                else {
+                                    msg += "Event file saved\n" ;
+                                }
+                                msg += "Event loaded sucessfully\n" ;
+                                base.sendToRenderer('set-status-text', msg) ;
+                                base.sendToRenderer('set-status-close-button-visible', true) ;
+                                resolve() ;
                             })
                             .catch((err) => {
-                                this.info_.frcev_ = undefined ;
-                                this.info_.teams_ = undefined ;
                                 reject(err) ;
-                            })
+                            }) ;
                     }
                     else {
                         this.info_.frcev_ = undefined ;
@@ -280,6 +292,25 @@ export class Project {
 
     public hasTeamScoutingResults(number: number) : boolean {
         return true;
+    }
+
+    public hasMatchScoutingResult(type: string, set: number, match: number, team: number) : boolean {
+        let ret:boolean = false ;
+
+        return ret ;
+    }
+    
+    public getMatchScoutingTablet(type: string, set: number, match: number, team: number) : string {
+        let ret: string = "" ;
+        if (this.info.matchassignements_) {
+            for(let t of this.info.matchassignements_) {
+                if (t.type === type && t.set === set && t.matchnumber === match && t.teamnumber === team) {
+                    ret = t.tablet ;
+                    break ;
+                }
+            }
+        }
+        return ret ;
     }
 
     public findTeamByNumber(number: number) : Team | undefined {

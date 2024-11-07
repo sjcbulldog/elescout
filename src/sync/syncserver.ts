@@ -1,12 +1,16 @@
-import * as net from 'net' ;
+import winston from "winston";
+import { Packet } from "./Packet";
+import { PacketCompressionNone } from "./packettypes";
+import { EventEmitter } from 'events';
+import { SyncBase } from "./syncbase";
 
-export class SyncServer {
-    // private server_: net.Server ;
-    
-    public constructor(port: number) {
+export abstract class SyncServer extends SyncBase
+{
+    constructor(logger: winston.Logger) {
+        super(logger) ;
     }
 
-    private connected(socket: net.Socket) {
-        
-    }
+    public abstract init() : Promise<void> ;
+    public abstract name() : string ;
+    public abstract send(p: Packet) : void ;
 }

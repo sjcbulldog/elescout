@@ -3,7 +3,7 @@ import { SCBase } from "../base/scbase";
 
 export class SCCoach extends SCBase {
     public constructor(win: BrowserWindow) {
-        super(win) ;
+        super(win, 'coach') ;
     }
     
     public basePage() : string  {

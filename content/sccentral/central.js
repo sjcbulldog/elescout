@@ -32,6 +32,9 @@ async function updateMainWindow(mtype) {
   else if (mainwintype === "teamstatus") {
     teamStatus() ;
   }
+  else if (mainwintype === "matchstatus") {
+    matchStatus() ;
+  }
   else {
     emptyView('Unknown view \'' + mainwintype + '\'') ;
   }

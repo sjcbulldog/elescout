@@ -23,7 +23,7 @@ function displayTeamStatus(table, data) {
 function teamStatusCompareFn(order, astr, bstr) {
     let ret = 0 ;
 
-    if (order === 1) {
+    if (Math.abs(order) === 1) {
         let anum = parseInt(astr) ;
         let bnum = parseInt(bstr) ;
 

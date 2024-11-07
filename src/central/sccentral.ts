@@ -6,12 +6,19 @@ import { BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
 import Papa from 'papaparse';
 import * as fs from 'fs' ;
 import { Team } from '../project/team';
+import { TCPSyncServer } from '../sync/tcpserver';
+import { USBSyncServer } from '../sync/usbserver';
+import { Packet } from '../sync/Packet';
+import { SyncServer } from '../sync/syncserver';
+import { PacketTypeHello } from '../sync/packettypes';
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
     private ba_? : BlueAlliance = undefined ;
     private baloading_ : boolean ;
     private frcevents_? : FRCEvent[] = undefined ;
+    private tcpsyncserver_? : TCPSyncServer = undefined ;
+    private usbsyncserver_? : USBSyncServer = undefined ;
 
     private static openExistingEvent : string = 'open-existing' ;
     private static createNewEvent: string = 'create-new' ;
@@ -34,7 +41,7 @@ export class SCCentral extends SCBase {
     private static viewHelp: string = "view-help" ;
 
     constructor(win: BrowserWindow) {
-        super(win) ;
+        super(win, 'server') ;
 
         this.baloading_ = true ;
         this.ba_ = new BlueAlliance() ;
@@ -129,6 +136,67 @@ export class SCCentral extends SCBase {
             ret.errormsg = "No team form has been set" ;
         }
         this.sendToRenderer('send-team-form', ret) ;
+    }
+
+    public sendMatchStatus() {
+        interface data {
+            type: string,
+            set: number,
+            number: number,
+
+            rteam1: number,
+            rtablet1: string,
+            rstatus1: string,
+            rteam2: number,
+            rtablet2: string,
+            rstatus2: string,
+            rteam3: number,
+            rtablet3: string,
+            rstatus3: string,
+
+            bteam1: number,
+            btablet1: string,
+            bstatus1: string,
+            bteam2: number,
+            btablet2: string,
+            bstatus2: string,
+            bteam3: number,
+            btablet3: string,
+            bstatus3: string,            
+        }
+
+        
+        let ret : data[] = [] ;
+
+        if (this.project_ && this.project_.info && this.project_.info.matches_ && this.project_.info.matchassignements_) {
+            for(let t of this.project_.info.matches_) {
+                ret.push({
+                    type: t.comp_level_,
+                    set: t.set_number_,
+                    number: t.match_number_,
+                    rteam1: t.red_alliance_!.teams_[0],
+                    rtablet1: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[0]),
+                    rstatus1: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[0]) ? "Y":"N",
+                    rteam2: t.red_alliance_!.teams_[1],
+                    rtablet2: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[1]),
+                    rstatus2: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[1]) ? "Y":"N",
+                    rteam3: t.red_alliance_!.teams_[2],
+                    rtablet3: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[2]),
+                    rstatus3: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[2]) ? "Y":"N",
+                    bteam1: t.blue_alliance_!.teams_[0],
+                    btablet1: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[0]),
+                    bstatus1: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[0]) ? "Y":"N",
+                    bteam2: t.blue_alliance_!.teams_[1],
+                    btablet2: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[1]),
+                    bstatus2: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[1]) ? "Y":"N",
+                    bteam3: t.blue_alliance_!.teams_[2],
+                    btablet3: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[2]),
+                    bstatus3: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[2]) ? "Y":"N",
+                }) ;
+            }
+        }
+
+        this.sendToRenderer('send-match-status', ret) ;
     }
 
     public sendTeamStatus() {
@@ -335,7 +403,7 @@ export class SCCentral extends SCBase {
             this.sendToRenderer('set-status-visible', true) ;            
             this.sendToRenderer('set-status-title', 'Loading match data for event \'' + fev.desc + '\'') ;
             this.sendToRenderer('set-status-html',  'Loading data ...') ;
-            this.project_!.loadMatchData(this.win_, this.ba_!, fev)
+            this.project_!.loadMatchData(this, this.ba_!, fev)
                 .then(() => {
                     this.sendToRenderer('set-status-close-button-visible', true) ;                    
                 }) ;
@@ -417,6 +485,7 @@ export class SCCentral extends SCBase {
         }
         else if (cmd === SCCentral.lockEvent) {
             this.project_!.lockEvent() ;
+            this.startSyncServer() ;
             this.setView('info') ;
         }
         else if (cmd === SCCentral.editTeams) {
@@ -439,6 +508,9 @@ export class SCCentral extends SCBase {
         }
         else if (cmd === SCCentral.viewTeamStatus) {
             this.setView('teamstatus') ;
+        }
+        else if (cmd === SCCentral.viewMatchStatus) {
+            this.setView('matchstatus') ;
         }
     }
 
@@ -710,6 +782,9 @@ export class SCCentral extends SCBase {
                 Project.openEvent(pathname.filePaths[0])
                     .then((p) => {
                         this.project_ = p ;
+                        if (this.project_.info.locked_) {
+                            this.startSyncServer() ;
+                        }
                         this.setView('info') ;
                         this.sendNavData() ;
                         this.setStatusMessage('Event Loaded - Blue Alliance Available') ;
@@ -723,5 +798,32 @@ export class SCCentral extends SCBase {
         .catch((err) => {
             dialog.showErrorBox('Open Event Error', err.message) ;
         }) ;
+    }
+
+    private processPacket(p: Packet) : Packet {
+        let resp = new Packet(PacketTypeHello, p.data_) ;
+        return resp ;
+    }
+
+    private startSyncServer() {
+        this.tcpsyncserver_ = new TCPSyncServer(this.logger_) ;
+        this.tcpsyncserver_.init()
+            .then(() => { 
+                this.logger_.info('TCPSyncServer: initialization completed sucessfully') ;
+            }) ;
+        this.tcpsyncserver_.on('packet', (p: Packet) => { 
+            let reply: Packet = this.processPacket(p) ;
+            this.tcpsyncserver_!.send(reply) ;
+        });
+
+        this.usbsyncserver_ = new USBSyncServer(this.logger_) ;
+        this.usbsyncserver_.init()
+            .then(() => {
+                this.logger_.info('USBSyncServer: initialization completed sucessfully') ;
+            }) ;
+        this.usbsyncserver_.on('packet', (p: Packet) => { 
+            let reply: Packet = this.processPacket(p) ;
+            this.usbsyncserver_!.send(reply) ;
+        });
     }
 }

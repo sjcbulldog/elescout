@@ -24,6 +24,13 @@ class BwgTable {
             this.sortfun = undefined ;
         }
 
+        if (options && options.sortrowfun) {
+            this.sortrowfun = options.sortrowfun
+        }
+        else {
+            this.sortrowfun = undefined ;
+        }
+
         this.editable = [] ;
         if (options && options.editable) {
             if (Array.isArray(options.editable) && options.editable.length == columns.length) {
@@ -168,19 +175,31 @@ class BwgTable {
     compareFun(a, b) {
         let ret = 0;
 
-        let index = Math.abs(this.sortOrder) - 1;
+        if (this.sortrowfun) {
+            let astr = [] ;
+            let bstr = [] ;
 
-        let astr = a.cells[index].innerText;
-        let bstr = b.cells[index].innerText;
-
-        if (this.sortfun) {
-            ret = this.sortfun(this.sortOrder, astr, bstr) ;
+            for(let index = 0 ; index < this.columnlables.length ; index++) {
+                astr.push(a.cells[index].innerText) ;
+                bstr.push(b.cells[index].innerText) ;
+            }
+            ret = this.sortrowfun(this.sortOrder, astr, bstr) ;
         }
         else {
-            if (this.sortOrder < 0) {
-                ret = bstr.localeCompare(astr);
-            } else {
-                ret = astr.localeCompare(bstr);
+            let index = Math.abs(this.sortOrder) - 1;
+
+            let astr = a.cells[index].innerText;
+            let bstr = b.cells[index].innerText;
+
+            if (this.sortfun) {
+                ret = this.sortfun(this.sortOrder, astr, bstr) ;
+            }
+            else {
+                if (this.sortOrder < 0) {
+                    ret = bstr.localeCompare(astr);
+                } else {
+                    ret = astr.localeCompare(bstr);
+                }
             }
         }
 
