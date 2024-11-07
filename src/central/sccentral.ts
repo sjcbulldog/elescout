@@ -10,7 +10,7 @@ import { TCPSyncServer } from '../sync/tcpserver';
 import { USBSyncServer } from '../sync/usbserver';
 import { Packet } from '../sync/Packet';
 import { SyncServer } from '../sync/syncserver';
-import { PacketTypeHello } from '../sync/packettypes';
+import { PacketTypeError, PacketTypeHello, PacketTypeProvideTablets, PacketTypeRequestTablets } from '../sync/packettypes';
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
@@ -801,7 +801,31 @@ export class SCCentral extends SCBase {
     }
 
     private processPacket(p: Packet) : Packet {
-        let resp = new Packet(PacketTypeHello, p.data_) ;
+        let resp : Packet | undefined ;
+
+        if (p.type_ === PacketTypeHello) {
+            resp = new Packet(PacketTypeHello, p.data_) ;
+        }
+        else if (p.type_ === PacketTypeRequestTablets) {
+            let data: Uint8Array = new Uint8Array(0) ;
+            if (this.project_ && this.project_.info.tablets_) {
+                let tablets: any[] = [] ;
+
+                for(let t of this.project_?.info.tablets_) {
+                    if (!t.assigned) {
+                        tablets.push({name: t.name, purpose: t.purpose}) ;
+                    }
+                }
+
+                let msg: string = JSON.stringify(tablets) ;
+                data = Buffer.from(msg, 'utf-8') ;
+            }
+            resp = new Packet(PacketTypeProvideTablets, data) ;
+        }
+        else {
+            resp = new Packet(PacketTypeError) ;
+        }
+
         return resp ;
     }
 

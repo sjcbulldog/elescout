@@ -28,6 +28,7 @@ export class TCPClient extends SyncClient {
             }) ;
 
             this.socket_.on('data', (data) => {
+                this.logger_.debug('TCPClient received ' + data.length + ' bytes of data') ;
                 this.extractPacket(data) ;
             }) ;
 
@@ -48,5 +49,11 @@ export class TCPClient extends SyncClient {
     }
 
     public send(p: Packet) : void {
+        let buffer = this.convertToBytes(p) ;
+        this.socket_.write(buffer, (err) => {
+            if (err) {
+                this.logger_.error('error writing data to TCPServer from TCPClient') ;
+            }
+        }) ;
     }
 }

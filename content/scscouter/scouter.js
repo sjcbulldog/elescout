@@ -8,6 +8,9 @@ async function updateMainWindow(mtype) {
     else if (mainwintype === "error") {
       emptyView("Internal Error Occurred") ;
     }
+    else if (mainwintype === "select-tablet") {
+      selectTabletView() ;
+    }
     else {
       emptyView('Unknown view \'' + mainwintype + '\'') ;
     }

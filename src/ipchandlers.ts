@@ -1,5 +1,6 @@
 import { SCCentral } from "./central/sccentral";
 import { scappbase } from "./main";
+import { SCScout } from "./scout/scscout";
 
 export async function executeCommand(...args: any[]) {
     if (scappbase) {
@@ -35,9 +36,15 @@ export async function getSelectEventData() {
 }
 
 export async function getTabletData() {
-    if (scappbase && !scappbase.isScoutingTablet()) {
-        let central : SCCentral = scappbase as SCCentral ;
-        central.sendTabletData() ;
+    if (scappbase) {
+        if (!scappbase.isScoutingTablet()) {
+            let central : SCCentral = scappbase as SCCentral ;
+            central.sendTabletData() ;
+        }
+        else {
+            let scout: SCScout = scappbase as SCScout ;
+            scout.sendTabletData() ;
+        }
     } 
 }
 
@@ -59,6 +66,13 @@ export async function setTeamData(...args: any[]) {
     if (scappbase && !scappbase.isScoutingTablet()) {
         let central : SCCentral = scappbase as SCCentral ;
         central.setTeamData(args[0]) ;
+    } 
+}
+
+export async function setTabletNamePurpose(...args: any[]) {
+    if (scappbase && scappbase.isScoutingTablet()) {
+        let scout : SCScout = scappbase as SCScout ;
+        scout.setTabletNamePurpose(args[0], args[1]) ;
     } 
 }
 

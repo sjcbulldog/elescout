@@ -4,7 +4,7 @@ import { SCBase } from "./base/scbase";
 import { SCScout } from "./scout/scscout";
 import { SCCentral } from "./central/sccentral";
 import { ContentManager } from "./cmgr";
-import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm, getTeamStatus, getMatchStatus } from "./ipchandlers" ;
+import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm, getTeamStatus, getMatchStatus, setTabletNamePurpose } from "./ipchandlers" ;
 import { SCCoach } from "./coach/sccoach";
 
 let cmgr: ContentManager = new ContentManager() ;
@@ -74,6 +74,7 @@ app.on("ready", () => {
     ipcMain.on('set-match-data', (event, ...args) => { setMatchData(...args)}) ;
     ipcMain.on('load-ba-event-data', (event, ...args) => { loadBaEventData(...args)}) ;
     ipcMain.on('execute-command', (event, ...args) => { executeCommand(...args)}) ;
+    ipcMain.on('set-tablet-name-purpose', (event, ...args) => { setTabletNamePurpose(...args)}) ;
     createWindow() ;
 }) ;
 

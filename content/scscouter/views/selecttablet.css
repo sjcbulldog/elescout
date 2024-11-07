@@ -1,0 +1,26 @@
+#select_tablet_main {
+    padding: 20px 10px;
+    border: 2px solid black;
+    border-radius: 10px;    
+    box-shadow: 10px 5px 5px lightgray;    
+    position: relative;
+    top: 25%;
+    width: max-content;
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#select_tablet_table {
+    width: 600px ;
+}
+
+.select_tablet_header_row {
+    font-weight: bolder;
+}
+
+.select_tablet_row {
+    background-color: lightblue;
+}

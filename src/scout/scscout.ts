@@ -3,15 +3,18 @@ import { SCBase } from "../base/scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
 import { Packet } from "../sync/Packet";
-import { PacketTypeHello } from "../sync/packettypes";
+import { PacketTypeHello, PacketTypeProvideTablets, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamList } from "../sync/packettypes";
 
 export class SCScout extends SCBase {
     private static viewHelp: string = "view-help" ;
     private static syncEventTCP: string = "sync-event-tcp" ;
     private static syncEventUSB: string = "sync-event-usb" ;
 
-    private tcpHost: string = "127.0.0.1" ;
-    private tablet?: string ;
+    private tcpHost_: string = "127.0.0.1" ;
+    private tablet_?: string ;
+    private purpose_? : string ;
+    private tablets_?: any[] ;
+    private syncconn_?: SyncClient ;
 
     public constructor(win: BrowserWindow) {
         super(win, 'scout') ;
@@ -32,24 +35,24 @@ export class SCScout extends SCBase {
         if (cmd === SCScout.viewHelp) {
         }
         else if (cmd === SCScout.syncEventTCP) {
-            this.syncClient(new TCPClient(this.logger_, this.tcpHost)) ;
+            this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
         }
         else if (cmd === SCScout.syncEventUSB) {
         }
     }
 
     private syncClient(conn: SyncClient) {
+        this.syncconn_ = conn ;
         conn.connect()
             .then(()=> {
-
                 conn.on('connected', () => {
                     this.logger_.info('ScouterSync: connected to server \'' + conn.name() + '\'') ;
-                    let p: Packet = new Packet(PacketTypeHello, new Uint8Array(0)) ;
+                    let p: Packet = new Packet(PacketTypeHello) ;
                     conn.send(p) ;
                 }) ;
 
                 conn.on('close', () => {
-
+                    this.syncconn_ = undefined ;
                 }) ;
 
                 conn.on('error', (err: Error) => {
@@ -81,7 +84,24 @@ export class SCScout extends SCBase {
     }
 
     private syncTablet(conn: SyncClient, p: Packet) {
-
+        if (p.type_ === PacketTypeHello) {
+            if (this.tablet_) {
+                if (this.purpose_ === 'match') {
+                    this.sendMatchData() ;
+                }
+                else {
+                    this.sendTeamData() ;
+                }
+            }
+            else {
+                let p: Packet = new Packet(PacketTypeRequestTablets) ;
+                conn.send(p) ;
+            }
+        }
+        else if (p.type_ === PacketTypeProvideTablets) {
+            this.tablets_ = JSON.parse(p.data_.toString()) ;
+            this.setView('select-tablet') ;
+        }
     }
 
     public createMenu() : Menu | null {
@@ -120,4 +140,32 @@ export class SCScout extends SCBase {
 
         return ret;
     }    
+
+    public sendTabletData() : void {
+        if (this.tablets_) {
+            this.sendToRenderer('send-tablet-data', this.tablets_) ;
+        }
+    }
+
+    private sendMatchData() : void {
+    }
+
+    private sendTeamData() : void {
+    }
+
+    public setTabletNamePurpose(name: string, purpose: string) : void {
+        this.tablets_ = undefined ;
+        this.tablet_ = name ;
+        this.purpose_ = purpose ;
+
+        let p: Packet ;
+
+        if (purpose === 'match') {
+            p = new Packet(PacketTypeRequestMatchList) ;
+        }
+        else {
+            p = new Packet(PacketTypeRequestTeamList) ;
+        }
+        this.syncconn_?.send(p) ;
+    }
 }

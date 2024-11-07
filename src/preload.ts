@@ -30,7 +30,8 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-team-form',
         'get-match-form',
         'get-team-status',
-        'get-match-status'
+        'get-match-status',
+        'set-tablet-name-purpose'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.send(channel, data);

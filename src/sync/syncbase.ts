@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { Packet } from './Packet';
-import { PacketCompressionNone } from './packettypes';
+import { PacketCompressionNone, PacketNameMap } from './packettypes';
 import { SyncServer } from './syncserver';
 import winston from 'winston';
 
@@ -20,7 +20,7 @@ export class SyncBase extends EventEmitter {
     // Convert a byte array to a packet and fire a packet event.  Return the
     // bytes remaining in the buffer.
     //
-    protected extractPacket(data: Uint8Array) : Uint8Array | undefined {
+    protected extractPacket(data: Uint8Array) {
         let ret: Uint8Array | undefined ;
 
         if (!this.buffer_) {
@@ -33,47 +33,47 @@ export class SyncBase extends EventEmitter {
                 buf.set(data, this.buffer_.length) ;
                 this.buffer_ = buf ;
             }
-
-            if (this.buffer_.length > SyncBase.minPacketSize) {
-                let result: Uint8Array | undefined = this.extractPacket(this.buffer_) ;
-                this.buffer_ = result ;
-            }
         }
 
-        let ptype = (data[0] >> 0) | (data[1] >> 8) | (data[2] >> 16) | (data[3] >> 24) ;
-        let len = (data[4] >> 0) | (data[5] >> 8) | (data[6] >> 16) | (data[7] >> 24) ;
-        let comptype = (data[8] >> 0) | (data[9] >> 8) ;
+        if (this.buffer_.length >= SyncBase.minPacketSize) {
+            let ptype = (data[0] << 0) | (data[1] << 8) | (data[2] << 16) | (data[3] << 24) ;
+            let len = (data[4] << 0) | (data[5] << 8) | (data[6] << 16) | (data[7] << 24) ;
+            let comptype = (data[8] << 0) | (data[9] << 8) ;
 
-        if (comptype === PacketCompressionNone) {
-            //
-            // The data is not compressed, we are good to go.
-            //
-        }
-        else {
-            let err: Error = new Error('invalid compression type') ;
-            this.emit('error', err) ;
-        }
-
-        if (data.length >= len + 10 + 2) {
-            let csum = (data[len + 10] >> 0) | (data[len + 11] >> 8) ;
-            if (this.computeSum16(data, 10, len) != csum) {
-                let err: Error = new Error('invalid packet checksum') ;
-                this.emit('error', err) ;
+            if (comptype === PacketCompressionNone) {
+                //
+                // The data is not compressed, we are good to go.
+                //
             }
             else {
-                let p = new Packet(ptype, data.slice(10, 10 + len)) ;
-                this.emit('packet', p) ;
-                ret = data.slice(12 + len) ;
+                let err: Error = new Error('invalid compression type') ;
+                this.emit('error', err) ;
+            }
+
+            if (data.length >= len + 10 + 2) {
+                let csum = (data[len + 10] << 0) + (data[len+11] << 8) ;
+                if (this.computeSum16(data, 10, len) != csum) {
+                    let err: Error = new Error('invalid packet checksum') ;
+                    this.emit('error', err) ;
+                }
+                else {
+                    let p = new Packet(ptype, data.slice(10, 10 + len)) ;
+                    this.logPacket('received', p) ;
+                    this.emit('packet', p) ;
+                    ret = data.slice(12 + len) ;
+                }
             }
         }
 
-        return ret ;
+        this.buffer_ = ret ;
     }
 
     //
     // Convert a packet to a byte array
     //
-    public reply(p: Packet) : Uint8Array {
+    protected convertToBytes(p: Packet) : Uint8Array {
+        this.logPacket('sending', p) ;
+
         let buffer: Uint8Array = new Uint8Array(12 + p.data_.length) ;
         buffer[0] = (p.type_ >> 0) & 0xff ;
         buffer[1] = (p.type_ >> 8) & 0xff ;
@@ -97,12 +97,37 @@ export class SyncBase extends EventEmitter {
         return buffer ;
     }
 
+    private packetTypeName(type: number) : string | undefined {
+        let ret: string | undefined ;
+
+        if (type < PacketNameMap.length) {
+            ret = PacketNameMap[type] ;
+        }
+
+        return ret ;
+    }
+
+    private logPacket(text: string, p: Packet) {
+        let msg: string = text + ':' + this.packetTypeName(p.type_) + ':' + p.data_.length + ':' ;
+        let index = 0 ; 
+        while (index < p.data_.length) {
+                msg += ' ' ;
+            msg += p.data_[index].toString(16) ;
+            index++ ;
+        }
+
+        this.logger_.info(msg) ;
+    }
+
     private computeSum16(data: Uint8Array, start: number, length: number) : number {
         let sum: number = 0 ;
+        let lencopy: number = length ;
     
         while (length-- > 0) {
             sum = (sum + data[start++]) & 0xffff ;
         }
+
+        this.logger_.silly('checksum computed, ' + lencopy + ', bytes, value ' + sum.toString(16)) ;
     
         return sum ;
     }

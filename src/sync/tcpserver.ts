@@ -7,13 +7,25 @@ export class TCPSyncServer extends SyncServer {
     private static portNumber: number = 45455 ;
 
     private server_? : net.Server ;
+    private socket_? : net.Socket ;
 
-    
     public constructor(logger: winston.Logger) {
         super(logger) ;
     }
 
     public async send(p: Packet) : Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
+            let buffer = this.convertToBytes(p) ;
+            this.logger_.debug('TCPServer sending ' + buffer.length + ' bytes of data');
+            this.socket_!.write(buffer, (err) => {
+                if (err) {
+                    reject(err) ;
+                }
+                else {
+                    resolve() ;
+                }
+            }) ;
+        });
     }
 
     public async init() : Promise<void> {
@@ -32,14 +44,14 @@ export class TCPSyncServer extends SyncServer {
     }
 
     private connected(socket: net.Socket) {
-        socket.on('connected', (client: net.Socket) => {
-            this.logger_.info('TCPSyncServer: client connected', { 
-                address: client.address,
-                family: client.remoteFamily
-            }) ;
+        this.socket_ = socket ;
+        this.logger_.info('TCPSyncServer: client connected', { 
+            address: socket.address,
+            family: socket.remoteFamily
         }) ;
 
         socket.on('close', () => { 
+            this.socket_ = undefined ;
             console.log('SyncServer: close') ;
         }) ;
 
@@ -49,7 +61,6 @@ export class TCPSyncServer extends SyncServer {
 
         socket.on('data', (data) => {
             this.extractPacket(data) ;
-
         }) ;
     }
 }
