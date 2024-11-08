@@ -35,6 +35,9 @@ async function updateMainWindow(mtype) {
   else if (mainwintype === "matchstatus") {
     matchStatus() ;
   }
+  else if (mainwintype === 'preview') {
+    previewFormView() ;
+  }
   else {
     emptyView('Unknown view \'' + mainwintype + '\'') ;
   }

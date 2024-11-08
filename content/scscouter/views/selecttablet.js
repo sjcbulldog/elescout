@@ -63,6 +63,7 @@ function updateSelectTabletView(tablets) {
     let lastcell = document.createElement('td') ;
     lastcell.colSpan = 2 ;
     lastcell.innerText = 'Double click tablet to select' ;
+    lastcell.className = 'select_tablet_instructions' ;
     table.appendChild(lastcell) ;
 
     $("#rightcontent").append(div) ;

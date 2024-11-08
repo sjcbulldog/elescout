@@ -3,10 +3,23 @@
     border: 1px solid #ccc;
     background-color: #f1f1f1;
 }
-.formtab button {
+
+.form-tab-button-unselected {
     font-weight: bolder;
     font-size : 24px;
-    background-color: inherit;
+    background-color: #f1f1f1;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+}
+
+.form-tab-button-selected {
+    font-weight: bolder;
+    font-size : 24px;
+    background-color: #ffffff;
     float: left;
     border: none;
     outline: none;

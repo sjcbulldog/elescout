@@ -22,7 +22,12 @@ export abstract class SCBase {
             fs.mkdirSync(this.appdir_) ;
         }
 
-        let logfileName = this.createUniqueFilename(this.appdir_, 'xeroscout-' + this.typestr_) ;
+        let logdir = path.join(this.appdir_, "logs") ;
+        if (!fs.existsSync(logdir)) {
+            fs.mkdirSync(logdir) ;
+        }
+
+        let logfileName = this.createUniqueFilename(logdir, 'xeroscout-' + this.typestr_) ;
 
         this.logger_ = winston.createLogger({
             level: 'silly',

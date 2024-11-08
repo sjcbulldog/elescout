@@ -97,6 +97,13 @@ export async function getTeamForm() {
     } 
 }
 
+export async function getPreviewForm() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendPreviewForm() ;
+    } 
+}
+
 export async function getMatchForm() {
     if (scappbase && !scappbase.isScoutingTablet()) {
         let central : SCCentral = scappbase as SCCentral ;

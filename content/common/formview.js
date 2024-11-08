@@ -1,3 +1,6 @@
+const buttonClassUnselected = 'form-tab-button-unselected' ;
+const buttonClassSelected = 'form-tab-button-selected' ;
+
 function formViewNormalizeName(name) { 
     let ret = '' ;
 
@@ -17,6 +20,9 @@ function formViewHideAll(sections) {
     for(let section of sections) {
         let qstr = '#' + section ;
         $(qstr).hide() ;
+
+        qstr = '#' + section + '-button' ;
+        $(qstr).css("border", "none") ;
     }
 }
 
@@ -24,6 +30,9 @@ function formViewSelect(section, sections) {
     formViewHideAll(sections) ;
     let qstr = '#' + section ;
     $(qstr).show() ;
+
+    qstr = '#' + section + '-button' ;
+    $(qstr).css("border", "3px solid black" );
 }
 
 function formViewCreateTabBar(sections) {
@@ -33,7 +42,7 @@ function formViewCreateTabBar(sections) {
     for(let section of sections) {
         let button = document.createElement('button') ;
         button.innerText = section ;
-        button.className = 'form-tab-button' ;
+        button.className = buttonClassUnselected ;
         button.id = section + '-button' ;
         button.onclick = () => { formViewSelect (section, sections) ; }
         bardiv.append(button) ;
@@ -177,7 +186,7 @@ function formViewCreateSection(section) {
 
 function formViewJsonToForm(parent, obj, ftype) {
     let div = document.createElement('div') ;
-    if (obj.form !== ftype) {
+    if (obj.form !== ftype && ftype !== 'preview') {
         let msg = "<b>The form is not the correct type." ;
         msg += 'Expected a form of type \'' + ftype + '\', but got a form of type \'' + obj.form + '\'.' ;
         div.innerHTML = msg;

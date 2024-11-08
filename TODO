@@ -1,16 +1,12 @@
 Central
 -------
-    Edit Teams
-    - Remove a Teams
+    Edit Teams - Remove a Teams
+    Edit Matches - Remove a match
+    Add Preview Form Command
 
-    Edit Matches
-    - Remove a match
-    - Import
-
-    Convert old JSON form format to HTML
-
-Scouter
+Scout
 -------
-
+    Extract
+    
 Coach
 -----

@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'execute-command',
         'get-team-form',
         'get-match-form',
+        'get-preview-form',
         'get-team-status',
         'get-match-status',
         'set-tablet-name-purpose'
@@ -48,6 +49,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-match-data',
         'send-team-form',
         'send-match-form',
+        'send-preview-form',
         'send-team-status',
         'send-match-status',
         'set-status-text',

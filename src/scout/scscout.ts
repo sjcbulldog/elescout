@@ -3,7 +3,7 @@ import { SCBase } from "../base/scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
 import { Packet } from "../sync/packet";
-import { PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamList } from "../sync/packettypes";
+import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList } from "../sync/packettypes";
 import * as path from 'path' ;
 import * as fs from 'fs' ;
 
@@ -163,6 +163,12 @@ export class SCScout extends SCBase {
             this.writeEventFile() ;
             ret = this.getMissingData() ;  
         }
+        else if (p.type_ === PacketTypeError) {
+            this.sendToRenderer('set-status-title', 'Error Syncing With XeroScout Central') ;
+            this.sendToRenderer('set-status-visible', true) ;
+            this.sendToRenderer('set-status-text', p.payloadAsString()) ;
+            this.sendToRenderer('set-status-close-button-visible', true) ;
+        }
 
         if (!ret) {
             this.sendScoutingData() ;
@@ -176,18 +182,18 @@ export class SCScout extends SCBase {
         let ret: boolean = false ;
 
         if (!this.info_.teamform_) {
-            this.conn_?.send(new Packet(PacketTypeRequestMatchForm)) ;
+            this.conn_?.send(new Packet(PacketTypeRequestTeamForm)) ;
             ret = true ;
         }
         else if (!this.info_.matchform_) {
             this.conn_?.send(new Packet(PacketTypeRequestMatchForm)) ;
             ret = true ;
         }
-        else if (this.info_.matchlist_) {
+        else if (!this.info_.matchlist_) {
             this.conn_?.send(new Packet(PacketTypeRequestMatchList)) ;
             ret = true ;
         }
-        else if (this.info_.teamlist_) {
+        else if (!this.info_.teamlist_) {
             this.conn_?.send(new Packet(PacketTypeRequestTeamList)) ;
             ret = true ;
         }

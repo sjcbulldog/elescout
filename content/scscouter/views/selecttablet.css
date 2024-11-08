@@ -24,3 +24,9 @@
 .select_tablet_row {
     cursor: pointer;
 }
+
+.select_tablet_instructions {
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+}

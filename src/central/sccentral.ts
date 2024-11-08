@@ -10,7 +10,7 @@ import { TCPSyncServer } from '../sync/tcpserver';
 import { USBSyncServer } from '../sync/usbserver';
 import { Packet } from '../sync/packet';
 import { SyncServer } from '../sync/syncserver';
-import { PacketTypeError, PacketTypeHello, PacketTypeProvideTablets, PacketTypeRequestTablets } from '../sync/packettypes';
+import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList } from '../sync/packettypes';
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
@@ -19,6 +19,7 @@ export class SCCentral extends SCBase {
     private frcevents_? : FRCEvent[] = undefined ;
     private tcpsyncserver_? : TCPSyncServer = undefined ;
     private usbsyncserver_? : USBSyncServer = undefined ;
+    private previewfile_? : string = undefined ;
 
     private static openExistingEvent : string = 'open-existing' ;
     private static createNewEvent: string = 'create-new' ;
@@ -38,6 +39,7 @@ export class SCCentral extends SCBase {
     private static viewMatchForm: string = 'view-match-form' ;
     private static viewMatchStatus: string = 'view-match-status' ;
     private static viewMatchData: string = "view-match-data" ;
+    private static viewPreviewForm: string = "view-preview-form" ;
     private static viewHelp: string = "view-help" ;
 
     constructor(win: BrowserWindow) {
@@ -122,7 +124,7 @@ export class SCCentral extends SCBase {
         } ;
 
         if (this.project_?.info.teamform_) {
-            let jsonstr = fs.readFileSync(this.project_.info.teamform_).toLocaleString() ;
+            let jsonstr = fs.readFileSync(this.project_.info.teamform_).toString() ;
             try { 
                 let jsonobj = JSON.parse(jsonstr) ;
                 ret.formjson = jsonobj ;
@@ -136,6 +138,29 @@ export class SCCentral extends SCBase {
             ret.errormsg = "No team form has been set" ;
         }
         this.sendToRenderer('send-team-form', ret) ;
+    }
+
+    public sendPreviewForm() {
+        let ret = {
+            formjson: null,
+            errormsg: "",
+        } ;
+
+        if (this.previewfile_) {
+            let jsonstr = fs.readFileSync(this.previewfile_).toString() ;
+            try { 
+                let jsonobj = JSON.parse(jsonstr) ;
+                ret.formjson = jsonobj ;
+            }
+            catch(err) {
+                let errobj = err as Error ;
+                ret.errormsg = errobj.message ;
+            }
+        }
+        else {
+            ret.errormsg = "No preview form has been set" ;
+        }
+        this.sendToRenderer('send-preview-form', ret) ;
     }
 
     public sendMatchStatus() {
@@ -439,6 +464,7 @@ export class SCCentral extends SCBase {
         let treedata = [] ;
 
         treedata.push({type: 'item', command: SCCentral.viewHelp, 'title' : 'Help'}) ;
+        treedata.push({type: 'item', command: SCCentral.viewPreviewForm, 'title' : 'Preview Form File'}) ;
 
         if (this.project_) {
             treedata.push({type: 'item', command: SCCentral.viewInit, 'title' : 'Event Overview'}) ;
@@ -461,7 +487,12 @@ export class SCCentral extends SCBase {
     }
 
     public executeCommand(cmd: string) : void {
-        if (cmd === SCCentral.createNewEvent) {
+        if (cmd === SCCentral.viewHelp) {
+        }
+        else if (cmd === SCCentral.viewPreviewForm) {
+            this.previewForm() ;
+        } 
+        else if (cmd === SCCentral.createNewEvent) {
             this.createEvent() ;
             this.sendNavData() ;
         }
@@ -512,6 +543,35 @@ export class SCCentral extends SCBase {
         else if (cmd === SCCentral.viewMatchStatus) {
             this.setView('matchstatus') ;
         }
+    }
+
+    private previewForm() {
+        var path = dialog.showOpenDialog({
+            title: 'Select Form',
+            message: 'Select scouting form',
+            filters: [
+                {
+                    extensions: ['json'],
+                    name: 'JSON file for team scouting form'
+                },
+                {
+                    extensions: ['html'],
+                    name: 'HTML file for team scouting form'
+                }
+            ],
+            properties: [
+                'openFile'
+            ],
+        });
+
+        path.then((pathname) => {
+            if (!pathname.canceled) {
+                if (this.validateForm(pathname.filePaths[0], '*')) {
+                    this.previewfile_ = pathname.filePaths[0] ;
+                    this.setView('preview') ;
+                }
+            }
+        }) ;
     }
 
     public setStatusMessage(msg: string) {
@@ -708,6 +768,194 @@ export class SCCentral extends SCBase {
         }) ;
     }
 
+    private showError(filename: string, err: string) {
+        dialog.showErrorBox('Invalid Form', filename + ': ' + err) ;
+    }
+
+    private showSectError(filename: string, num: number, err: string) {
+        dialog.showErrorBox('Invalid Form', filename + ': section ' + num + ': ' + err) ;
+    }
+
+    private showItemError(filename: string, sectno: number, itemno: number, err: string) {
+        dialog.showErrorBox('Invalid Form', filename + ': section ' + sectno + ': item ' + itemno + ':' + err) ;
+    }
+
+    private validateItem(filename: string, sectno: number, itemno: number, item: any) : boolean {
+        if (!item.name) {
+            this.showItemError(filename, sectno, itemno, 'the field \'name\' is not defined') ;
+            return false ;
+        }
+
+        if (typeof item.name !== 'string') {
+            this.showItemError(filename, sectno, itemno, 'the field \'name\' is defined, but is not a string') ;
+            return false ; 
+        }
+
+        if (!item.type) {
+            this.showItemError(filename, sectno, itemno, 'the field \'type\' is not defined') ;
+            return false ;
+        }
+
+        if (typeof item.type !== 'string') {
+            this.showItemError(filename, sectno, itemno, 'the field \'type\' is defined, but is not a string') ;
+            return false ; 
+        }
+
+        if (item.type != 'boolean' && item.type != 'text' && item.type != 'choice' && item.type != 'updown') {
+            this.showItemError(filename, sectno, itemno, 'the field \'type\' is ${item.type} which is not valid.  Must be \'boolean\', \'text\', \'updown\', or \'choice\'') ;
+        }
+
+        if (!item.tag) {
+            this.showItemError(filename, sectno, itemno, 'the field \'tag\' is not defined') ;
+            return false ;
+        }
+
+        if (typeof item.tag !== 'string') {
+            this.showItemError(filename, sectno, itemno, 'the field \'tag\' is defined, but is not a string') ;
+            return false ; 
+        }
+
+        if (item.type === 'text') {
+            if (item.maxlen === undefined) {
+                this.showItemError(filename, sectno, itemno, 'the field \'maxlen\' is not defined and is required for an item of type \'text\'') ;
+                return false ;
+            }
+
+            if (typeof item.maxlen !== 'number') {
+                this.showItemError(filename, sectno, itemno, 'the field \'maxlen\' is defined but is not a number') ;
+                return false ;                
+            }
+        }
+        else if (item.type === 'boolean') {
+            // NONE
+        }
+        else if (item.type === 'updown') {
+            if (item.minimum === undefined) {
+                this.showItemError(filename, sectno, itemno, 'the field \'minimum\' is not defined and is required for an item of type \'updown\'') ;
+                return false ;
+            }
+
+            if (typeof item.minimum !== 'number') {
+                this.showItemError(filename, sectno, itemno, 'the field \'minimum\' is defined but is not a number') ;
+                return false ;                
+            }
+
+            if (item.maximum === undefined) {
+                this.showItemError(filename, sectno, itemno, 'the field \'maximum\' is not defined and is required for an item of type \'updown\'') ;
+                return false ;
+            }
+
+            if (typeof item.maximum !== 'number') {
+                this.showItemError(filename, sectno, itemno, 'the field \'maximum\' is defined but is not a number') ;
+                return false ;                
+            }
+
+            if (item.maximum <= item.minimum) {
+                this.showItemError(filename, sectno, itemno, 'the field \'maximum\' is less than the field \'minimum\'') ;
+                return false ;                
+            }
+        }
+        else if (item.type === 'choice') {
+            if (item.choices === undefined) {
+                this.showItemError(filename, sectno, itemno, 'the field \'choices\' is not defined and is required for an item of type \'choice\'') ;
+                return false ;
+            }
+
+            if (!Array.isArray(item.choices)) {
+                this.showItemError(filename, sectno, itemno, 'the field \'choices\' is defined but is not of type array') ;
+                return false ;                
+            }
+
+            let choiceno = 1 ;
+            for(let choice of item.choices) {
+                if (typeof choice !== 'string' && typeof choice !== 'number') {
+                    let msg: string = 'choice ' + choiceno + ": the value is neither a 'string', nor a 'number'" ;
+                    this.showItemError(filename, sectno, itemno, msg) ;
+                    return false ;
+                }
+                choiceno++ ;
+            }
+        }
+
+        return true ;
+    }
+
+    private validateSection(filename: string, num: number, sect: any) : boolean {
+        if (!sect.name) {
+            this.showSectError(filename, num, 'the field \'name\' is not defined') ;
+            return false ;
+        }
+
+        if (typeof sect.name !== 'string') {
+            this.showSectError(filename, num, 'the field \'name\' is defined, but is not a string') ;
+            return false ; 
+        }
+
+        if (!sect.items) {
+            this.showSectError(filename, num, 'the field \'items\' is not defined') ;
+            return false ;
+        }
+
+        if (!Array.isArray(sect.items)) {
+            this.showSectError(filename, num, 'the form \'items\' is defined but it is not an array') ;
+            return false;
+        }
+
+        let itemnum = 1 ;
+        for(let item of sect.items) {
+            if (!this.validateItem(filename, num, itemnum, item)) {
+                return false ;
+            }
+            itemnum++ ;
+        }
+
+        return true ;
+    }
+
+    private validateForm(filename: string, type: string) {
+        let jsonstr = fs.readFileSync(filename).toLocaleString() ;
+        let obj ;
+
+        try { 
+            obj = JSON.parse(jsonstr) ;
+        }
+        catch(err) {
+            this.showError(filename, 'not a valid JSON file - load the form file in VS Code to find errors') ;
+            return false ;
+        }
+
+        if (!obj.form) {
+            this.showError(filename, 'the form is missing the \'form\' field to indicate form type') ;
+            return false;
+        }
+
+        if (obj.form !== type && type !== '*') {
+            this.showError(filename, 'the form type is not valid, expected \'' + type + '\' but form \'' + obj.form + '\'') ;
+            return false ;
+        }
+
+        if (!obj.sections) {
+            this.showError(filename, 'the form is missing the \'sections\' field to indicate form type') ;
+            return false;
+        }
+
+        if (!Array.isArray(obj.sections)) {
+            this.showError(filename, 'the form has the \'sections\' field but it is not an array') ;
+            return false;
+        }
+
+        let num = 1 ;
+        for (let sect of obj.sections) {
+            if (!this.validateSection(filename, num, sect)) {
+                return false;
+            }
+
+            num++ ;
+        }
+
+        return true ;
+    }
+
     private selectTeamForm() {
         var path = dialog.showOpenDialog({
             title: 'Select Team Form',
@@ -729,7 +977,9 @@ export class SCCentral extends SCBase {
 
         path.then((pathname) => {
             if (!pathname.canceled) {
-                this.project_!.setTeamForm(pathname.filePaths[0]) ;
+                if (this.validateForm(pathname.filePaths[0], 'team')) {
+                    this.project_!.setTeamForm(pathname.filePaths[0]) ;
+                }
                 this.setView('info') ;
             }
         }) ;
@@ -756,7 +1006,9 @@ export class SCCentral extends SCBase {
 
         path.then((pathname) => {
             if (!pathname.canceled) {
-                this.project_!.setMatchForm(pathname.filePaths[0]) ;
+                if (this.validateForm(pathname.filePaths[0], 'match')) {
+                    this.project_!.setMatchForm(pathname.filePaths[0]) ;
+                }
                 this.setView('info') ;
            }
         }) ;
@@ -822,6 +1074,44 @@ export class SCCentral extends SCBase {
                 data = Buffer.from(msg, 'utf-8') ;
             }
             resp = new Packet(PacketTypeProvideTablets, data) ;
+        }
+        else if (p.type_ === PacketTypeRequestTeamForm) {
+            if (this.project_?.info.teamform_) {
+                let jsonstr = fs.readFileSync(this.project_.info.teamform_).toString() ;
+                resp = new Packet(PacketTypeProvideTeamForm, Buffer.from(jsonstr, 'utf8')) ;
+            } else {
+                resp = new Packet(PacketTypeError, Buffer.from('internal error #1 - no team form', 'utf-8')) ;
+                dialog.showErrorBox('Internal Error #1', 'No team form is defined but event is locked') ;
+            }
+        }
+        else if (p.type_ === PacketTypeRequestMatchForm) {
+            if (this.project_?.info.matchform_) {
+                let jsonstr = fs.readFileSync(this.project_.info.matchform_).toString() ;
+                resp = new Packet(PacketTypeProvideMatchForm, Buffer.from(jsonstr, 'utf8')) ;
+            } else {
+                resp = new Packet(PacketTypeError, Buffer.from('internal error #1 - no match form', 'utf-8')) ;
+                dialog.showErrorBox('Internal Error #1', 'No match form is defined but event is locked') ;
+            }
+        }
+        else if (p.type_ === PacketTypeRequestTeamList) {
+            if (this.project_?.info.teamassignments_) {
+                let str = JSON.stringify(this.project_?.info.teamassignments_) ;
+                resp = new Packet(PacketTypeProvideTeamList, Buffer.from(str)) ;
+            }
+            else {
+                resp = new Packet(PacketTypeError, Buffer.from('internal error #2 - no team list generated for a locked event', 'utf-8')) ;
+                dialog.showErrorBox('Internal Error #2', 'No team list has been generated for a locked event') ;                
+            }
+        }
+        else if (p.type_ === PacketTypeRequestMatchList) {
+            if (this.project_?.info.matchassignements_) {
+                let str = JSON.stringify(this.project_?.info.matchassignements_) ;
+                resp = new Packet(PacketTypeProvideMatchList, Buffer.from(str)) ;
+            }
+            else {
+                resp = new Packet(PacketTypeError, Buffer.from('internal error #2 - no match list has been generated for a locked event', 'utf-8')) ;
+                dialog.showErrorBox('Internal Error #2', 'No match list has been generated for a locked event') ;                
+            }
         }
         else {
             resp = new Packet(PacketTypeError) ;
