@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { Packet } from './Packet';
+import { Packet } from './packet';
 import { SyncBase } from './syncbase';
 import winston from 'winston';
 
@@ -11,4 +11,5 @@ export abstract class SyncClient extends SyncBase {
     public abstract connect() : Promise<void> ;
     public abstract send(p: Packet) : void ;
     public abstract name() : string ;
+    public abstract close() : void ;
 }

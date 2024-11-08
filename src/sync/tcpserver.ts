@@ -1,7 +1,7 @@
 import * as net from 'net' ;
 import { SyncServer } from './syncserver';
 import winston from 'winston';
-import { Packet } from './Packet';
+import { Packet } from './packet';
 
 export class TCPSyncServer extends SyncServer {
     private static portNumber: number = 45455 ;

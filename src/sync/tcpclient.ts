@@ -1,5 +1,5 @@
 import winston from "winston";
-import { Packet } from "./Packet";
+import { Packet } from "./packet";
 import { SyncClient } from "./syncclient";
 import * as net from 'net' ;
 
@@ -46,6 +46,10 @@ export class TCPClient extends SyncClient {
         }) ;
 
         return ret ;
+    }
+
+    public close() : void {
+        this.socket_.destroy() ;
     }
 
     public send(p: Packet) : void {

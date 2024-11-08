@@ -1,6 +1,6 @@
 import winston from "winston";
 import { SyncServer } from "./syncserver";
-import { Packet } from "./Packet";
+import { Packet } from "./packet";
 
 export class USBSyncServer extends SyncServer {
     constructor(logger: winston.Logger) {

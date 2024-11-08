@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { Packet } from './Packet';
+import { Packet } from './packet';
 import { PacketCompressionNone, PacketNameMap } from './packettypes';
 import { SyncServer } from './syncserver';
 import winston from 'winston';

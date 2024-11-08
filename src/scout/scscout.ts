@@ -2,22 +2,44 @@ import { BrowserWindow, Menu, MenuItem } from "electron";
 import { SCBase } from "../base/scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
-import { Packet } from "../sync/Packet";
-import { PacketTypeHello, PacketTypeProvideTablets, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamList } from "../sync/packettypes";
+import { Packet } from "../sync/packet";
+import { PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamList } from "../sync/packettypes";
+import * as path from 'path' ;
+import * as fs from 'fs' ;
+
+export class MatchInfo {
+    public type_? : string ;
+    public set_? : number ;
+    public number_? : number ;
+} ;
+
+export class SCScoutInfo {
+    public tablet_? : string ;
+    public purpose_? : string ;
+    public uuid_? : string ;
+    public teamform_? : string ;
+    public matchform_? : string ;
+    public teamlist_? : string[] ;
+    public matchlist_? : MatchInfo[] ;
+}
 
 export class SCScout extends SCBase {
+    private static last_event_file = "lastevent" ;
+
     private static viewHelp: string = "view-help" ;
     private static syncEventTCP: string = "sync-event-tcp" ;
     private static syncEventUSB: string = "sync-event-usb" ;
 
+    private info_ : SCScoutInfo = new SCScoutInfo() ;
+
     private tcpHost_: string = "127.0.0.1" ;
-    private tablet_?: string ;
-    private purpose_? : string ;
     private tablets_?: any[] ;
-    private syncconn_?: SyncClient ;
+    private conn_?: SyncClient ;
 
     public constructor(win: BrowserWindow) {
         super(win, 'scout') ;
+
+        this.checkLastEvent() ;
     }
     
     public basePage() : string  {
@@ -42,7 +64,7 @@ export class SCScout extends SCBase {
     }
 
     private syncClient(conn: SyncClient) {
-        this.syncconn_ = conn ;
+        this.conn_ = conn ;
         conn.connect()
             .then(()=> {
                 conn.on('connected', () => {
@@ -52,7 +74,7 @@ export class SCScout extends SCBase {
                 }) ;
 
                 conn.on('close', () => {
-                    this.syncconn_ = undefined ;
+                    this.conn_ = undefined ;
                 }) ;
 
                 conn.on('error', (err: Error) => {
@@ -76,32 +98,101 @@ export class SCScout extends SCBase {
                 }) ;
 
                 conn.on('packet', (p: Packet) => {
-                    this.syncTablet(conn, p) ;
+                    this.syncTablet(p) ;
                 }) ;
             })
             .catch((err) => {
             }) ;
     }
 
-    private syncTablet(conn: SyncClient, p: Packet) {
+    private uuidToFileName(uuid: string) : string {
+        return uuid ;
+    }
+
+    private syncTablet(p: Packet) {
+        let ret = true ;
+
         if (p.type_ === PacketTypeHello) {
-            if (this.tablet_) {
-                if (this.purpose_ === 'match') {
-                    this.sendMatchData() ;
-                }
-                else {
-                    this.sendTeamData() ;
-                }
+            let uuid = p.data_.toString() ;
+            if (this.info_.uuid_ && this.info_.uuid_ !== uuid) {
+                //
+                // We have an event loaded and it does not match
+                //
+                this.sendToRenderer('set-status-title', 'Error Connecting To XeroScout Central') ;
+                this.sendToRenderer('set-status-visible', true) ;
+                this.sendToRenderer('set-status-text', 'The loaded event does not match event being synced - reset the tablet to sync to this new event.') ;
+                this.sendToRenderer('set-status-close-button-visible', true) ;
+                this.conn_!.close() ;
             }
             else {
-                let p: Packet = new Packet(PacketTypeRequestTablets) ;
-                conn.send(p) ;
+
+                if (this.info_.tablet_) {
+                    //
+                    // The current tablet already has an identity.  See if we are missing things ...
+                    //
+                    this.getMissingData() ;
+                }
+                else {
+                    this.info_.uuid_ = uuid ;
+                    let p: Packet = new Packet(PacketTypeRequestTablets) ;
+                    this.conn_!.send(p) ;
+                }
             }
         }
         else if (p.type_ === PacketTypeProvideTablets) {
             this.tablets_ = JSON.parse(p.data_.toString()) ;
             this.setView('select-tablet') ;
         }
+        else if (p.type_ === PacketTypeProvideTeamForm) {
+            this.info_.teamform_ = p.payloadAsString() ;
+            this.writeEventFile() ;
+            ret = this.getMissingData() ;            
+        }
+        else if (p.type_ === PacketTypeProvideMatchForm) {
+            this.info_.matchform_ = p.payloadAsString() ;
+            this.writeEventFile() ;
+            ret = this.getMissingData() ;  
+        }
+        else if (p.type_ === PacketTypeProvideTeamList) {
+            this.info_.teamlist_ = JSON.parse(p.payloadAsString()) ;
+            this.writeEventFile() ;
+            ret = this.getMissingData() ;  
+        }
+        else if (p.type_ === PacketTypeProvideMatchList) {
+            this.info_.matchlist_ = JSON.parse(p.payloadAsString()) ;
+            this.writeEventFile() ;
+            ret = this.getMissingData() ;  
+        }
+
+        if (!ret) {
+            this.sendScoutingData() ;
+        }
+    }
+
+    private sendScoutingData() {
+    }
+
+    private getMissingData() : boolean {
+        let ret: boolean = false ;
+
+        if (!this.info_.teamform_) {
+            this.conn_?.send(new Packet(PacketTypeRequestMatchForm)) ;
+            ret = true ;
+        }
+        else if (!this.info_.matchform_) {
+            this.conn_?.send(new Packet(PacketTypeRequestMatchForm)) ;
+            ret = true ;
+        }
+        else if (this.info_.matchlist_) {
+            this.conn_?.send(new Packet(PacketTypeRequestMatchList)) ;
+            ret = true ;
+        }
+        else if (this.info_.teamlist_) {
+            this.conn_?.send(new Packet(PacketTypeRequestTeamList)) ;
+            ret = true ;
+        }
+
+        return ret ;
     }
 
     public createMenu() : Menu | null {
@@ -147,18 +238,14 @@ export class SCScout extends SCBase {
         }
     }
 
-    private sendMatchData() : void {
-    }
-
-    private sendTeamData() : void {
-    }
-
     public setTabletNamePurpose(name: string, purpose: string) : void {
         this.tablets_ = undefined ;
-        this.tablet_ = name ;
-        this.purpose_ = purpose ;
+        this.info_.tablet_ = name ;
+        this.info_.purpose_ = purpose ;
 
         let p: Packet ;
+
+        this.writeEventFile() ;
 
         if (purpose === 'match') {
             p = new Packet(PacketTypeRequestMatchList) ;
@@ -166,6 +253,63 @@ export class SCScout extends SCBase {
         else {
             p = new Packet(PacketTypeRequestTeamList) ;
         }
-        this.syncconn_?.send(p) ;
+        this.conn_!.send(p) ;
     }
+
+    private checkLastEvent() {
+        let lastfile: string = path.join(this.appdir_, SCScout.last_event_file) ;
+        if (fs.existsSync(lastfile)) {
+            const rawData = fs.readFileSync(lastfile, 'utf-8');
+            let obj = JSON.parse(rawData) ;
+            if (obj && obj.lastevent) {
+                let fname: string = this.uuidToFileName(obj.lastevent) ;
+                let fullpath: string = path.join(this.appdir_, fname) ;
+                this.readEventFile(fullpath) ;
+            }
+        }
+    }
+
+    private readEventFile(fullpath: string) : Error | undefined {
+        let ret : Error | undefined = undefined ;
+
+        const rawData = fs.readFileSync(fullpath, 'utf-8');
+        this.info_ = JSON.parse(rawData) as SCScoutInfo ;
+        
+        return ret ;
+    }
+
+    private writeEventFile() : Error | undefined {
+        let ret: Error | undefined = undefined ;
+        let lastfile: string = path.join(this.appdir_, SCScout.last_event_file) ;
+
+        let obj = {
+            lastevent: this.info_.uuid_
+        } ;
+        const lastFileJson = JSON.stringify(obj) ;
+        fs.writeFile(lastfile, lastFileJson, (err) => {
+            if (err) {
+                fs.rmSync(lastfile) ;   
+                ret = err ;
+            }
+        });
+
+        if (!ret) {
+
+            const jsonString = JSON.stringify(this.info_);
+
+            // Write the string to a file
+            let filename = this.uuidToFileName(this.info_.uuid_!) ;
+            let projfile = path.join(this.appdir_, filename) ;
+            fs.writeFile(projfile, jsonString, (err) => {
+                if (err) {
+                    fs.rmSync(lastfile) ;
+                    fs.rmSync(projfile) ;   
+                    ret = err ;
+                }
+            });
+        }
+        
+        return ret;
+    } 
+
 }

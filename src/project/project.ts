@@ -15,9 +15,11 @@ import { SCBase } from '../base/scbase';
 import { TeamTablet } from './teamtablet';
 import { MatchTablet } from './matchtablet';
 import * as sqlite3 from 'sqlite3' ;
+import * as uuid from 'uuid' ;
 
 export class ProjectInfo {
     public frcev_? : FRCEvent ;
+    public uuid_? : string ;
     public name_? : string ;
     public teamform_? : string ;
     public matchform_? : string ;
@@ -34,6 +36,7 @@ export class ProjectInfo {
     public matchdb_?: sqlite3.Database ;
 
     constructor() {
+
         this.locked_ = false ;
     }
 
@@ -80,6 +83,7 @@ export class Project {
         if (this.info_.matches_ && this.info_.teams_ && this.info_.teamform_ && this.info_.matchform_ && this.areTabletsValid()) {
             if (this.generateTabletSchedule()) {
                 this.info_.locked_ = true ;
+                this.info_.uuid_ = uuid.v4() ;
                 this.writeEventFile() ;
             }
             else {

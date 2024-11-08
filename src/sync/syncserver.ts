@@ -1,5 +1,5 @@
 import winston from "winston";
-import { Packet } from "./Packet";
+import { Packet } from "./packet";
 import { PacketCompressionNone } from "./packettypes";
 import { EventEmitter } from 'events';
 import { SyncBase } from "./syncbase";

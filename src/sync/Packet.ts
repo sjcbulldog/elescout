@@ -12,4 +12,8 @@ export class Packet {
             this.data_ = new Uint8Array(0) ;
         }
     }
+
+    public payloadAsString() : string {
+        return this.data_.toString() ;
+    }
 }

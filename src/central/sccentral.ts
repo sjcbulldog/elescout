@@ -8,7 +8,7 @@ import * as fs from 'fs' ;
 import { Team } from '../project/team';
 import { TCPSyncServer } from '../sync/tcpserver';
 import { USBSyncServer } from '../sync/usbserver';
-import { Packet } from '../sync/Packet';
+import { Packet } from '../sync/packet';
 import { SyncServer } from '../sync/syncserver';
 import { PacketTypeError, PacketTypeHello, PacketTypeProvideTablets, PacketTypeRequestTablets } from '../sync/packettypes';
 
@@ -804,7 +804,8 @@ export class SCCentral extends SCBase {
         let resp : Packet | undefined ;
 
         if (p.type_ === PacketTypeHello) {
-            resp = new Packet(PacketTypeHello, p.data_) ;
+            let uuidbuf = Buffer.from(this.project_!.info.uuid_!, 'utf-8') ;
+            resp = new Packet(PacketTypeHello, uuidbuf) ;
         }
         else if (p.type_ === PacketTypeRequestTablets) {
             let data: Uint8Array = new Uint8Array(0) ;
