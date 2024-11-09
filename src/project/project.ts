@@ -46,11 +46,11 @@ export class ProjectInfo {
 }
 
 export class Project {
-    private static event_file_name : string  = "event.json" ;
-    private static team_db_file_name: string = "teamdb" ;
-    private static match_db_file_name: string = "matchdb" ;
-    private static tabletTeam: string = "team" ;
-    private static tabletMatch: string = "match" ;
+    private static readonly event_file_name : string  = "event.json" ;
+    private static readonly team_db_file_name: string = "teamdb" ;
+    private static readonly match_db_file_name: string = "matchdb" ;
+    private static readonly tabletTeam: string = "team" ;
+    private static readonly tabletMatch: string = "match" ;
 
     private location_ : string ;
     private info_ : ProjectInfo ;

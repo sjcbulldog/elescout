@@ -9,7 +9,7 @@ export abstract class SyncClient extends SyncBase {
     }
 
     public abstract connect() : Promise<void> ;
-    public abstract send(p: Packet) : void ;
+    public abstract send(p: Packet) : Promise<void>
     public abstract name() : string ;
     public abstract close() : void ;
 }

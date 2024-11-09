@@ -6,7 +6,8 @@ import * as winston from 'winston' ;
 import * as crypto from 'crypto' ;
 
 export abstract class SCBase {
-    private static appdirName = '.xeroscout' ;
+    private static readonly appdirName = '.xeroscout' ;
+    private static readonly isDevelop = true ;
 
     protected typestr_ : string ;
     protected win_ : BrowserWindow ;
@@ -27,7 +28,19 @@ export abstract class SCBase {
             fs.mkdirSync(logdir) ;
         }
 
-        let logfileName = this.createUniqueFilename(logdir, 'xeroscout-' + this.typestr_) ;
+        let logfileName ;
+        
+        if (SCBase.isDevelop) {
+            logfileName = 'xeroscout-' + this.typestr_ ;
+        }
+        else {
+            logfileName = this.createUniqueFilename(logdir, 'xeroscout-' + this.typestr_) ;
+        }
+        logfileName += ".txt" ;
+
+        if (fs.existsSync(logfileName)) {
+            fs.rmSync(logfileName) ;
+        }
 
         this.logger_ = winston.createLogger({
             level: 'silly',

@@ -6,6 +6,7 @@ import { Packet } from "../sync/packet";
 import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList } from "../sync/packettypes";
 import * as path from 'path' ;
 import * as fs from 'fs' ;
+import { USBClient } from "../sync/usbclient";
 
 export class MatchInfo {
     public type_? : string ;
@@ -24,11 +25,11 @@ export class SCScoutInfo {
 }
 
 export class SCScout extends SCBase {
-    private static last_event_file = "lastevent" ;
+    private static readonly last_event_file = "lastevent" ;
 
-    private static viewHelp: string = "view-help" ;
-    private static syncEventTCP: string = "sync-event-tcp" ;
-    private static syncEventUSB: string = "sync-event-usb" ;
+    private static readonly viewHelp: string = "view-help" ;
+    private static readonly syncEventTCP: string = "sync-event-tcp" ;
+    private static readonly syncEventUSB: string = "sync-event-usb" ;
 
     private info_ : SCScoutInfo = new SCScoutInfo() ;
 
@@ -60,24 +61,23 @@ export class SCScout extends SCBase {
             this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
         }
         else if (cmd === SCScout.syncEventUSB) {
+            this.syncClient(new USBClient(this.logger_, [4, 3])) ;
         }
     }
 
     private syncClient(conn: SyncClient) {
         this.conn_ = conn ;
         conn.connect()
-            .then(()=> {
-                conn.on('connected', () => {
-                    this.logger_.info('ScouterSync: connected to server \'' + conn.name() + '\'') ;
-                    let p: Packet = new Packet(PacketTypeHello) ;
-                    conn.send(p) ;
-                }) ;
+            .then(async ()=> {
+                this.logger_.info('ScouterSync: connected to server \'' + conn.name() + '\'') ;
+                let p: Packet = new Packet(PacketTypeHello) ;
+                await this.conn_!.send(p) ;
 
-                conn.on('close', () => {
+                this.conn_!.on('close', () => {
                     this.conn_ = undefined ;
                 }) ;
 
-                conn.on('error', (err: Error) => {
+                this.conn_!.on('error', (err: Error) => {
                     let msg: string = "" ;
                     let a: any = err as any ;
                     if (a.errors) {
@@ -97,11 +97,12 @@ export class SCScout extends SCBase {
                     this.sendToRenderer('set-status-close-button-visible', true) ;
                 }) ;
 
-                conn.on('packet', (p: Packet) => {
+                this.conn_!.on('packet', (p: Packet) => {
                     this.syncTablet(p) ;
                 }) ;
             })
             .catch((err) => {
+                console.log(err) ;
             }) ;
     }
 
@@ -144,12 +145,12 @@ export class SCScout extends SCBase {
             this.setView('select-tablet') ;
         }
         else if (p.type_ === PacketTypeProvideTeamForm) {
-            this.info_.teamform_ = p.payloadAsString() ;
+            this.info_.teamform_ = JSON.parse(p.payloadAsString()) ;
             this.writeEventFile() ;
             ret = this.getMissingData() ;            
         }
         else if (p.type_ === PacketTypeProvideMatchForm) {
-            this.info_.matchform_ = p.payloadAsString() ;
+            this.info_.matchform_ = JSON.parse(p.payloadAsString()) ;
             this.writeEventFile() ;
             ret = this.getMissingData() ;  
         }
@@ -252,14 +253,7 @@ export class SCScout extends SCBase {
         let p: Packet ;
 
         this.writeEventFile() ;
-
-        if (purpose === 'match') {
-            p = new Packet(PacketTypeRequestMatchList) ;
-        }
-        else {
-            p = new Packet(PacketTypeRequestTeamList) ;
-        }
-        this.conn_!.send(p) ;
+        this.getMissingData() ;
     }
 
     private checkLastEvent() {

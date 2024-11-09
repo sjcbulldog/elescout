@@ -4,7 +4,7 @@ import { SyncClient } from "./syncclient";
 import * as net from 'net' ;
 
 export class TCPClient extends SyncClient {
-    private static portNumber: number = 45455 ;
+    private static readonly portNumber: number = 45455 ;
 
     private host_ : string ;
     private socket_ : net.Socket ;
@@ -52,12 +52,19 @@ export class TCPClient extends SyncClient {
         this.socket_.destroy() ;
     }
 
-    public send(p: Packet) : void {
-        let buffer = this.convertToBytes(p) ;
-        this.socket_.write(buffer, (err) => {
-            if (err) {
-                this.logger_.error('error writing data to TCPServer from TCPClient') ;
-            }
+    public send(p: Packet) : Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
+            let buffer = this.convertToBytes(p) ;
+            this.socket_.write(buffer, (err) => {
+                if (err) {
+                    reject(err) ;
+                }
+                else {
+                    resolve() ;
+                }
+            }) ;
         }) ;
+
+        return ret ;
     }
 }

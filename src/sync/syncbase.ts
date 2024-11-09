@@ -5,7 +5,7 @@ import { SyncServer } from './syncserver';
 import winston from 'winston';
 
 export class SyncBase extends EventEmitter {
-    protected static minPacketSize = 12;
+    protected static readonly minPacketSize = 12;
 
     private buffer_? : Uint8Array ;
     protected logger_ : winston.Logger ;
@@ -126,9 +126,6 @@ export class SyncBase extends EventEmitter {
         while (length-- > 0) {
             sum = (sum + data[start++]) & 0xffff ;
         }
-
-        this.logger_.silly('checksum computed, ' + lencopy + ', bytes, value ' + sum.toString(16)) ;
-    
         return sum ;
     }
 }

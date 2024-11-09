@@ -10,7 +10,7 @@ export abstract class SyncServer extends SyncBase
         super(logger) ;
     }
 
-    public abstract init() : Promise<void> ;
+    public abstract init(arg: any) : Promise<void> ;
     public abstract name() : string ;
     public abstract send(p: Packet) : void ;
 }

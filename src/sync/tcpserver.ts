@@ -4,7 +4,7 @@ import winston from 'winston';
 import { Packet } from './packet';
 
 export class TCPSyncServer extends SyncServer {
-    private static portNumber: number = 45455 ;
+    private static readonly portNumber: number = 45455 ;
 
     private server_? : net.Server ;
     private socket_? : net.Socket ;

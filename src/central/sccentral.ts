@@ -21,26 +21,26 @@ export class SCCentral extends SCBase {
     private usbsyncserver_? : USBSyncServer = undefined ;
     private previewfile_? : string = undefined ;
 
-    private static openExistingEvent : string = 'open-existing' ;
-    private static createNewEvent: string = 'create-new' ;
-    private static selectTeamForm: string = 'select-team-form' ;
-    private static selectMatchForm: string = 'select-match-form' ;
-    private static assignTablets: string = 'assign-tablets' ;
-    private static loadBAEvent: string = 'load-ba-event' ;
-    private static viewInit: string = 'view-init' ;
-    private static lockEvent: string = 'lock-event' ;
-    private static editTeams: string = 'edit-teams' ;
-    private static editMatches : string = 'edit-matches' ;
-    private static importTeams: string = 'import-teams' ;
-    private static importMatches: string = 'import-matches' ;
-    private static viewTeamForm: string = 'view-team-form' ;
-    private static viewTeamStatus: string = 'view-team-status' ;
-    private static viewTeamData: string = "view-team-data" ;
-    private static viewMatchForm: string = 'view-match-form' ;
-    private static viewMatchStatus: string = 'view-match-status' ;
-    private static viewMatchData: string = "view-match-data" ;
-    private static viewPreviewForm: string = "view-preview-form" ;
-    private static viewHelp: string = "view-help" ;
+    private static readonly openExistingEvent : string = 'open-existing' ;
+    private static readonly createNewEvent: string = 'create-new' ;
+    private static readonly selectTeamForm: string = 'select-team-form' ;
+    private static readonly selectMatchForm: string = 'select-match-form' ;
+    private static readonly assignTablets: string = 'assign-tablets' ;
+    private static readonly loadBAEvent: string = 'load-ba-event' ;
+    private static readonly viewInit: string = 'view-init' ;
+    private static readonly lockEvent: string = 'lock-event' ;
+    private static readonly editTeams: string = 'edit-teams' ;
+    private static readonly editMatches : string = 'edit-matches' ;
+    private static readonly importTeams: string = 'import-teams' ;
+    private static readonly importMatches: string = 'import-matches' ;
+    private static readonly viewTeamForm: string = 'view-team-form' ;
+    private static readonly viewTeamStatus: string = 'view-team-status' ;
+    private static readonly viewTeamData: string = "view-team-data" ;
+    private static readonly viewMatchForm: string = 'view-match-form' ;
+    private static readonly viewMatchStatus: string = 'view-match-status' ;
+    private static readonly viewMatchData: string = "view-match-data" ;
+    private static readonly viewPreviewForm: string = "view-preview-form" ;
+    private static readonly viewHelp: string = "view-help" ;
 
     constructor(win: BrowserWindow) {
         super(win, 'server') ;
@@ -1125,6 +1125,10 @@ export class SCCentral extends SCBase {
         this.tcpsyncserver_.init()
             .then(() => { 
                 this.logger_.info('TCPSyncServer: initialization completed sucessfully') ;
+            })
+            .catch((err) => {
+                let errobj: Error = err ;
+                dialog.showErrorBox('TCP Sync', 'Cannot start TCP sync - ' + err.message) ;
             }) ;
         this.tcpsyncserver_.on('packet', (p: Packet) => { 
             let reply: Packet = this.processPacket(p) ;
@@ -1132,9 +1136,13 @@ export class SCCentral extends SCBase {
         });
 
         this.usbsyncserver_ = new USBSyncServer(this.logger_) ;
-        this.usbsyncserver_.init()
+        this.usbsyncserver_.init([4, 1])
             .then(() => {
                 this.logger_.info('USBSyncServer: initialization completed sucessfully') ;
+            })
+            .catch((err) => {
+                let errobj: Error = err ;
+                dialog.showErrorBox('USB Sync', 'Cannot start USB sync - ' + err.message) ;
             }) ;
         this.usbsyncserver_.on('packet', (p: Packet) => { 
             let reply: Packet = this.processPacket(p) ;
