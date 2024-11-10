@@ -62,6 +62,13 @@ export async function getTeamData() {
     } 
 }
 
+export async function setEventName(...args: any[]) {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.setEventName(args[0]) ;
+    }
+}
+
 export async function setTeamData(...args: any[]) {
     if (scappbase && !scappbase.isScoutingTablet()) {
         let central : SCCentral = scappbase as SCCentral ;

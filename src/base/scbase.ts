@@ -57,6 +57,7 @@ export abstract class SCBase {
     public abstract sendNavData() : void ;
     public abstract executeCommand(cmd: string) : void ;
     public abstract createMenu() : Menu | null ;
+    public abstract windowCreated() : void ;
 
     public isScoutingTablet() : boolean { 
         return true ;
@@ -69,6 +70,10 @@ export abstract class SCBase {
 
     protected setView(view: string) {
         this.sendToRenderer('update-main-window-view', view) ;
+    }
+    
+    protected setStatusMessage(msg: string) {
+        this.sendToRenderer('set-status-bar-message', msg) ;
     }
 
     private createUniqueFilename(directory: string, prefix: string = 'file') : string{

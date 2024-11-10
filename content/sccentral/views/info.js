@@ -29,11 +29,20 @@ function addname(info) {
     label.className = "info-table-cell" ;
     row.append(label) ;
 
-    let value = document.createElement('td')
-    value.className = "info-table-cell" ;
-    value.innerHTML = (info.name_ ? info.name_ : 'NONE') ;
-    row.append(value) ;
+    let evname = document.createElement('td')
+    evname.className = "info-table-cell" ;
+    evname.innerHTML = (info.name_ ? info.name_ : 'NONE') ;
+    evname.addEventListener('input', function() {
+        if (evname && evname.innerText !== 'NONE') {
+            window.scoutingAPI.send('set-event-name', evname.innerText) ;
+        }
+    }) ;
 
+    if (info.teams_ && !info.baky_ && !info.locked_) {
+        evname.contentEditable = true ;
+    }
+
+    row.append(evname) ;
     return row ;
 }
 

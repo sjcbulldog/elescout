@@ -3,12 +3,9 @@ import { SCBase } from "../base/scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
 import { Packet } from "../sync/packet";
-import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideResults, 
-         PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, 
-         PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList 
-       } from "../sync/packettypes";
 import * as path from 'path' ;
 import * as fs from 'fs' ;
+import { PacketType } from "../sync/packettypes";
 
 export class MatchInfo {
     public type_? : string ;
@@ -20,6 +17,7 @@ export class SCScoutInfo {
     public tablet_? : string ;
     public purpose_? : string ;
     public uuid_? : string ;
+    public evname_? : string ;
     public teamform_? : any ;
     public matchform_? : any ;
     public teamlist_? : any[] ;
@@ -69,6 +67,12 @@ export class SCScout extends SCBase {
             treedata = [...treedata, ...navstuff] ;
         }
         this.sendToRenderer('send-nav-data', treedata);
+    }
+
+    public windowCreated() {
+        this.win_.on('ready-to-show', () => {
+            this.setViewString() ;
+        }) ;
     }
 
     private populateNavTeams() : any[] {
@@ -163,7 +167,11 @@ export class SCScout extends SCBase {
         else if (cmd === SCScout.resetTablet) {
             this.info_.purpose_ = undefined ;
             this.info_.tablet_ = undefined ;
-            this.writeEventFile() ;
+            this.info_.results_ = undefined ;
+            this.info_.uuid_ = undefined ;
+            this.info_.evname_ = undefined ;
+            this.sendNavData() ;
+            this.setView('empty') ;
         }
         else if (cmd.startsWith('st-')) {
             this.scoutTeam(cmd) ;
@@ -317,7 +325,16 @@ export class SCScout extends SCBase {
         conn.connect()
             .then(async ()=> {
                 this.logger_.info('ScouterSync: connected to server \'' + conn.name() + '\'') ;
-                let p: Packet = new Packet(PacketTypeHello) ;
+                let data = new Uint8Array(0) ;
+
+                if (this.info_.tablet_ && this.info_.purpose_) {
+                    let obj = {
+                        name: this.info_.tablet_,
+                        purpose: this.info_.purpose_
+                    }
+                    data = Buffer.from(JSON.stringify(obj)) ;
+                }
+                let p: Packet = new Packet(PacketType.Hello, data) ;
                 await this.conn_!.send(p) ;
 
                 this.conn_!.on('close', () => {
@@ -349,7 +366,7 @@ export class SCScout extends SCBase {
                 }) ;
             })
             .catch((err) => {
-                console.log(err) ;
+                this.logger_.error('cannot connect to central', err) ;
             }) ;
     }
 
@@ -360,58 +377,71 @@ export class SCScout extends SCBase {
     private syncTablet(p: Packet) {
         let ret = true ;
 
-        if (p.type_ === PacketTypeHello) {
-            let uuid = p.data_.toString() ;
-            if (this.info_.uuid_ && this.info_.uuid_ !== uuid) {
-                //
-                // We have an event loaded and it does not match
-                //
-                this.sendToRenderer('set-status-title', 'Error Connecting To XeroScout Central') ;
-                this.sendToRenderer('set-status-visible', true) ;
-                this.sendToRenderer('set-status-text', 'The loaded event does not match event being synced - reset the tablet to sync to this new event.') ;
-                this.sendToRenderer('set-status-close-button-visible', true) ;
-                this.conn_!.close() ;
-            }
-            else {
+        if (p.type_ === PacketType.Hello) {
+            let obj ;
+
+            try {
+                obj = JSON.parse(p.payloadAsString()) ;
+                if (this.info_.uuid_ && obj.uuid !== this.info_.uuid_) {
+                    //
+                    // We have an event loaded and it does not match
+                    //
+                    this.sendToRenderer('set-status-title', 'Error Connecting To XeroScout Central') ;
+                    this.sendToRenderer('set-status-visible', true) ;
+                    this.sendToRenderer('set-status-text', 'The loaded event does not match event being synced - reset the tablet to sync to this new event.') ;
+                    this.sendToRenderer('set-status-close-button-visible', true) ;
+                    this.conn_!.close() ;
+                    return ;
+                }
 
                 if (this.info_.tablet_) {
                     //
                     // The current tablet already has an identity.  See if we are missing things ...
                     //
                     this.getMissingData() ;
+                    if (!this.info_.evname_) {
+                        this.info_.evname_ = obj.name ;
+                    }
                 }
                 else {
-                    this.info_.uuid_ = uuid ;
-                    let p: Packet = new Packet(PacketTypeRequestTablets) ;
+                    this.info_.uuid_ = obj.uuid ;
+                    this.info_.evname_ = obj.name;
+                    let p: Packet = new Packet(PacketType.RequestTablets) ;
                     this.conn_!.send(p) ;
                 }
             }
+            catch(err) {
+            }
         }
-        else if (p.type_ === PacketTypeProvideTablets) {
+        else if (p.type_ === PacketType.ProvideTablets) {
             this.tablets_ = JSON.parse(p.data_.toString()) ;
             this.setView('select-tablet') ;
         }
-        else if (p.type_ === PacketTypeProvideTeamForm) {
+        else if (p.type_ === PacketType.ProvideTeamForm) {
             this.info_.teamform_ = JSON.parse(p.payloadAsString()) ;
             this.writeEventFile() ;
             ret = this.getMissingData() ;            
         }
-        else if (p.type_ === PacketTypeProvideMatchForm) {
+        else if (p.type_ === PacketType.ProvideMatchForm) {
             this.info_.matchform_ = JSON.parse(p.payloadAsString()) ;
             this.writeEventFile() ;
             ret = this.getMissingData() ;  
         }
-        else if (p.type_ === PacketTypeProvideTeamList) {
+        else if (p.type_ === PacketType.ProvideTeamList) {
             this.info_.teamlist_ = JSON.parse(p.payloadAsString()) ;
             this.writeEventFile() ;
             ret = this.getMissingData() ;  
         }
-        else if (p.type_ === PacketTypeProvideMatchList) {
+        else if (p.type_ === PacketType.ProvideMatchList) {
             this.info_.matchlist_ = JSON.parse(p.payloadAsString()) ;
             this.writeEventFile() ;
             ret = this.getMissingData() ;  
         }
-        else if (p.type_ === PacketTypeError) {
+        else if (p.type_ === PacketType.ReceivedResults) {
+            this.conn_?.send(new Packet(PacketType.Goodbye, Buffer.from(this.info_.tablet_!))) ;
+            this.conn_?.close() ;
+        }
+        else if (p.type_ === PacketType.Error) {
             this.sendToRenderer('set-status-title', 'Error Syncing With XeroScout Central') ;
             this.sendToRenderer('set-status-visible', true) ;
             this.sendToRenderer('set-status-text', p.payloadAsString()) ;
@@ -426,36 +456,45 @@ export class SCScout extends SCBase {
         } ;
 
         let jsonstr = JSON.stringify(obj) ;
-        this.conn_?.send(new Packet(PacketTypeProvideResults, Buffer.from(jsonstr))) ;
+        this.conn_?.send(new Packet(PacketType.ProvideResults, Buffer.from(jsonstr))) ;
     }
 
     private getMissingData() {
         let ret: boolean = false ;
 
         if (!this.info_.teamform_) {
-            this.conn_?.send(new Packet(PacketTypeRequestTeamForm)) ;
+            this.conn_?.send(new Packet(PacketType.RequestTeamForm)) ;
             ret = true ;
         }
         else if (!this.info_.matchform_) {
-            this.conn_?.send(new Packet(PacketTypeRequestMatchForm)) ;
+            this.conn_?.send(new Packet(PacketType.RequestMatchForm)) ;
             ret = true ;
         }
         else if (!this.info_.matchlist_) {
-            this.conn_?.send(new Packet(PacketTypeRequestMatchList)) ;
+            this.conn_?.send(new Packet(PacketType.RequestMatchList)) ;
             ret = true ;
         }
         else if (!this.info_.teamlist_) {
-            this.conn_?.send(new Packet(PacketTypeRequestTeamList)) ;
+            this.conn_?.send(new Packet(PacketType.RequestTeamList)) ;
             ret = true ;
         }
         
         if (!ret) {
             this.sendNavData() ;
-            this.setView('empty') ;
-            // this.sendScoutingData() ;
+            this.setViewString() ;
+            this.sendScoutingData() ;
         }
 
         return ret ;
+    }
+
+    private setViewString() {
+        if (this.info_.uuid_) {
+            this.sendToRenderer('event-name', this.info_.evname_, this.info_.uuid_) ;
+        }
+        else {
+            this.setView('empty') ;
+        }
     }
 
     public createMenu() : Menu | null {

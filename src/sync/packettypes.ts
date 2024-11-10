@@ -1,22 +1,37 @@
 export const PacketCompressionNone = 0 ;
 
-export const PacketTypeHello = 0x00 ;
-export const PacketTypeRequestTablets = 0x01 ;
-export const PacketTypeError = 0x02 ;
-export const PacketTypeProvideTablets = 0x03 ;
-export const PacketTypeRequestMatchList = 0x04 ;
-export const PacketTypeRequestTeamList = 0x05 ;
-export const PacketTypeRequestTeamForm = 0x06 ;
-export const PacketTypeRequestMatchForm = 0x07 ;
-export const PacketTypeProvideTeamForm = 0x08 ;
-export const PacketTypeProvideMatchForm = 0x09 ;
-export const PacketTypeProvideMatchList = 0x0a ;
-export const PacketTypeProvideTeamList = 0x0b ;
-export const PacketTypeProvideResults = 0x0c ;
+export enum PacketType {
+    Hello = 0x00,
+    RequestTablets = 0x01,
+    Error = 0x02,
+    ProvideTablets = 0x03,
+    RequestMatchList = 0x04,
+    RequestTeamList = 0x05,
+    RequestTeamForm = 0x06,
+    RequestMatchForm = 0x07,
+    ProvideTeamForm = 0x08,
+    ProvideMatchForm = 0x09,
+    ProvideMatchList = 0x0a,
+    ProvideTeamList = 0x0b,
+    ProvideResults = 0x0c,
+    ReceivedResults = 0x0d,
+    Goodbye = 0x0e
+} ;
 
 export const PacketNameMap : string[] = [
-    'PacketTypeHello',
-    'PacketTypeRequestTablets',
-    'PacketTypeError',
-    'PacketTypeProvideTablets',
+    'PacketType.Hello',
+    'PacketType.RequestTablets',
+    'PacketType.Error',
+    'PacketType.ProvideTablets',
+    'PacketType.RequestMatchList',
+    'PacketType.RequestTeamList',
+    'PacketType.RequestTeamForm',
+    'PacketType.RequestMatchForm',
+    'PacketType.ProvideTeamForm',
+    'PacketType.ProvideMatchForm',
+    'PacketType.ProvideMatchList',
+    'PacketType.ProvideTeamList',
+    'PacketType.ProvideResults',
+    'PacketType.ReceivedResults',
+    'PacketType.Goodbye'
 ];

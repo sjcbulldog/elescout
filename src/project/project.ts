@@ -40,8 +40,17 @@ export class ProjectInfo {
         this.locked_ = false ;
     }
 
-    public get name() : string | undefined {
-        return this.frcev_ ? this.frcev_.desc : this.name_ ; 
+    public getName() : string | undefined {
+        let ret: string | undefined = undefined ;
+
+        if (this.frcev_ !== undefined) {
+            ret = this.frcev_.desc ;
+        }
+        else {
+            ret = this.name_ ;
+        }
+
+        return ret ;
     }
 }
 
@@ -210,6 +219,11 @@ export class Project {
         }
 
         return teamcnt >= 1 && matchcnt >= 6 ;
+    }
+
+    public setEventName(name: string) {
+        this.info_.name_ = name ;
+        this.writeEventFile() ;
     }
 
     public setTeamData(data: any[]) {

@@ -14,6 +14,9 @@ export class SCCoach extends SCBase {
         this.sendToRenderer('send-tree-data', null);
     }   
 
+    public windowCreated(): void {
+    }
+
     public executeCommand(cmd: string) : void {   
     }
 

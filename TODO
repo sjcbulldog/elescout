@@ -1,12 +1,17 @@
+Base
+----
+    Status bar at bottom
+
 Central
 -------
     Edit Teams - Remove a Teams
     Edit Matches - Remove a match
-    Add Preview Form Command
+    Team Data Model
+    Match Data Model
 
 Scout
 -------
-    Extract
-    
+    Left nav pane visible appearance needs improvement
+
 Coach
 -----

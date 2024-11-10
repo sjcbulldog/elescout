@@ -13,4 +13,5 @@ export abstract class SyncServer extends SyncBase
     public abstract init(arg: any) : Promise<void> ;
     public abstract name() : string ;
     public abstract send(p: Packet) : void ;
+    public abstract shutdown() : void ;
 }

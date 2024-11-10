@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
       let validChannels = [
         'get-nav-data', 
         'get-info-data',
+        'set-event-name',
         'get-event-data',
         'get-tablet-data',
         'set-tablet-data',
@@ -42,6 +43,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
   receive: (channel: string, func:any) => {
       let validChannels = [
         'update-main-window-view',
+        'event-name',
         'send-nav-data', 
         'send-nav-highlight',
         'send-info-data',
@@ -64,7 +66,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'request-result',
       ];
       if (validChannels.includes(channel)) {
-          ipcRenderer.on(channel, (event, ...args) => func(...args));
+          ipcRenderer.on(channel, (event, ...args) => { console.log("XYZZY:" + channel, event, args) ; func(...args)});
       }
   }
 }) ;

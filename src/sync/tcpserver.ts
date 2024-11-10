@@ -13,6 +13,11 @@ export class TCPSyncServer extends SyncServer {
         super(logger) ;
     }
 
+    public shutdown() : void {
+        this.socket_?.destroy() ;
+        this.socket_ = undefined ;
+    }
+
     public async send(p: Packet) : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
             let buffer = this.convertToBytes(p) ;
@@ -52,11 +57,12 @@ export class TCPSyncServer extends SyncServer {
 
         socket.on('close', () => { 
             this.socket_ = undefined ;
-            console.log('SyncServer: close') ;
+            this.logger_.info('remote connect closed') ;
         }) ;
 
         socket.on('error', (err: Error) => {
-            console.log('SyncServer: error') ;
+            this.socket_ = undefined ;
+            this.logger_.info('error in socket communications', err) ;
         }) ;
 
         socket.on('data', (data) => {

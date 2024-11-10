@@ -1,5 +1,8 @@
+import { PacketType } from "./packettypes";
+
+
 export class Packet {
-    public type_ : number ;
+    public type_ : PacketType ;
     public data_: Uint8Array ;
 
     constructor(type: number, data?: Uint8Array) {

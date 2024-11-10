@@ -7,14 +7,15 @@ import { ContentManager } from "./cmgr";
 import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
          setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm, 
          getTeamStatus, getMatchStatus, setTabletNamePurpose, getPreviewForm, 
-         provideResult} from "./ipchandlers" ;
+         provideResult,
+         setEventName} from "./ipchandlers" ;
 import { SCCoach } from "./coach/sccoach";
 
 let cmgr: ContentManager = new ContentManager() ;
 
 export let scappbase : SCBase | undefined = undefined ;
 
-function createWindow() : BrowserWindow {
+function createWindow() : void {
     const args = process.argv;
   
     const win = new BrowserWindow({
@@ -44,11 +45,8 @@ function createWindow() : BrowserWindow {
     if (!scappbase) {
         console.log(process.argv) ;
         console.log("No App Created") ;
-    }
-
-    if (!scappbase) {
         app.exit(1) ;
-    }     
+    }
   
     win
       .loadFile(cmgr.getStaticPage(scappbase!.basePage()))
@@ -58,12 +56,13 @@ function createWindow() : BrowserWindow {
 
     Menu.setApplicationMenu(scappbase!.createMenu()) ;
 
-    return win ;
+    scappbase.windowCreated() ;
 }
 
 app.on("ready", () => {
     ipcMain.on('get-nav-data', getTreeData);
     ipcMain.on('get-info-data', getInfoData) ;
+    ipcMain.on('set-event-name', (event, ...args) => { setEventName(...args)}) ;
     ipcMain.on('get-event-data', getSelectEventData) ;
     ipcMain.on('get-tablet-data', getTabletData) ;
     ipcMain.on('set-tablet-data', (event, ...args) => { setTabletData(...args)}) ;

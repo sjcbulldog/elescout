@@ -8,8 +8,9 @@ import * as fs from 'fs' ;
 import { Team } from '../project/team';
 import { TCPSyncServer } from '../sync/tcpserver';
 import { Packet } from '../sync/packet';
-import { SyncServer } from '../sync/syncserver';
-import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList } from '../sync/packettypes';
+import { PacketType } from '../sync/packettypes';
+import { TeamDataModel } from '../model/teammodel';
+import { MatchDataModel } from '../model/matchmodel';
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
@@ -18,6 +19,10 @@ export class SCCentral extends SCBase {
     private frcevents_? : FRCEvent[] = undefined ;
     private tcpsyncserver_? : TCPSyncServer = undefined ;
     private previewfile_? : string = undefined ;
+    private syncingTablet_? : string = undefined ;
+    private syncingPurpose_? : string = undefined;
+    private team_model_ : TeamDataModel ;
+    private match_model_ : MatchDataModel ;
 
     private static readonly openExistingEvent : string = 'open-existing' ;
     private static readonly createNewEvent: string = 'create-new' ;
@@ -42,6 +47,9 @@ export class SCCentral extends SCBase {
 
     constructor(win: BrowserWindow) {
         super(win, 'server') ;
+    
+        this.team_model_ = new TeamDataModel() ;
+        this.match_model_ = new MatchDataModel() ;
 
         this.baloading_ = true ;
         this.ba_ = new BlueAlliance() ;
@@ -113,6 +121,9 @@ export class SCCentral extends SCBase {
         ret.append(viewmenu) ;
 
         return ret;
+    }
+
+    public windowCreated(): void {
     }
 
     public sendTeamForm() {
@@ -288,7 +299,7 @@ export class SCCentral extends SCBase {
             let obj = {
                 location_ : this.project_.location,
                 bakey_ : this.project_.info.frcev_?.evkey,
-                name_ : this.project_.info.frcev_?.desc,
+                name_ : this.project_.info.frcev_ ? this.project_.info.frcev_.desc : this.project_.info.name_,
                 teamform_ : this.shortenString(this.project_.info.teamform_),
                 matchform_ : this.shortenString(this.project_.info.matchform_),
                 tablets_ : this.project_.info.tablets_,
@@ -318,6 +329,12 @@ export class SCCentral extends SCBase {
         if (this.project_) {
             this.project_.setTeamData(data) ;
             this.sendToRenderer('update-main-window-view', 'info') ;
+        }
+    }
+
+    public setEventName(data: any) {
+        if (this.project_) {
+            this.project_.setEventName(data) ;
         }
     }
 
@@ -570,10 +587,6 @@ export class SCCentral extends SCBase {
                 }
             }
         }) ;
-    }
-
-    public setStatusMessage(msg: string) {
-        this.sendToRenderer('set-status-bar-message', msg) ;
     }
 
     private importTeams() {
@@ -1050,14 +1063,36 @@ export class SCCentral extends SCBase {
         }) ;
     }
 
-    private processPacket(p: Packet) : Packet {
+    private processPacket(p: Packet) : Packet | undefined  {
         let resp : Packet | undefined ;
 
-        if (p.type_ === PacketTypeHello) {
-            let uuidbuf = Buffer.from(this.project_!.info.uuid_!, 'utf-8') ;
-            resp = new Packet(PacketTypeHello, uuidbuf) ;
+        if (p.type_ === PacketType.Hello) {
+            if (p.data_.length > 0) {
+                try {
+                    let obj = JSON.parse(p.payloadAsString()) ;
+                    this.syncingPurpose_ = obj.purpose ;
+                    this.syncingTablet_ = obj.tablet ;
+                }
+                catch(err) {
+                }
+            }
+
+            let evname ;
+
+            if (this.project_?.info.frcev_?.desc) {
+                evname = this.project_.info.frcev_.desc ;
+            }
+            else {
+                evname = this.project_?.info.name_ ;
+            }
+            let evid = {
+                uuid: this.project_!.info.uuid_,
+                name: evname,
+            }
+            let uuidbuf = Buffer.from(JSON.stringify(evid), 'utf-8') ;
+            resp = new Packet(PacketType.Hello, uuidbuf) ;
         }
-        else if (p.type_ === PacketTypeRequestTablets) {
+        else if (p.type_ === PacketType.RequestTablets) {
             let data: Uint8Array = new Uint8Array(0) ;
             if (this.project_ && this.project_.info.tablets_) {
                 let tablets: any[] = [] ;
@@ -1071,48 +1106,72 @@ export class SCCentral extends SCBase {
                 let msg: string = JSON.stringify(tablets) ;
                 data = Buffer.from(msg, 'utf-8') ;
             }
-            resp = new Packet(PacketTypeProvideTablets, data) ;
+            resp = new Packet(PacketType.ProvideTablets, data) ;
         }
-        else if (p.type_ === PacketTypeRequestTeamForm) {
+        else if (p.type_ === PacketType.RequestTeamForm) {
             if (this.project_?.info.teamform_) {
                 let jsonstr = fs.readFileSync(this.project_.info.teamform_).toString() ;
-                resp = new Packet(PacketTypeProvideTeamForm, Buffer.from(jsonstr, 'utf8')) ;
+                resp = new Packet(PacketType.ProvideTeamForm, Buffer.from(jsonstr, 'utf8')) ;
             } else {
-                resp = new Packet(PacketTypeError, Buffer.from('internal error #1 - no team form', 'utf-8')) ;
+                resp = new Packet(PacketType.Error, Buffer.from('internal error #1 - no team form', 'utf-8')) ;
                 dialog.showErrorBox('Internal Error #1', 'No team form is defined but event is locked') ;
             }
         }
-        else if (p.type_ === PacketTypeRequestMatchForm) {
+        else if (p.type_ === PacketType.RequestMatchForm) {
             if (this.project_?.info.matchform_) {
                 let jsonstr = fs.readFileSync(this.project_.info.matchform_).toString() ;
-                resp = new Packet(PacketTypeProvideMatchForm, Buffer.from(jsonstr, 'utf8')) ;
+                resp = new Packet(PacketType.ProvideMatchForm, Buffer.from(jsonstr, 'utf8')) ;
             } else {
-                resp = new Packet(PacketTypeError, Buffer.from('internal error #1 - no match form', 'utf-8')) ;
+                resp = new Packet(PacketType.Error, Buffer.from('internal error #1 - no match form', 'utf-8')) ;
                 dialog.showErrorBox('Internal Error #1', 'No match form is defined but event is locked') ;
             }
         }
-        else if (p.type_ === PacketTypeRequestTeamList) {
+        else if (p.type_ === PacketType.RequestTeamList) {
             if (this.project_?.info.teamassignments_) {
                 let str = JSON.stringify(this.project_?.info.teamassignments_) ;
-                resp = new Packet(PacketTypeProvideTeamList, Buffer.from(str)) ;
+                resp = new Packet(PacketType.ProvideTeamList, Buffer.from(str)) ;
             }
             else {
-                resp = new Packet(PacketTypeError, Buffer.from('internal error #2 - no team list generated for a locked event', 'utf-8')) ;
+                resp = new Packet(PacketType.Error, Buffer.from('internal error #2 - no team list generated for a locked event', 'utf-8')) ;
                 dialog.showErrorBox('Internal Error #2', 'No team list has been generated for a locked event') ;                
             }
         }
-        else if (p.type_ === PacketTypeRequestMatchList) {
+        else if (p.type_ === PacketType.RequestMatchList) {
             if (this.project_?.info.matchassignements_) {
                 let str = JSON.stringify(this.project_?.info.matchassignements_) ;
-                resp = new Packet(PacketTypeProvideMatchList, Buffer.from(str)) ;
+                resp = new Packet(PacketType.ProvideMatchList, Buffer.from(str)) ;
             }
             else {
-                resp = new Packet(PacketTypeError, Buffer.from('internal error #2 - no match list has been generated for a locked event', 'utf-8')) ;
-                dialog.showErrorBox('Internal Error #2', 'No match list has been generated for a locked event') ;                
+                resp = new Packet(PacketType.Error, Buffer.from('internal error #3 - no match list has been generated for a locked event', 'utf-8')) ;
+                dialog.showErrorBox('Internal Error #3', 'No match list has been generated for a locked event') ;                
             }
         }
+        else if (p.type_ === PacketType.ProvideResults) {
+            try {
+                let obj = JSON.parse(p.payloadAsString()) ;
+                this.processResults(obj) ;
+                resp = new Packet(PacketType.ReceivedResults) ;
+            }
+            catch(err) {
+                resp = new Packet(PacketType.Error, Buffer.from('internal error #5 - invalid results json received by central host', 'utf-8')) ;
+                dialog.showErrorBox('Internal Error #5', 'invalid results json received by central host') ;                          
+            }
+        }
+        else if (p.type_ === PacketType.Goodbye) {
+            resp = undefined ;
+            let msg: string = 'Tablet \'' + p.payloadAsString() + '\' has completed sync' ;
+            this.syncingTablet_ = undefined ;
+            this.syncingPurpose_ = undefined ;
+
+            dialog.showMessageBox(this.win_, {
+                title: 'Synchronization Complete',
+                message: msg,
+                type: 'info',
+            }) ;
+        }
         else {
-            resp = new Packet(PacketTypeError) ;
+            resp = new Packet(PacketType.Error, Buffer.from('internal error #4 - invalid packet type received')) ;
+            dialog.showErrorBox('Internal Error #4', 'Invalid packet type received') ;   
         }
 
         return resp ;
@@ -1129,8 +1188,30 @@ export class SCCentral extends SCBase {
                 dialog.showErrorBox('TCP Sync', 'Cannot start TCP sync - ' + err.message) ;
             }) ;
         this.tcpsyncserver_.on('packet', (p: Packet) => { 
-            let reply: Packet = this.processPacket(p) ;
-            this.tcpsyncserver_!.send(reply) ;
+            let reply: Packet | undefined = this.processPacket(p) ;
+            if (reply) {
+                this.tcpsyncserver_!.send(reply)
+                    .then(() => {
+                        if (reply.type_ === PacketType.Error) {
+                            this.tcpsyncserver_!.shutdown() ;
+                        }
+                    })
+            }
+            else {
+                this.tcpsyncserver_?.shutdown() ;
+            }
         });
+    }
+
+    private processResults(obj: any) {
+        this.logger_.silly('received results from tablet ' + this.syncingTablet_, obj) ;
+        if (obj.purpose) {
+            if (obj.purpose === 'match') {
+                this.match_model_.processResults(obj.results) ;
+            }
+            else {
+                this.team_model_.processResults(obj.results) ;
+            }
+        }
     }
 }
