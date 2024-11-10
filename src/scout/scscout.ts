@@ -170,12 +170,36 @@ export class SCScout extends SCBase {
         }
     }
 
+    //
+    // Steps for the sequences below.
+    //
+    // executeCommand() is called with a command that starts with either
+    //    'st-' : scout team
+    //    'sm-' : scout match
+    //
+    // This causes scoutTeam() or scoutMatch() to be called.  If there is a previous
+    // form being displayed, these methods request the results from the current form to
+    // be returned.  These results are returned via the provideResults() method.  These
+    // results are then stored so the are stored in the info_ field and this is saved to
+    // the output file.  The method provideResults() then calls back into scoutTeam() or
+    // scoutMatch() with the force flag set to true, so that we forms the team or match
+    // view.
+    //
+    // The 'team-form' or 'match-form' request to the renderer view then causes the sendTeamForm()
+    // or sendMatchForm() method to get called.
+    //
+
     private scoutTeam(team: string, force: boolean = false) {
         if (this.current_scout_ && !force) {
+            //
+            // Get the result from the existing displayed
+            // team and store the result in the info for the team
+            //
             this.next_scout_ = team ;
             this.sendToRenderer('request-result') ;
         }
         else {
+            this.sendToRenderer('send-nav-highlight', team) ;
             this.current_scout_ = team;
             this.setView('team-form') ;
         }
@@ -183,10 +207,15 @@ export class SCScout extends SCBase {
 
     private scoutMatch(match: string, force: boolean = false) {
         if (this.current_scout_ && !force) {
+            //
+            // Get the result from the existing displayed
+            // match and store the result in the info for the match
+            //
             this.next_scout_ = match ;
             this.sendToRenderer('request-result') ;
         }
         else {
+            this.sendToRenderer('send-nav-highlight', match) ;
             this.current_scout_ = match ;
             this.setView('match-form') ;
         }
@@ -195,6 +224,8 @@ export class SCScout extends SCBase {
     public provideResults(res: any) {
         this.addResults(this.current_scout_!, res) ;
         this.writeEventFile() ;
+
+        this.logger_.silly('provideResults', res) ;
         
         if (this.next_scout_?.startsWith('st-')) {
             this.scoutTeam(this.next_scout_!, true) ;
@@ -216,6 +247,7 @@ export class SCScout extends SCBase {
         }
 
         let data: any = this.getResults(this.current_scout_!) ;
+        this.logger_.silly('sendTeamForm/send-result-values', data) ;
         if (data) {
             this.sendToRenderer('send-result-values', data) ;
         }
@@ -233,6 +265,7 @@ export class SCScout extends SCBase {
         }
 
         let data: any = this.getResults(this.current_scout_!) ;
+        this.logger_.silly('sendTeamForm/send-result-values', data) ;
         if (data) {
             this.sendToRenderer('send-result-values', data) ;
         }
@@ -384,7 +417,12 @@ export class SCScout extends SCBase {
     }
 
     private sendScoutingData() {
-        let jsonstr = JSON.stringify(this.info_.results_)
+        let obj = {
+            purpose: this.info_.purpose_,
+            results: this.info_.results_
+        } ;
+
+        let jsonstr = JSON.stringify(obj) ;
         this.conn_?.send(new Packet(PacketTypeProvideResults, Buffer.from(jsonstr))) ;
     }
 
@@ -472,11 +510,13 @@ export class SCScout extends SCBase {
         let lastfile: string = path.join(this.appdir_, SCScout.last_event_file) ;
         if (fs.existsSync(lastfile)) {
             const rawData = fs.readFileSync(lastfile, 'utf-8');
-            let obj = JSON.parse(rawData) ;
-            if (obj && obj.lastevent) {
-                let fname: string = this.uuidToFileName(obj.lastevent) ;
-                let fullpath: string = path.join(this.appdir_, fname) ;
-                this.readEventFile(fullpath) ;
+            if (rawData.trim().length !== 0) {
+                let obj = JSON.parse(rawData) ;
+                if (obj && obj.lastevent) {
+                    let fname: string = this.uuidToFileName(obj.lastevent) ;
+                    let fullpath: string = path.join(this.appdir_, fname) ;
+                    this.readEventFile(fullpath) ;
+                }
             }
         }
     }

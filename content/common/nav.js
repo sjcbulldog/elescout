@@ -1,3 +1,4 @@
+let navelems = [] ;
 
 async function updateNav() {
     window.scoutingAPI.send("get-nav-data");
@@ -7,6 +8,7 @@ function updateNavProcess(args) {
     $("#leftnav").empty();
 
     let navdata = args[0] ;
+    navelems = [] ;
 
     if (navdata) {
         let nav = document.createElement("div");
@@ -18,6 +20,7 @@ function updateNavProcess(args) {
             if (item.type === "item") {
                 navitem.className = "navlistitem";
                 navitem.textContent = item.title;
+                navelems.push(navitem) ;
             }
             else if (item.type === "separator") {
                 navitem.className = "navlistseparator" ;
@@ -39,10 +42,23 @@ function updateNavProcess(args) {
             }
         );
 
-        $(".navlistitem").mousedown(function () {
+        $(".navlistitem").mousedown(function (event) {
             window.scoutingAPI.send("execute-command", this.command);
         });
     }
 }
 
+function highlightNavProcess(args) {
+    for(let one of navelems) {
+        if (one.command === args[0]) {
+            one.style.border = "2px solid #808080" ;
+        }
+        else {
+            one.style.border = "none" ;
+        }
+    }
+}
+
 window.scoutingAPI.receive("send-nav-data", (args)=>updateNavProcess(args)) ;
+window.scoutingAPI.receive("send-nav-highlight", (args)=>highlightNavProcess(args)) ;
+

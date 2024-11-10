@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
       let validChannels = [
         'update-main-window-view',
         'send-nav-data', 
+        'send-nav-highlight',
         'send-info-data',
         'send-event-data',
         'send-tablet-data',
