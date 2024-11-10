@@ -11,6 +11,12 @@ async function updateMainWindow(mtype) {
     else if (mainwintype === "select-tablet") {
       selectTabletView() ;
     }
+    else if (mainwintype === 'team-form') {
+      teamFormView() ;
+    }
+    else if (mainwintype === 'match-form') {
+      matchFormView() ;
+    }
     else {
       emptyView('Unknown view \'' + mainwintype + '\'') ;
     }

@@ -24,6 +24,7 @@ html, body {
     align-items: center;
     display: flex;
     justify-content: center;
+    overflow-y: auto;
 }
 
 .resizer {

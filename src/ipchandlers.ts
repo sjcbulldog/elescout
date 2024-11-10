@@ -72,7 +72,14 @@ export async function setTeamData(...args: any[]) {
 export async function setTabletNamePurpose(...args: any[]) {
     if (scappbase && scappbase.isScoutingTablet()) {
         let scout : SCScout = scappbase as SCScout ;
-        scout.setTabletNamePurpose(args[0], args[1]) ;
+        scout.setTabletNamePurpose(args[0].name, args[0].purpose) ;
+    } 
+}
+
+export async function provideResult(...args: any[]) {
+    if (scappbase && scappbase.isScoutingTablet()) {
+        let scout : SCScout = scappbase as SCScout ;
+        scout.provideResults(args[0]) ;
     } 
 }
 
@@ -95,6 +102,10 @@ export async function getTeamForm() {
         let central : SCCentral = scappbase as SCCentral ;
         central.sendTeamForm() ;
     } 
+    else {
+        let scout: SCScout = scappbase as SCScout ;
+        scout.sendTeamForm() ;
+    }
 }
 
 export async function getPreviewForm() {
@@ -109,6 +120,10 @@ export async function getMatchForm() {
         let central : SCCentral = scappbase as SCCentral ;
         central.sendMatchForm() ;
     } 
+    else {
+        let scout: SCScout = scappbase as SCScout ;
+        scout.sendMatchForm() ;
+    }
 }
 
 export async function getTeamStatus() {

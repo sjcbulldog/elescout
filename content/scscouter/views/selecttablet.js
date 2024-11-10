@@ -11,7 +11,8 @@ function selectTabletView() {
 }
 
 function selectTablet(event) {
-    window.scoutingAPI.send("set-tablet-name-purpose", event.currentTarget.tabletName, event.currentTarget.tabletPurpose) ;
+    window.scoutingAPI.send("set-tablet-name-purpose", 
+        { 'name' : event.currentTarget.tabletName, 'purpose' : event.currentTarget.tabletPurpose}) ;
 }
 
 function updateSelectTabletView(tablets) {

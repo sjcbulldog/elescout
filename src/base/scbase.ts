@@ -63,12 +63,7 @@ export abstract class SCBase {
     }
 
     public sendToRenderer(ev: string, ...args: any[]) {
-        let argstr = '' ;
-        for(let arg of args) {
-            argstr += ' \'' + arg + '\'' ;
-        }
-        console.log('sendToRenderer: \'' + ev + '\'' + argstr) ;
-
+        this.logger_.silly('sendToRenderer', ev, args);
         this.win_.webContents.send(ev, args) ;
     }
 

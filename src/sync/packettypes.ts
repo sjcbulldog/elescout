@@ -12,6 +12,7 @@ export const PacketTypeProvideTeamForm = 0x08 ;
 export const PacketTypeProvideMatchForm = 0x09 ;
 export const PacketTypeProvideMatchList = 0x0a ;
 export const PacketTypeProvideTeamList = 0x0b ;
+export const PacketTypeProvideResults = 0x0c ;
 
 export const PacketNameMap : string[] = [
     'PacketTypeHello',

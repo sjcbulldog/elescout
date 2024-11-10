@@ -32,7 +32,8 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-preview-form',
         'get-team-status',
         'get-match-status',
-        'set-tablet-name-purpose'
+        'set-tablet-name-purpose',
+        'provide-result'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.send(channel, data);
@@ -57,7 +58,9 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'set-status-title',
         'set-status-visible',
         'set-status-close-button-visible',
-        'set-status-bar-message'
+        'set-status-bar-message',
+        'send-result-values',
+        'request-result',
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.on(channel, (event, ...args) => func(...args));

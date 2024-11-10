@@ -66,7 +66,12 @@ function formViewCreateText(item) {
     if (item.maxlen) {
         lin.maxLength = item.maxlen ;
     }
-    lin.scouttag = item.tag ;
+    lin.xerotag = item.tag ;
+    lin.xerotype = 'text' ;
+    lin.xerovalue = '' ;
+    lin.addEventListener('input', function() {
+        lin.xerovalue = lin.value ;
+    }) ;
     label.for = lin ;
     div.append(label) ;
     div.append(lin) ;
@@ -88,8 +93,15 @@ function formViewCreateChoice(item) {
         opt.text = choice ;
         select.append(opt) ;
     }
+    select.xerovalue = item.choices[0] ;
 
-    select.scouttag = item.tag ;
+    select.addEventListener("change", function() {
+        select.xerovalue = select.value ;
+    });
+
+    select.xerotag = item.tag ;
+    select.xerotype = 'select' ;
+    
     label.for = select ;
     div.append(label) ;
     div.append(select) ;
@@ -105,7 +117,14 @@ function formViewCreateBoolean(item) {
     let lin = document.createElement('input') ;
     lin.className = 'form-item-boolean' ;
     lin.setAttribute("type", "checkbox");
-    lin.scouttag = item.tag ;
+    lin.xerovalue = false;
+
+    lin.addEventListener('change', (event) => {
+        lin.xerovalue = event.target.checked ;
+    });
+
+    lin.xerotag = item.tag ;
+    lin.xerotype = 'boolean' ;
 
     label.for = lin ;
     div.append(label) ;
@@ -116,15 +135,21 @@ function formViewCreateBoolean(item) {
 function incrUpDown(item) {
     let numstr = item.textContent ;
     let num = parseInt(numstr) ;
-    num++ ;
+    if (num < item.maximumValue) {
+        num++ ;
+    }
     item.textContent = num ;
+    item.xerovalue = num ;
 }
 
 function decrUpDown(item) {
     let numstr = item.textContent ;
     let num = parseInt(numstr) ;
-    num-- ;
+    if (num > item.minimumValue) {
+        num-- ;
+    }
     item.textContent = num ;
+    item.xeroValue = num ;
 }
 
 function formViewCreateUpdown(item) {
@@ -136,8 +161,12 @@ function formViewCreateUpdown(item) {
 
     let count = document.createElement('p') ;
     count.innerText = '0' ;
-    count.scouttag = item.tag ;
+    count.xerotag = item.tag ;
+    count.xerotype = 'updown' ;
     count.className = 'form-item-updown' ;
+    count.minimumValue = item.minimum;
+    count.maximumValue = item.maximum ;
+    count.xerovalue = 0 ;
 
     let plus = document.createElement('button') ;
     plus.className = 'form-item-updown-button' ;
@@ -214,3 +243,74 @@ function formViewJsonToForm(parent, obj, ftype) {
         formViewSelect(sectnames[0], sectnames) ;
     }
 }
+
+function returnResultRecursively(elem, result) {
+    if (elem.xerotag) {
+        let one = {
+            tag: elem.xerotag,
+            type: elem.xerotype,
+            value: elem.xerovalue
+        } ;
+        result.push(one) ;
+    }
+
+    for(let child of elem.childNodes) {
+        returnResultRecursively(child, result) ;
+    }
+}
+
+function returnResult() {
+    //
+    // Extract the results from the form and send to the main process
+    //
+    const element = document.getElementById("rightcontent");
+    let result = [] ;
+    returnResultRecursively(element, result) ;
+    window.scoutingAPI.send("provide-result", result);
+}
+
+function findElemByTag(elem, tag) {
+    if (elem.xerotag === tag) {
+        return elem ;
+    }
+
+    for(let child of elem.childNodes) {
+        let answer = findElemByTag(child, tag)
+        if (answer) {
+            return answer ;
+        }
+    }
+
+    return undefined ;
+}
+
+function setXeroValue(elem, one) {
+    if (one.value) {
+        if (one.type === 'text') {
+            elem.value = one.value ;
+        }
+        else if (one.type === 'updown') {
+            elem.innerText = one.value ;
+        }
+        else if (one.type === 'boolean') {
+            elem.checked = one.value ;
+        }
+        else if (one.type === 'choice') {
+            elem.value = one.value ;
+        }
+    }
+}
+
+function sendResultValues(arg) {
+    //
+    // Initialize the form with existing form values
+    //
+    const top = document.getElementById("rightcontent");
+    for(let one of arg) {
+        let elem = findElemByTag(top, one.tag) ;
+        setXeroValue(elem, one) ;
+    }
+}
+
+window.scoutingAPI.receive("request-result", (args)=>returnResult()) ;
+window.scoutingAPI.receive("send-result-values", (args)=>sendResultValues(args[0])) ;

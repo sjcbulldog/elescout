@@ -7,7 +7,6 @@ import Papa from 'papaparse';
 import * as fs from 'fs' ;
 import { Team } from '../project/team';
 import { TCPSyncServer } from '../sync/tcpserver';
-import { USBSyncServer } from '../sync/usbserver';
 import { Packet } from '../sync/packet';
 import { SyncServer } from '../sync/syncserver';
 import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList } from '../sync/packettypes';
@@ -18,7 +17,6 @@ export class SCCentral extends SCBase {
     private baloading_ : boolean ;
     private frcevents_? : FRCEvent[] = undefined ;
     private tcpsyncserver_? : TCPSyncServer = undefined ;
-    private usbsyncserver_? : USBSyncServer = undefined ;
     private previewfile_? : string = undefined ;
 
     private static readonly openExistingEvent : string = 'open-existing' ;
@@ -1133,20 +1131,6 @@ export class SCCentral extends SCBase {
         this.tcpsyncserver_.on('packet', (p: Packet) => { 
             let reply: Packet = this.processPacket(p) ;
             this.tcpsyncserver_!.send(reply) ;
-        });
-
-        this.usbsyncserver_ = new USBSyncServer(this.logger_) ;
-        this.usbsyncserver_.init([4, 1])
-            .then(() => {
-                this.logger_.info('USBSyncServer: initialization completed sucessfully') ;
-            })
-            .catch((err) => {
-                let errobj: Error = err ;
-                dialog.showErrorBox('USB Sync', 'Cannot start USB sync - ' + err.message) ;
-            }) ;
-        this.usbsyncserver_.on('packet', (p: Packet) => { 
-            let reply: Packet = this.processPacket(p) ;
-            this.usbsyncserver_!.send(reply) ;
         });
     }
 }

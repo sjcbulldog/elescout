@@ -3,10 +3,9 @@ import { SCBase } from "../base/scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
 import { Packet } from "../sync/packet";
-import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList } from "../sync/packettypes";
+import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideResults, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList } from "../sync/packettypes";
 import * as path from 'path' ;
 import * as fs from 'fs' ;
-import { USBClient } from "../sync/usbclient";
 
 export class MatchInfo {
     public type_? : string ;
@@ -18,24 +17,30 @@ export class SCScoutInfo {
     public tablet_? : string ;
     public purpose_? : string ;
     public uuid_? : string ;
-    public teamform_? : string ;
-    public matchform_? : string ;
-    public teamlist_? : string[] ;
-    public matchlist_? : MatchInfo[] ;
+    public teamform_? : any ;
+    public matchform_? : any ;
+    public teamlist_? : any[] ;
+    public matchlist_? : any[] ;
+    public results_? : any[] ;
+
+    constructor() {
+        this.results_ = [] ;
+    }
 }
 
 export class SCScout extends SCBase {
     private static readonly last_event_file = "lastevent" ;
 
-    private static readonly viewHelp: string = "view-help" ;
-    private static readonly syncEventTCP: string = "sync-event-tcp" ;
-    private static readonly syncEventUSB: string = "sync-event-usb" ;
+    private static readonly syncEvent: string = "sync-event" ;
+    private static readonly resetTablet: string = "reset-tablet" ;
 
     private info_ : SCScoutInfo = new SCScoutInfo() ;
 
     private tcpHost_: string = "127.0.0.1" ;
     private tablets_?: any[] ;
     private conn_?: SyncClient ;
+    private current_scout_? : string ;
+    private next_scout_? : string ;
 
     public constructor(win: BrowserWindow) {
         super(win, 'scout') ;
@@ -48,21 +53,227 @@ export class SCScout extends SCBase {
     }
 
     public sendNavData() : any {
-        let treedata = [] ;
+        let treedata : any[] = [] ;
 
-        treedata.push({type: 'item', command: SCScout.viewHelp, 'title' : 'Help'}) ;
+        if (this.info_.purpose_) {
+            let navstuff ;
+            if (this.info_.purpose_ === 'team' && this.info_.teamlist_) {
+                navstuff = this.populateNavTeams() ;
+            }
+            else {
+                navstuff = this.populateNavMatches() ;
+            }
+            treedata = [...treedata, ...navstuff] ;
+        }
         this.sendToRenderer('send-nav-data', treedata);
-    }   
+    }
+
+    private populateNavTeams() : any[] {
+        let ret : any[] = [] ;
+
+        for(let t of this.info_.teamlist_!) {      
+            if (t.tablet === this.info_.tablet_) {
+                ret.push({type: 'item', command: 'st-' + t.team, title: "Team: " + t.team}) ;
+            }
+        }
+        return ret ;
+    }
+
+    private mapMatchType(mtype: string) : number {
+        let ret: number = -1 ;
+
+        if (mtype === 'f') {
+            ret = 3 ;
+        }
+        else if (mtype === 'sf') {
+            ret = 2 ;
+        }
+        else {
+            ret = 1 ;
+        }
+
+        return ret;
+    }
+
+    private sortCompFun(a: any, b: any) : number {
+        let ret: number = 0 ;
+
+        let atype = this.mapMatchType(a.type) ;
+        let btype = this.mapMatchType(b.type) ;
+
+        if (atype < btype) {
+            ret = -1 ;
+        }
+        else if (atype > btype) {
+            ret = 1 ;
+        }
+        else {
+            if (a.matchnumber < b.matchnumber) {
+                ret = -1 ;
+            }
+            else if (a.matchnumber > b.matchnumber) {
+                ret = 1 ;
+            }
+            else {
+                ret = 0 ;
+            }
+        }
+        return ret ;
+    }
+
+    private populateNavMatches() : any[] {
+        let ret : any[] = [] ;
+
+        let ofinterest: any[] = [] ;
+        for(let t of this.info_.matchlist_!) {
+            if (t.tablet === this.info_.tablet_) {
+                ofinterest.push(t) ;
+            }
+        }
+        ofinterest.sort((a, b) => { return this.sortCompFun(a, b) ;}) ;
+
+        for(let t of ofinterest) {
+            if (t.tablet === this.info_.tablet_) {
+                let numstr: string = t.teamnumber ;
+                if (numstr.startsWith('frc')) {
+                    numstr = numstr.substring(3);
+                }
+                let mtype:string = t.type ;
+                
+                let cmd: string = 'sm-' + t.type + '-' + t.set + '-' + t.matchnumber + '-' + numstr ;
+                let title: string ;
+                    if (mtype === 'sf') {
+                    title = mtype.toUpperCase() + '-' + t.matchnumber + ' - ' + t.set + '-' + numstr ;
+                } else {
+                    title = mtype.toUpperCase() + '-' + t.matchnumber + ' - ' + numstr ;
+                }
+                ret.push({type: 'item', command: cmd, title: title}) ;
+            }        
+        }
+        return ret ;
+    }
 
     public executeCommand(cmd: string) : void {   
-        if (cmd === SCScout.viewHelp) {
-        }
-        else if (cmd === SCScout.syncEventTCP) {
+        if (cmd === SCScout.syncEvent) {
             this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
         }
-        else if (cmd === SCScout.syncEventUSB) {
-            this.syncClient(new USBClient(this.logger_, [4, 3])) ;
+        else if (cmd === SCScout.resetTablet) {
+            this.info_.purpose_ = undefined ;
+            this.info_.tablet_ = undefined ;
+            this.writeEventFile() ;
         }
+        else if (cmd.startsWith('st-')) {
+            this.scoutTeam(cmd) ;
+        }
+        else if (cmd.startsWith('sm-')) {
+            this.scoutMatch(cmd) ;
+        }
+    }
+
+    private scoutTeam(team: string, force: boolean = false) {
+        if (this.current_scout_ && !force) {
+            this.next_scout_ = team ;
+            this.sendToRenderer('request-result') ;
+        }
+        else {
+            this.current_scout_ = team;
+            this.setView('team-form') ;
+        }
+    }
+
+    private scoutMatch(match: string, force: boolean = false) {
+        if (this.current_scout_ && !force) {
+            this.next_scout_ = match ;
+            this.sendToRenderer('request-result') ;
+        }
+        else {
+            this.current_scout_ = match ;
+            this.setView('match-form') ;
+        }
+    }
+
+    public provideResults(res: any) {
+        this.addResults(this.current_scout_!, res) ;
+        this.writeEventFile() ;
+        
+        if (this.next_scout_?.startsWith('st-')) {
+            this.scoutTeam(this.next_scout_!, true) ;
+        }
+        else {
+            this.scoutMatch(this.next_scout_!, true) ;
+        }
+    }
+
+    public sendTeamForm() {
+        let ret = {
+            formjson: null,
+            errormsg: "",
+        } ;
+
+        if (this.info_.teamform_) {
+            ret.formjson = this.info_.teamform_ ;
+            this.sendToRenderer('send-team-form', ret) ;
+        }
+
+        let data: any = this.getResults(this.current_scout_!) ;
+        if (data) {
+            this.sendToRenderer('send-result-values', data) ;
+        }
+    }
+
+    public sendMatchForm() {
+        let ret = {
+            formjson: null,
+            errormsg: "",
+        } ;
+
+        if (this.info_.matchform_) {
+            ret.formjson = this.info_.matchform_ ;
+            this.sendToRenderer('send-match-form', ret) ;
+        }
+
+        let data: any = this.getResults(this.current_scout_!) ;
+        if (data) {
+            this.sendToRenderer('send-result-values', data) ;
+        }
+    }
+
+    private getIndex(scout: string) : number {
+        let ret: number = -1 ;
+
+        if (this.info_.results_) {
+            for(let i = 0 ; i < this.info_.results_.length ; i += 2) {
+                let str: string = this.info_.results_[i] ;
+                if (str === scout) {
+                    ret = i + 1 ;
+                    break ;
+                }
+            }
+        }  
+
+        return ret ;
+    }
+
+    private getResults(scout: string) : any {
+        let ret = undefined ;
+        let index = this.getIndex(scout) ;
+
+        if (index != -1) {
+            ret = this.info_.results_![index] ;
+        }
+
+        return ret ;
+    }
+    
+    private addResults(scout: string, result: any) {
+        let index = this.getIndex(scout) ;
+        if (index === -1) {
+            this.info_.results_?.push(scout) ;
+            this.info_.results_?.push(result) ;
+        }   
+        else {
+            this.info_.results_![index] = result ;
+        }     
     }
 
     private syncClient(conn: SyncClient) {
@@ -170,16 +381,14 @@ export class SCScout extends SCBase {
             this.sendToRenderer('set-status-text', p.payloadAsString()) ;
             this.sendToRenderer('set-status-close-button-visible', true) ;
         }
-
-        if (!ret) {
-            this.sendScoutingData() ;
-        }
     }
 
     private sendScoutingData() {
+        let jsonstr = JSON.stringify(this.info_.results_)
+        this.conn_?.send(new Packet(PacketTypeProvideResults, Buffer.from(jsonstr))) ;
     }
 
-    private getMissingData() : boolean {
+    private getMissingData() {
         let ret: boolean = false ;
 
         if (!this.info_.teamform_) {
@@ -198,6 +407,12 @@ export class SCScout extends SCBase {
             this.conn_?.send(new Packet(PacketTypeRequestTeamList)) ;
             ret = true ;
         }
+        
+        if (!ret) {
+            this.sendNavData() ;
+            this.setView('empty') ;
+            // this.sendScoutingData() ;
+        }
 
         return ret ;
     }
@@ -214,19 +429,18 @@ export class SCScout extends SCBase {
         let synctcpitem: MenuItem = new MenuItem( {
             type: 'normal',
             label: 'Sync Event (TCP)',
-            id: 'sync-event',
-            click: () => { this.executeCommand(SCScout.syncEventTCP)}
+            click: () => { this.executeCommand(SCScout.syncEvent)}
         }) ;
         filemenu.submenu?.insert(0, synctcpitem) ;
 
-        let syncusbitem: MenuItem = new MenuItem( {
+        filemenu.submenu?.insert(1, new MenuItem({type: 'separator'}));
+
+        let resetitem: MenuItem = new MenuItem( {
             type: 'normal',
-            label: 'Sync Event (USB)',
-            id: 'sync-event',
-            click: () => { this.executeCommand(SCScout.syncEventUSB)}
+            label: 'Reset Tablet',
+            click: () => { this.executeCommand(SCScout.resetTablet)}
         }) ;
-        filemenu.submenu?.insert(1, syncusbitem) ;
-        filemenu.submenu?.insert(2, new MenuItem({type: 'separator'}));
+        filemenu.submenu?.insert(2, resetitem) ;
 
         ret.append(filemenu) ;
         
@@ -249,8 +463,6 @@ export class SCScout extends SCBase {
         this.tablets_ = undefined ;
         this.info_.tablet_ = name ;
         this.info_.purpose_ = purpose ;
-
-        let p: Packet ;
 
         this.writeEventFile() ;
         this.getMissingData() ;
