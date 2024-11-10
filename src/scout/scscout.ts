@@ -3,7 +3,10 @@ import { SCBase } from "../base/scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
 import { Packet } from "../sync/packet";
-import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideResults, PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList } from "../sync/packettypes";
+import { PacketTypeError, PacketTypeHello, PacketTypeProvideMatchForm, PacketTypeProvideMatchList, PacketTypeProvideResults, 
+         PacketTypeProvideTablets, PacketTypeProvideTeamForm, PacketTypeProvideTeamList, PacketTypeRequestMatchForm, 
+         PacketTypeRequestMatchList, PacketTypeRequestTablets, PacketTypeRequestTeamForm, PacketTypeRequestTeamList 
+       } from "../sync/packettypes";
 import * as path from 'path' ;
 import * as fs from 'fs' ;
 
@@ -225,7 +228,7 @@ export class SCScout extends SCBase {
         this.addResults(this.current_scout_!, res) ;
         this.writeEventFile() ;
 
-        this.logger_.silly('provideResults', res) ;
+        this.logger_.silly('provideResults:' + this.current_scout_, res) ;
         
         if (this.next_scout_?.startsWith('st-')) {
             this.scoutTeam(this.next_scout_!, true) ;
@@ -247,7 +250,7 @@ export class SCScout extends SCBase {
         }
 
         let data: any = this.getResults(this.current_scout_!) ;
-        this.logger_.silly('sendTeamForm/send-result-values', data) ;
+        this.logger_.silly('sendTeamForm/send-result-values: ' + this.current_scout_, data) ;
         if (data) {
             this.sendToRenderer('send-result-values', data) ;
         }
@@ -265,7 +268,7 @@ export class SCScout extends SCBase {
         }
 
         let data: any = this.getResults(this.current_scout_!) ;
-        this.logger_.silly('sendTeamForm/send-result-values', data) ;
+        this.logger_.silly('sendTeamForm/send-result-values: ' + this.current_scout_, data) ;
         if (data) {
             this.sendToRenderer('send-result-values', data) ;
         }

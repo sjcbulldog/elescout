@@ -286,6 +286,7 @@ function findElemByTag(elem, tag) {
 
 function setXeroValue(elem, one) {
     if (one.value) {
+        elem.xerovalue = one.value ;
         if (one.type === 'text') {
             elem.value = one.value ;
         }
