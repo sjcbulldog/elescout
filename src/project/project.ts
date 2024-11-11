@@ -16,6 +16,9 @@ import { TeamTablet } from './teamtablet';
 import { MatchTablet } from './matchtablet';
 import * as sqlite3 from 'sqlite3' ;
 import * as uuid from 'uuid' ;
+import { SCCentral } from '../central/sccentral';
+import { TeamDataModel } from '../model/teammodel';
+import { MatchDataModel } from '../model/matchmodel';
 
 export class ProjectInfo {
     public frcev_? : FRCEvent ;
@@ -63,13 +66,50 @@ export class Project {
 
     private location_ : string ;
     private info_ : ProjectInfo ;
+    private teamdb_ : TeamDataModel ;
+    private matchdb_ : MatchDataModel ;
 
     constructor(dir: string) {
         this.location_ = dir ;
         this.info_ = new ProjectInfo() ;
+        let filename: string ;
+        let infoname: string ;
 
-        let teamdbfile = path.join(this.location_, Project.team_db_file_name) ;
-        let matchdbfile = path.join(this.location) ;
+        filename = path.join(dir, 'team.db') ;
+        infoname = path.join(dir, 'team.info') ;
+        this.teamdb_ = new TeamDataModel(filename, infoname) ;
+
+        filename = path.join(dir, 'match.db') ;
+        infoname = path.join(dir, 'match.info') ;
+        this.matchdb_ = new MatchDataModel(filename, infoname) ;
+    }
+
+    public init() : Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
+            this.teamdb_.init()
+                .then(() => {
+                    this.matchdb_.init()
+                        .then(()=> {
+                            resolve() ;
+                        })
+                        .catch((err) => {
+                            reject(err) ;
+                        })
+                })
+                .catch((err) => {
+                    reject(err) ;
+                }) ;
+        }) ;
+
+        return ret;
+    }
+
+    public get teamDB() : TeamDataModel {
+        return this.teamdb_ ;
+    }
+
+    public get matchDB() : MatchDataModel {
+        return this.matchdb_ ;
     }
 
     public get hasTeamData() : boolean {
@@ -141,7 +181,13 @@ export class Project {
                 reject(err) ;
             }
 
-            resolve(proj) ;
+            proj.init()
+                .then(() => {
+                    resolve(proj) ;
+                })
+                .catch((err) => {
+                    reject(err) ;
+                }) ;
         }) ;
 
         return ret ;
@@ -163,32 +209,31 @@ export class Project {
             if (err) {
                 reject(err) ;
             }
-
-            resolve(proj) ;
+            proj.init()
+                .then(() => {
+                    resolve(proj) ;
+                })
+                .catch((err) => {
+                    reject(err) ;
+                }) ;
         }) ;
 
         return ret ;
     }
 
-    private xferTeamDataToDB() {
-        if (this.info_.teams_) {
-            for(let team of this.info_.teams_!) {
-                let sql = 'create table teams (' ;
-            }
-        }
-    }
-
-    private xferMatchResultsToDB() {
-
-    }
-
-    public loadMatchData(base: SCBase, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
-        let ret: Promise<void> = new Promise<void>((resolve, reject) => {
+    public loadMatchData(base: SCBase, ba: BlueAlliance, frcev: FRCEvent) : Promise<number> {
+        let ret: Promise<number> = new Promise<number>((resolve, reject) => {
             ba.getMatches(frcev.evkey)
             .then((matches) => {
                 if (matches.length > 0) {
                     this.info_.matches_ = matches ;
-                    resolve() ;
+                    this.matchdb_.processBAData(matches)
+                        .then(() => {
+                            resolve(matches.length) ;
+                        })
+                        .catch((err) => {
+                            reject(err) ;
+                        })
                 }
             })
             .catch((err) => {
@@ -260,21 +305,19 @@ export class Project {
         this.writeEventFile() ;
     }
 
-    public loadBAEvent(base: SCBase, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
+    public loadBAEvent(base: SCCentral, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
         let ret: Promise<void> = new Promise<void>((resolve, reject) => {
             this.info_.frcev_ = frcev ;
             base.sendToRenderer('set-status-text', 'Loading teams from the event') ;
             ba.getTeams(frcev.evkey)
                 .then((teams) => {
                     if (teams.length > 0) {
-                        this.xferTeamDataToDB() ;
                         this.info_.teams_ = teams ;
                         let msg: string = teams.length + " teams loaded\n" ;
                         msg += "Loading matches from the event" ;
                         base.sendToRenderer('set-status-text', msg) ;
                         this.loadMatchData(base, ba, frcev)
                             .then(() => {
-                                this.xferMatchResultsToDB() ;
                                 let msg: string = teams.length + " teams loaded\n" ;
                                 msg += this.info.matches_!.length + " matches loaded\n" ;
                                 let err = this.writeEventFile() ;

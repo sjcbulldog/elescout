@@ -72,6 +72,15 @@ export class SCScout extends SCBase {
     public windowCreated() {
         this.win_.on('ready-to-show', () => {
             this.setViewString() ;
+
+            if (this.info_.uuid_) {
+                let msg = "Event Loaded: " ;
+                msg += this.info_!.teamlist_!.length + " teams" ;
+                this.setStatusMessage(msg) ;
+            }
+            else {
+                this.setStatusMessage('No Event Loaded') ;
+            }
         }) ;
     }
 

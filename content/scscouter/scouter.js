@@ -110,7 +110,7 @@ function updateView(args) {
 }
 
 function updateStatusBar(args) {
-  console.log('update-status-bar', args);
-  $("#statusbar").innerText = "XYZZY";
+  let elem = document.getElementById('statusbar') ;
+  elem.innerText = args[0];
 }
 

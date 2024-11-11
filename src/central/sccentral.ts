@@ -9,8 +9,6 @@ import { Team } from '../project/team';
 import { TCPSyncServer } from '../sync/tcpserver';
 import { Packet } from '../sync/packet';
 import { PacketType } from '../sync/packettypes';
-import { TeamDataModel } from '../model/teammodel';
-import { MatchDataModel } from '../model/matchmodel';
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
@@ -21,8 +19,6 @@ export class SCCentral extends SCBase {
     private previewfile_? : string = undefined ;
     private syncingTablet_? : string = undefined ;
     private syncingPurpose_? : string = undefined;
-    private team_model_ : TeamDataModel ;
-    private match_model_ : MatchDataModel ;
 
     private static readonly openExistingEvent : string = 'open-existing' ;
     private static readonly createNewEvent: string = 'create-new' ;
@@ -48,9 +44,6 @@ export class SCCentral extends SCBase {
     constructor(win: BrowserWindow) {
         super(win, 'server') ;
     
-        this.team_model_ = new TeamDataModel() ;
-        this.match_model_ = new MatchDataModel() ;
-
         this.baloading_ = true ;
         this.ba_ = new BlueAlliance() ;
         this.ba_.init()
@@ -444,7 +437,8 @@ export class SCCentral extends SCBase {
             this.sendToRenderer('set-status-title', 'Loading match data for event \'' + fev.desc + '\'') ;
             this.sendToRenderer('set-status-html',  'Loading data ...') ;
             this.project_!.loadMatchData(this, this.ba_!, fev)
-                .then(() => {
+                .then((count) => {
+                    this.sendToRenderer('set-status-html',  'Loading data ... done, ' + count + ' match records processed') ;
                     this.sendToRenderer('set-status-close-button-visible', true) ;                    
                 }) ;
         }
@@ -510,9 +504,12 @@ export class SCCentral extends SCBase {
         else if (cmd === SCCentral.createNewEvent) {
             this.createEvent() ;
             this.sendNavData() ;
+            this.updateStatusBar() ;
         }
         else if (cmd === SCCentral.openExistingEvent) {
             this.openEvent() ;
+            this.sendNavData() ;
+            this.updateStatusBar() ;
         }
         else if (cmd === SCCentral.selectMatchForm) {
             this.selectMatchForm() ;
@@ -587,6 +584,18 @@ export class SCCentral extends SCBase {
                 }
             }
         }) ;
+    }
+
+    private updateStatusBar() {
+        let msg: string = '';
+
+        if (this.project_) {
+            msg = 'Event ' + this.project_.info.getName() ;
+        }
+        else {
+            msg = 'No Event Loaded' ;
+        }
+        this.setStatusMessage(msg) ;
     }
 
     private importTeams() {
@@ -1085,6 +1094,7 @@ export class SCCentral extends SCBase {
             else {
                 evname = this.project_?.info.name_ ;
             }
+
             let evid = {
                 uuid: this.project_!.info.uuid_,
                 name: evname,
@@ -1207,10 +1217,10 @@ export class SCCentral extends SCBase {
         this.logger_.silly('received results from tablet ' + this.syncingTablet_, obj) ;
         if (obj.purpose) {
             if (obj.purpose === 'match') {
-                this.match_model_.processResults(obj.results) ;
+                this.project_!.matchDB.processResults(obj.results) ;
             }
             else {
-                this.team_model_.processResults(obj.results) ;
+                this.project_!.teamDB.processResults(obj.results) ;
             }
         }
     }
