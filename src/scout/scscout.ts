@@ -22,7 +22,7 @@ export class SCScoutInfo {
     public matchform_? : any ;
     public teamlist_? : any[] ;
     public matchlist_? : any[] ;
-    public results_? : any[] ;
+    public results_ : any[] ;
 
     constructor() {
         this.results_ = [] ;
@@ -42,6 +42,7 @@ export class SCScout extends SCBase {
     private conn_?: SyncClient ;
     private current_scout_? : string ;
     private next_scout_? : string ;
+    private want_sync_ : boolean = false ;
 
     public constructor(win: BrowserWindow) {
         super(win, 'scout') ;
@@ -72,15 +73,6 @@ export class SCScout extends SCBase {
     public windowCreated() {
         this.win_.on('ready-to-show', () => {
             this.setViewString() ;
-
-            if (this.info_.uuid_) {
-                let msg = "Event Loaded: " ;
-                msg += this.info_!.teamlist_!.length + " teams" ;
-                this.setStatusMessage(msg) ;
-            }
-            else {
-                this.setStatusMessage('No Event Loaded') ;
-            }
         }) ;
     }
 
@@ -171,12 +163,18 @@ export class SCScout extends SCBase {
 
     public executeCommand(cmd: string) : void {   
         if (cmd === SCScout.syncEvent) {
-            this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
+            if (this.current_scout_) {
+                this.want_sync_ = true ;
+                this.sendToRenderer('request-result') ;
+            }
+            else {
+                this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
+            }
         }
         else if (cmd === SCScout.resetTablet) {
             this.info_.purpose_ = undefined ;
             this.info_.tablet_ = undefined ;
-            this.info_.results_ = undefined ;
+            this.info_.results_ = [];
             this.info_.uuid_ = undefined ;
             this.info_.evname_ = undefined ;
             this.sendNavData() ;
@@ -244,14 +242,19 @@ export class SCScout extends SCBase {
     public provideResults(res: any) {
         this.addResults(this.current_scout_!, res) ;
         this.writeEventFile() ;
-
         this.logger_.silly('provideResults:' + this.current_scout_, res) ;
-        
-        if (this.next_scout_?.startsWith('st-')) {
-            this.scoutTeam(this.next_scout_!, true) ;
+
+        if (this.want_sync_) {
+            this.want_sync_ = false ;
+            this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
         }
-        else {
-            this.scoutMatch(this.next_scout_!, true) ;
+        else {        
+            if (this.next_scout_?.startsWith('st-')) {
+                this.scoutTeam(this.next_scout_!, true) ;
+            }
+            else {
+                this.scoutMatch(this.next_scout_!, true) ;
+            }
         }
     }
 

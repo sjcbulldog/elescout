@@ -1,10 +1,7 @@
 
-window.scoutingAPI.receive("update-main-window-view", (args) => updateView(args));
-window.scoutingAPI.receive("set-status-bar-message", (args) => updateStatusBar(args));
-window.scoutingAPI.receive("event-name", (args) => updateEventName(args));
 
 async function updateEventName(args) {
-  let str = "Event: " + args[0] + "<br>UUID: " + args[1] ;
+  let str = args[0] + "<br>" + args[1] ;
   emptyView(str) ;
 }
 
@@ -109,8 +106,5 @@ function updateView(args) {
   }
 }
 
-function updateStatusBar(args) {
-  let elem = document.getElementById('statusbar') ;
-  elem.innerText = args[0];
-}
-
+window.scoutingAPI.receive("update-main-window-view", (args) => updateView(args));
+window.scoutingAPI.receive("event-name", (args) => updateEventName(args));

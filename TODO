@@ -1,13 +1,11 @@
 Base
 ----
-    Status bar at bottom
 
 Central
 -------
     Edit Teams - Remove a Teams
     Edit Matches - Remove a match
-    Team Data Model
-    Match Data Model
+    Compute team data from match data
 
 Scout
 -------
@@ -15,3 +13,4 @@ Scout
 
 Coach
 -----
+    Think about what this should do ...

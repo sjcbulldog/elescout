@@ -1,6 +1,6 @@
 import * as sqlite3 from 'sqlite3' ;
 
-type ValueType = string | number | boolean | null ;
+export type ValueType = string | number | boolean | null ;
 
 export class DataRecord {
     private data_ : Map<string, ValueType> ;
@@ -76,13 +76,17 @@ export class DataModel {
         return ret ;
     }
 
-    public getColumnNames(table: string) : Promise<string[]> {
+    public getColumnNames(table: string, comparefn? : ((a: string, b: string) => number)) : Promise<string[]> {
         let ret = new Promise<string[]>((resolve, reject) => {
             let query = 'SELECT * FROM sqlite_schema where name=\'' + table + '\';' ;
             this.all(query)
                 .then((rows) => {
                     let one = rows[0] as any ;
-                    resolve(this.parseSql(one.sql)) ;
+                    let cols = this.parseSql(one.sql) ;
+                    if (comparefn) {
+                        cols.sort(comparefn) ;
+                    }
+                    resolve(cols) ;
                 })
                 .catch((err) => {
                     reject(err) ;
@@ -126,7 +130,11 @@ export class DataModel {
         for(let record of records) {
             if (record.has(key)) {
                 let v = record.value(key) ;
-                if (typeof v === 'string') {
+
+                if (v === null) {
+                    type = 'TEXT' ;
+                }
+                else if (typeof v === 'string') {
                     type = 'TEXT' ;
                 }
                 else if (typeof v === 'number') {
@@ -197,7 +205,25 @@ export class DataModel {
         return ret ;
     }
 
-    public updateRecord(table: string, key: string, dr: DataRecord) : Promise<void> {
+    private generateWhereClause(keys: string[], dr: DataRecord) : string {
+        let query = ' WHERE ' ;
+        let first = true ;
+
+        for(let i = 0 ; i < keys.length ; i++) {
+            if (!first) {
+                query += ' AND ' ;
+            }
+            query += keys[i] ;
+            query += ' = ' ;
+            query += this.valueToString(dr.value(keys[i])!) ;
+
+            first = false ;
+        }
+
+        return query ;
+    }
+
+    public updateRecord(table: string, keys: string[], dr: DataRecord) : Promise<void> {
         let ret = new Promise<void>((resolve,reject) => {
             let query = 'update ' + table + ' SET ' ;
             let first = true ;
@@ -212,8 +238,7 @@ export class DataModel {
                 first = false ;
             }
 
-            query += ') WHERE ' + key + '=' + this.valueToString(dr.value(key)!) ;
-
+            query += ') ' + this.generateWhereClause(keys, dr) ;
             this.runQuery(query).then(()=> resolve()).catch((err) =>reject(err)) ;
 
         }) ;
@@ -241,26 +266,27 @@ export class DataModel {
 
             query += ') ' + valstr + ');' ;
             this.runQuery(query).then(()=> resolve()).catch((err) =>reject(err)) ;
-
         }) ;
         
         return ret;
     }
 
-    public insertOrUpdate(table: string, key: string, dr: DataRecord) : Promise<void> {
+    public insertOrUpdate(table: string, keys: string[], dr: DataRecord) : Promise<void> {
         let ret = new Promise<void>((resolve,reject) => {
-            if (!dr.has(key)) {
-                let err = new Error('The data record is missing a value for the key \'' + key + '\'') ;
-                reject(err) ; 
+            for(let key of keys) {
+                if (!dr.has(key)) {
+                    let err = new Error('The data record is missing a value for the key \'' + key + '\'') ;
+                    reject(err) ; 
+                }
             }
 
-            let value: ValueType | undefined = dr.value(key) ;
-            let query: string = 'select * from ' + table + ' where ' + key + '= \'' + value + '\' ;' ;
+            let query: string = 'select * from ' + table + this.generateWhereClause(keys, dr) ;
+
             this.all(query)
                 .then((rows: unknown[])=> {
                     if (rows.length) {
                         // Update the record in the database
-                        this.updateRecord(table, key, dr)
+                        this.updateRecord(table, keys, dr)
                             .then(() => {
                                 resolve() ;
                             })

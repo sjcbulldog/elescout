@@ -8,7 +8,9 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm, 
          getTeamStatus, getMatchStatus, setTabletNamePurpose, getPreviewForm, 
          provideResult,
-         setEventName} from "./ipchandlers" ;
+         setEventName,
+         getMatchDB,
+         getTeamDB} from "./ipchandlers" ;
 import { SCCoach } from "./coach/sccoach";
 
 let cmgr: ContentManager = new ContentManager() ;
@@ -67,9 +69,11 @@ app.on("ready", () => {
     ipcMain.on('get-tablet-data', getTabletData) ;
     ipcMain.on('set-tablet-data', (event, ...args) => { setTabletData(...args)}) ;
     ipcMain.on('get-team-data', getTeamData) ;
-    ipcMain.on('get-match-data', getMatchData);
+    ipcMain.on('get-match-db', getMatchDB);
+    ipcMain.on('get-team-db', getTeamDB) ;
     ipcMain.on('get-team-form', getTeamForm);
     ipcMain.on('get-match-form', getMatchForm);
+    ipcMain.on('get-match-data', getMatchData);
     ipcMain.on('get-preview-form', getPreviewForm);
     ipcMain.on('get-team-status', getTeamStatus) ;
     ipcMain.on('get-match-status', getMatchStatus) ;
@@ -87,4 +91,3 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 });
-

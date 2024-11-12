@@ -30,6 +30,8 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'execute-command',
         'get-team-form',
         'get-match-form',
+        'get-match-db',
+        'get-team-db',
         'get-preview-form',
         'get-team-status',
         'get-match-status',
@@ -56,6 +58,8 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-preview-form',
         'send-team-status',
         'send-match-status',
+        'send-match-db',
+        'send-team-db',
         'set-status-text',
         'set-status-html',
         'set-status-title',
@@ -66,7 +70,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'request-result',
       ];
       if (validChannels.includes(channel)) {
-          ipcRenderer.on(channel, (event, ...args) => { console.log("XYZZY:" + channel, event, args) ; func(...args)});
+          ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
   }
 }) ;

@@ -9,6 +9,7 @@ import { Team } from '../project/team';
 import { TCPSyncServer } from '../sync/tcpserver';
 import { Packet } from '../sync/packet';
 import { PacketType } from '../sync/packettypes';
+import { ValueType } from '../model/datamodel';
 
 export class SCCentral extends SCBase {
     private project_? : Project = undefined ;
@@ -34,10 +35,10 @@ export class SCCentral extends SCBase {
     private static readonly importMatches: string = 'import-matches' ;
     private static readonly viewTeamForm: string = 'view-team-form' ;
     private static readonly viewTeamStatus: string = 'view-team-status' ;
-    private static readonly viewTeamData: string = "view-team-data" ;
+    private static readonly viewTeamDB: string = "view-team-db" ;
     private static readonly viewMatchForm: string = 'view-match-form' ;
     private static readonly viewMatchStatus: string = 'view-match-status' ;
-    private static readonly viewMatchData: string = "view-match-data" ;
+    private static readonly viewMatchDB: string = "view-match-db" ;
     private static readonly viewPreviewForm: string = "view-preview-form" ;
     private static readonly viewHelp: string = "view-help" ;
 
@@ -95,16 +96,33 @@ export class SCCentral extends SCBase {
 
         let loadmenu: MenuItem = new MenuItem( {
             type: 'submenu',
-            label: 'Import',
+            label: 'Data',
             submenu: new Menu()            
         }) ;
 
         let downloadMatchData: MenuItem = new MenuItem( {
             type: 'normal',
-            label: 'Match Data',
+            label: 'Import Match Data',
             click: () => { this.downloadMatchData();}
         }) ;
-        loadmenu.submenu?.insert(0, downloadMatchData) ;
+        loadmenu.submenu?.append(downloadMatchData) ;
+
+        loadmenu.submenu?.append(new MenuItem({type: 'separator'}));
+
+        let exportTeamData: MenuItem = new MenuItem( {
+            type: 'normal',
+            label: 'Export Team Data',
+            click: () => { this.doExportTeamData();}
+        }) ;
+        loadmenu.submenu?.append(exportTeamData) ;
+
+        let exportMatchData: MenuItem = new MenuItem( {
+            type: 'normal',
+            label: 'Export Match Data',
+            click: () => { this.doExportMatchData();}
+        }) ;
+        loadmenu.submenu?.append(exportMatchData) ;
+
         ret.append(loadmenu) ;
 
         let viewmenu: MenuItem = new MenuItem( {
@@ -117,6 +135,12 @@ export class SCCentral extends SCBase {
     }
 
     public windowCreated(): void {
+    }
+
+    private doExportTeamData() {
+    }
+
+    private doExportMatchData() {
     }
 
     public sendTeamForm() {
@@ -191,8 +215,6 @@ export class SCCentral extends SCBase {
             btablet3: string,
             bstatus3: string,            
         }
-
-        
         let ret : data[] = [] ;
 
         if (this.project_ && this.project_.info && this.project_.info.matches_ && this.project_.info.matchassignements_) {
@@ -344,6 +366,50 @@ export class SCCentral extends SCBase {
         }
     }
 
+    public sendMatchDB() : void {
+        if (this.project_) {
+            this.project_.matchDB.getColumns()
+                .then((cols) => {
+                    this.project_?.matchDB.getAllData()
+                        .then((data) => {
+                            let dataobj = {
+                                cols: cols,
+                                data: data
+                            } ;
+                            this.sendToRenderer('send-match-db', dataobj) ;
+                        })
+                        .catch((err) => {
+
+                        }) ;
+                })
+                .catch((err) => {
+
+                })
+        }
+    }
+
+    public sendTeamDB() : void {
+        if (this.project_) {
+            this.project_.teamDB.getColumns()
+                .then((cols) => {
+                    this.project_?.teamDB.getAllData()
+                        .then((data) => {
+                            let dataobj = {
+                                cols: cols,
+                                data: data
+                            } ;
+                            this.sendToRenderer('send-team-db', dataobj) ;
+                        })
+                        .catch((err) => {
+                            this.logger_.error('error getting data from database for send-team-db', err) ;
+                        }) ;
+                })
+                .catch((err) => {
+                    this.logger_.error('error getting columns from database for send-team-db', err) ;
+                })
+        }
+    }
+
     public sendMatchData() : void {
         if (this.project_) {
             let data = [] ;
@@ -473,23 +539,19 @@ export class SCCentral extends SCBase {
         let treedata = [] ;
 
         treedata.push({type: 'item', command: SCCentral.viewHelp, 'title' : 'Help'}) ;
-        treedata.push({type: 'item', command: SCCentral.viewPreviewForm, 'title' : 'Preview Form File'}) ;
+        treedata.push({type: 'item', command: SCCentral.viewPreviewForm, 'title' : 'Preview Form'}) ;
 
         if (this.project_) {
             treedata.push({type: 'item', command: SCCentral.viewInit, 'title' : 'Event Overview'}) ;
-            treedata.push( { type: 'separator', title: 'Teams'}) ;
+            treedata.push({ type: 'separator', title: 'Teams'}) ;
             treedata.push({ type: 'item', command: SCCentral.viewTeamForm, 'title' : 'Form'}) ;
             treedata.push({ type: 'item', command: SCCentral.viewTeamStatus, 'title' : 'Status'}) ;
-            if (this.project_.hasTeamData) {
-                treedata.push({ type: 'item', command: SCCentral.viewTeamData, 'title' : 'Data'}) ;
-            }
+            treedata.push({ type: 'item', command: SCCentral.viewTeamDB, 'title' : 'Data'}) ;
 
-            treedata.push( { type: 'separator', title: 'Match'}) ;
+            treedata.push({ type: 'separator', title: 'Match'}) ;
             treedata.push({ type: 'item', command: SCCentral.viewMatchForm, 'title' : 'Form'}) ;
             treedata.push({ type: 'item', command: SCCentral.viewMatchStatus, 'title' : 'Status'}) ;
-            if (this.project_.hasMatchData) {
-                treedata.push({ type: 'item', command: SCCentral.viewMatchData, 'title' : 'Data'}) ;
-            }
+            treedata.push({ type: 'item', command: SCCentral.viewMatchDB, 'title' : 'Data'}) ;
         }
 
         this.sendToRenderer('send-nav-data', treedata);
@@ -504,12 +566,10 @@ export class SCCentral extends SCBase {
         else if (cmd === SCCentral.createNewEvent) {
             this.createEvent() ;
             this.sendNavData() ;
-            this.updateStatusBar() ;
         }
         else if (cmd === SCCentral.openExistingEvent) {
             this.openEvent() ;
             this.sendNavData() ;
-            this.updateStatusBar() ;
         }
         else if (cmd === SCCentral.selectMatchForm) {
             this.selectMatchForm() ;
@@ -555,6 +615,12 @@ export class SCCentral extends SCBase {
         else if (cmd === SCCentral.viewMatchStatus) {
             this.setView('matchstatus') ;
         }
+        else if (cmd === SCCentral.viewMatchDB) {
+            this.setView('matchdb') ;
+        }
+        else if (cmd === SCCentral.viewTeamDB) {
+            this.setView('teamdb') ;
+        }
     }
 
     private previewForm() {
@@ -584,18 +650,6 @@ export class SCCentral extends SCBase {
                 }
             }
         }) ;
-    }
-
-    private updateStatusBar() {
-        let msg: string = '';
-
-        if (this.project_) {
-            msg = 'Event ' + this.project_.info.getName() ;
-        }
-        else {
-            msg = 'No Event Loaded' ;
-        }
-        this.setStatusMessage(msg) ;
     }
 
     private importTeams() {
@@ -1059,7 +1113,6 @@ export class SCCentral extends SCBase {
                         }
                         this.setView('info') ;
                         this.sendNavData() ;
-                        this.setStatusMessage('Event Loaded - Blue Alliance Available') ;
                     })
                     .catch((err) => {
                         let errobj : Error = err as Error ;
@@ -1217,10 +1270,10 @@ export class SCCentral extends SCBase {
         this.logger_.silly('received results from tablet ' + this.syncingTablet_, obj) ;
         if (obj.purpose) {
             if (obj.purpose === 'match') {
-                this.project_!.matchDB.processResults(obj.results) ;
+                this.project_!.matchDB.processScoutingResults(obj.results) ;
             }
             else {
-                this.project_!.teamDB.processResults(obj.results) ;
+                this.project_!.teamDB.processScoutingResults(obj.results) ;
             }
         }
     }

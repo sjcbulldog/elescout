@@ -90,6 +90,20 @@ export async function provideResult(...args: any[]) {
     } 
 }
 
+export async function getMatchDB() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendMatchDB() ;
+    } 
+}
+
+export async function getTeamDB() {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendTeamDB() ;
+    } 
+}
+
 export async function getMatchData() {
     if (scappbase && !scappbase.isScoutingTablet()) {
         let central : SCCentral = scappbase as SCCentral ;

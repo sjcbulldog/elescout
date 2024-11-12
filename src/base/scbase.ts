@@ -72,10 +72,6 @@ export abstract class SCBase {
         this.sendToRenderer('update-main-window-view', view) ;
     }
     
-    protected setStatusMessage(msg: string) {
-        this.sendToRenderer('set-status-bar-message', msg) ;
-    }
-
     private createUniqueFilename(directory: string, prefix: string = 'file') : string{
         const timestamp = Date.now();
         const randomString = crypto.randomBytes(8).toString('hex');

@@ -1,16 +1,68 @@
 import * as sqlite3 from 'sqlite3' ;
-import { DataModel, DataRecord } from "./datamodel";
+import { DataModel, DataRecord, ValueType } from "./datamodel";
 import { Match } from '../project/match';
 import { MatchData } from '../project/matchdata';
 
 export class MatchDataModel extends DataModel {
     static readonly MatchTableName: string = 'matches' ;
-
-    private colnames_ : string[] ;
+    static readonly BlueAlliancePrefix: string = 'ba_' ;
 
     public constructor(dbname: string, infoname: string) {
         super(dbname, infoname) ;
-        this.colnames_ = [] ;
+    }
+
+    public getColumns() : Promise<string[]> {
+        return this.getColumnNames(MatchDataModel.MatchTableName, (a, b) => { return this.compareCols(a, b) ;}) ;
+    }
+
+    private static fixedcols = ['KEY', 'TYPE', 'MATCHNO', 'SETNO', 'RED1', 'RED2', 'RED3', 'BLUE1', 'BLUE2', 'BLUE3'] ;
+
+    private compareCols(a: string, b: string) : number {
+        let ra = MatchDataModel.fixedcols.indexOf(a) ;
+        let rb = MatchDataModel.fixedcols.indexOf(b) ;
+
+        if (ra !== -1 && rb !== -1) {
+            if (ra < rb) {
+                return -1 ;
+            }
+            else if (ra > rb) {
+                return 1;
+            }
+            return 0 ;
+        }
+
+        if (ra !== -1 && rb === -1) {
+            return -1 ;
+        }
+
+        if (rb !== -1 && ra === -1) {
+            return 1 ;
+        }
+
+        if (!a.startsWith(MatchDataModel.BlueAlliancePrefix) && b.startsWith(MatchDataModel.BlueAlliancePrefix)) {
+            return -1 ;
+        }
+
+        if (a.startsWith(MatchDataModel.BlueAlliancePrefix) && !b.startsWith('_ba')) {
+            return 1 ;
+        }
+
+        return a.localeCompare(b) ;
+    }
+
+    public getAllData() : Promise<any> {
+        let ret = new Promise<any>((resolve, reject) => {
+            let query = 'select * from ' + MatchDataModel.MatchTableName + ';' ;
+            this.all(query)
+                .then((rows) => {
+                    resolve(rows as any) ;
+                })
+                .catch((err) => {
+                    reject(err) ;
+                }) ;
+        }) ;
+
+        return ret ;
     }
 
     public init() : Promise<void> {
@@ -19,14 +71,7 @@ export class MatchDataModel extends DataModel {
             .then(() => {
                 this.createMatchTableIfNecessary()
                     .then(()=> {
-                        this.getColumnNames(MatchDataModel.MatchTableName)
-                            .then((cols: string[]) => {
-                                this.colnames_ = cols ;
-                                resolve() ;
-                            })
-                            .catch((err) => {
-                                reject(err) ;
-                            });
+                        resolve() ;
                     })
                     .catch((err) => {
                         reject(err) ;
@@ -72,6 +117,47 @@ export class MatchDataModel extends DataModel {
         return ret ;
     }
 
+    private extractBAMatchResult(prefix: string, result: any, dr: DataRecord) {
+        if (result instanceof Map) {
+            for(let key of result.keys()) {
+                let value = result.get(key) ;
+                let type = typeof value ;
+
+                if (type === 'string') {
+                    dr.addfield(prefix + key, value) ;
+                }
+                else if (type === 'number') {
+                    dr.addfield(prefix + key, value) ;
+                }
+                else if (type === 'boolean') {
+                    dr.addfield(prefix + key, value) ;
+                }
+                else if (type === 'object') {
+                    this.extractBAMatchResult(prefix, value, dr) ;
+                }
+            }
+        }
+        else {
+            for(let key of Object.keys(result)) {
+                let value = result[key] ;
+                let type = typeof value ;
+
+                if (type === 'string') {
+                    dr.addfield(prefix + key, value) ;
+                }
+                else if (type === 'number') {
+                    dr.addfield(prefix + key, value) ;
+                }
+                else if (type === 'boolean') {
+                    dr.addfield(prefix + key, value) ;
+                }
+                else if (type === 'object') {
+                    this.extractBAMatchResult(prefix, value, dr) ;
+                }
+            }
+        }
+    }
+
     // array
     // key_                         -> KEY
     // comp_level_                  -> TYPE
@@ -101,12 +187,12 @@ export class MatchDataModel extends DataModel {
                     dr.addfield('TYPE', one.comp_level_) ;
                 }
 
-                if (one.match_number !== undefined) {
-                    dr.addfield('MATCHNO', one.match_number) ;
+                if (one.match_number_ !== undefined) {
+                    dr.addfield('MATCHNO', one.match_number_) ;
                 }
 
-                if (one.set_number !== undefined) {
-                    dr.addfield('SETNO', one.set_number) ;
+                if (one.set_number_ !== undefined) {
+                    dr.addfield('SETNO', one.set_number_) ;
                 }
 
                 if (one.blue_alliance_.teams_[0]) {
@@ -132,6 +218,8 @@ export class MatchDataModel extends DataModel {
                 if (one.red_alliance_.teams_[2]) {
                     dr.addfield('RED3', one.red_alliance_.teams_[2]) ;
                 }
+
+                this.extractBAMatchResult(MatchDataModel.BlueAlliancePrefix, one.results_, dr) ;
 
                 for(let key of dr.keys()) {
                     reccolnames.add(key) ;
@@ -167,7 +255,7 @@ export class MatchDataModel extends DataModel {
 
             for(let record of records) {
                 try {
-                    await this.insertOrUpdate(MatchDataModel.MatchTableName, 'KEY', record) ;
+                    await this.insertOrUpdate(MatchDataModel.MatchTableName, ['TYPE', 'MATCHNO', 'SETNO'], record) ;
                 }
                 catch(err) {
                     reject(err) ;
@@ -180,6 +268,36 @@ export class MatchDataModel extends DataModel {
         return ret;
     }
 
-    public processResults(results: any) {        
+    // sm-qm-1-1-8 is sm- TYPE - SETNO - MATCHNO
+
+    private parseMatchString(str: string) : any | undefined {
+        let ret ;
+
+        const regex = /^sm-([a-z]+)-([0-9]+)-([0-9]+)-([0-9])$/;
+        let match = regex.exec(str) ;
+        if (match) {
+            ret = {
+                TYPE: 'qm',
+                SETNO: +match[2],
+                MATCHNO: +match[3],
+                TEAM: +match[4]
+            } ;
+        }
+
+        return ret ;
+    }
+
+    public processScoutingResults(results: any) {
+        let i = 0 ;
+        let records: DataRecord[] = [] ;
+
+        while (i < results.length) {
+            let which = results[i++] ;
+            let data = results[i++] ;
+            let keys = this.parseMatchString(which) ;
+            if (keys) {
+                let dr = new DataRecord() ;
+            }
+        }
     }
 }

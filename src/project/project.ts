@@ -113,11 +113,11 @@ export class Project {
     }
 
     public get hasTeamData() : boolean {
-        return this.info_.teamdata_ != undefined ;
+        return true ;
     }
 
     public get hasMatchData() : boolean {
-        return this.info_.matchdata_ != undefined ;
+        return true ;
     }
 
     public get info() : ProjectInfo {
@@ -312,6 +312,7 @@ export class Project {
             ba.getTeams(frcev.evkey)
                 .then((teams) => {
                     if (teams.length > 0) {
+                        this.teamDB.processBAData(teams) ;
                         this.info_.teams_ = teams ;
                         let msg: string = teams.length + " teams loaded\n" ;
                         msg += "Loading matches from the event" ;
