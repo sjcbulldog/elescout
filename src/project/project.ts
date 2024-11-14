@@ -283,10 +283,10 @@ export class Project {
         this.info_.teams_ = [] ;
         for(let d of data) {
             let team : BATeam = {
-                key: '',
-                team_number: d.number_,
-                nickname: d.nickname_,
-                name: d.nickname_,
+                key: d.team_number,
+                team_number: d.team_number,
+                nickname: d.nickname,
+                name: d.nickname,
                 school_name: '',
                 city: '',
                 state_prov: '',
@@ -316,20 +316,20 @@ export class Project {
         this.info.matches_ = []; 
         for(let d of data) {
             let match: BAMatch = {
-                key: '',
-                comp_level: d.type_,
-                set_number: 0,
-                match_number: d.number_,
+                key: d.comp_level + '-' + d.set_number + '-' + d.match_number,
+                comp_level: d.comp_level,
+                set_number: d.set_number,
+                match_number: d.match_number,
                 alliances: {
                   red: {
                     score: 0,
-                    team_keys: [ d.red_[0], d.red_[1], d.red_[2]],
+                    team_keys: [d.red[0], d.red[1], d.red[2]],
                     surrogate_team_keys: [],
                     dq_team_keys: []
                   },
                   blue: {
                     score: 0,
-                    team_keys: [ d.blue_[0], d.blue_[1], d.blue_[2]],
+                    team_keys: [ d.blue[0], d.blue[1], d.blue[2]],
                     surrogate_team_keys: [],
                     dq_team_keys: []
                   }

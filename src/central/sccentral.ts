@@ -453,25 +453,29 @@ export class SCCentral extends SCBase {
 
     public sendMatchData() : void {
         if (this.project_) {
-            let data = [] ;
-            if (this.project_.info.matches_) {
-                for(let t of this.project_.info.matches_) {
-                    let d = {
-                        comp_level : t.comp_level,
-                        set_number : t.set_number,
-                        match_number: t.match_number,
-                        red1: this.keyToTeamNumber(t.alliances.red.team_keys[0]),
-                        red2: this.keyToTeamNumber(t.alliances.red.team_keys[1]),
-                        red3: this.keyToTeamNumber(t.alliances.red.team_keys[2]),
-                        blue1: this.keyToTeamNumber(t.alliances.blue.team_keys[0]),
-                        blue2: this.keyToTeamNumber(t.alliances.blue.team_keys[1]),
-                        blue3: this.keyToTeamNumber(t.alliances.blue.team_keys[2])
-                    }
-                    data.push(d) ;
-                }
-            }
-            this.sendToRenderer('send-match-data', data, this.project_.info.teams_) ;
+            this.sendMatchDataInternal(this.project_.info.matches_) ;
         }
+    }
+
+    private sendMatchDataInternal(matches: BAMatch[] | undefined) : void {
+        let data = [] ;
+        if (matches) {
+            for(let t of matches) {
+                let d = {
+                    comp_level : t.comp_level,
+                    set_number : t.set_number,
+                    match_number: t.match_number,
+                    red1: this.keyToTeamNumber(t.alliances.red.team_keys[0]),
+                    red2: this.keyToTeamNumber(t.alliances.red.team_keys[1]),
+                    red3: this.keyToTeamNumber(t.alliances.red.team_keys[2]),
+                    blue1: this.keyToTeamNumber(t.alliances.blue.team_keys[0]),
+                    blue2: this.keyToTeamNumber(t.alliances.blue.team_keys[1]),
+                    blue3: this.keyToTeamNumber(t.alliances.blue.team_keys[2])
+                }
+                data.push(d) ;
+            }
+        }
+        this.sendToRenderer('send-match-data', data, this.project_!.info.teams_) ;
     }
 
     public sendEventData() : void {
@@ -772,16 +776,40 @@ export class SCCentral extends SCBase {
                 let ret = header ;
 
                 if (index == 0) {
-                    ret = 'number_' ;
+                    ret = 'team_number' ;
                 }
                 else if (index == 1) {
-                    ret = 'nickname_' ;
+                    ret = 'nickname' ;
                 }
         
                 return ret ;
             },
             complete: (results) => {
-              this.sendToRenderer('send-team-data', results.data) ;
+                let data: BATeam[] = [];
+                for(let one of results.data) {
+                    let entry = one as any ;
+                    let obj : BATeam = {
+                        key: entry.team_number,
+                        team_number: +entry.team_number,
+                        nickname: entry.nickname,
+                        name: entry.nickname,
+                        school_name: '',
+                        city: '',
+                        state_prov: '',
+                        country: '',
+                        address: '',
+                        postal_code: '',
+                        gmaps_place_id: '',
+                        gmaps_url: '',
+                        lat: 0,
+                        lng: 0,
+                        location_name: '',
+                        website: '',
+                        rookie_year: 1942,
+                    }
+                    data.push(obj) ;
+                }
+              this.sendToRenderer('send-team-data', data) ;
             },
             error: (error: any) => {
                 let errobj: Error = error as Error ;
@@ -852,9 +880,7 @@ export class SCCentral extends SCBase {
                 return ret ;
             },
             complete: (results) => {
-                if (!this.project_?.info.matches_) {
-                    this.project_!.info.matches_ = [] ;
-                }
+                let matches:BAMatch[] = [] ;
                 for(let one of results.data) {
                     let oneobj = one as any ;
                     let obj : BAMatch = {
@@ -871,9 +897,9 @@ export class SCCentral extends SCBase {
                             }
                         }
                     };
-                    this.project_?.info.matches_.push(obj) ;
+                    matches.push(obj) ;
                 }
-                this.sendMatchData();
+                this.sendMatchDataInternal(matches);
             },
             error: (error: any) => {
                 let errobj: Error = error as Error ;
