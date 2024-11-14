@@ -52,7 +52,8 @@ function updateTeamStatus(data) {
                 data:data,
                 layout:"fitDataStretch",
                 resizableColumnFit:true,
-                columns:cols
+                columns:cols,
+                movableColumns: true,
             });
    table.id = 'table' ;
 }

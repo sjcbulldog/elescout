@@ -214,6 +214,7 @@ function updateMatchStatus(data) {
                 resizableColumnFit:true,
                 columns:createColDescs(),
                 initialSort:[{column:"comp_level", dir:"asc"}],
+                movableColumns: true,
             });
    table.id = 'table' ;
 }

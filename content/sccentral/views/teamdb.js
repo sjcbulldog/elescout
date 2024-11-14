@@ -29,7 +29,8 @@ function updateTeamData(args) {
             data:args.data,
             layout:"fitDataStretch",
             resizableColumnFit:true,
-            columns:cols
+            columns:cols,
+            movableColumns: true,
         });
     table.id = 'table' ;
 }
