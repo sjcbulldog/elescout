@@ -93,9 +93,15 @@ export class TeamDataModel extends DataModel {
 
         return ret;        
     }
-
-    private convertRankingToRecord(ranking: BARankings) : DataRecord {
+	
+    private convertRankingToRecord(ranking: any) : DataRecord {
         let dr = new DataRecord() ;
+        dr.addfield('rank', ranking.rank);
+        dr.addfield('wins', ranking.record.wins) ;
+        dr.addfield('losses', ranking.record.losses);
+        dr.addfield('ties', ranking.record.ties) ;
+        dr.addfield('team_key', ranking.team_key) ;
+        dr.addfield('team_number', DataModel.extractNumberFromKey(ranking.team_key)) ;
         return dr ;
     }
 

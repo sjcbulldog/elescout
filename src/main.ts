@@ -1,8 +1,9 @@
 import { app, BrowserWindow, ipcMain, Menu } from "electron";
 import * as path from "path";
-import { SCBase } from "./base/scbase";
-import { SCScout } from "./scout/scscout";
-import { SCCentral } from "./central/sccentral";
+import { SCBase } from "./apps/scbase";
+import { SCScout } from "./apps/scscout";
+import { SCCentral } from "./apps/sccentral";
+import { SCCoach } from "./apps/sccoach";
 import { ContentManager } from "./cmgr";
 import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
          setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm, 
@@ -11,7 +12,7 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          setEventName,
          getMatchDB,
          getTeamDB} from "./ipchandlers" ;
-import { SCCoach } from "./coach/sccoach";
+
 
 let cmgr: ContentManager = new ContentManager() ;
 

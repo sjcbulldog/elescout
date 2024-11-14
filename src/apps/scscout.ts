@@ -1,5 +1,5 @@
 import { BrowserWindow, Menu, MenuItem } from "electron";
-import { SCBase } from "../base/scbase";
+import { SCBase } from "./scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
 import { Packet } from "../sync/packet";

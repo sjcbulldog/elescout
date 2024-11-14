@@ -52,6 +52,16 @@ export abstract class DataModel {
         this.logger_ = logger ;
     }
 
+    
+    public static extractNumberFromKey(key: string) : number {
+        let ret = -1 ;
+
+        if (key.startsWith('frc')) {
+            ret = +key.substring(3) ;
+        }
+        return ret ;
+    }
+
     public close() : boolean {
         let ret: boolean = true ;
 

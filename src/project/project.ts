@@ -5,12 +5,12 @@ import * as fs from 'fs' ;
 import * as path from 'path' ;
 import { Tablet } from './tablet';
 import { BlueAlliance } from '../bluealliance/ba';
-import { SCBase } from '../base/scbase';
+import { SCBase } from '../apps/scbase';
 import { TeamTablet } from './teamtablet';
 import { MatchTablet } from './matchtablet';
 import * as sqlite3 from 'sqlite3' ;
 import * as uuid from 'uuid' ;
-import { SCCentral } from '../central/sccentral';
+import { SCCentral } from '../apps/sccentral';
 import { TeamDataModel } from '../model/teammodel';
 import { MatchDataModel } from '../model/matchmodel';
 import winston from 'winston';
@@ -238,8 +238,8 @@ export class Project {
                     this.info_.matches_ = matches ;
                     await this.matchDB.processBAData(matches) ;
                     let rankings = await this.loadRanking(ba);
-                    if (rankings.length > 0) {
-                        await this.teamDB.processRankings(rankings) ;
+                    if (rankings.rankings && rankings.rankings.length > 0) {
+                        await this.teamDB.processRankings(rankings.rankings) ;
                     }
                 }
                 resolve(matches.length) ;

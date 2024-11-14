@@ -1,6 +1,7 @@
-import { SCCentral } from "./central/sccentral";
 import { scappbase } from "./main";
-import { SCScout } from "./scout/scscout";
+import { SCCentral } from "./apps/sccentral";
+import { SCScout } from "./apps/scscout";
+import { SCCoach } from "./apps/sccoach";
 
 export async function executeCommand(...args: any[]) {
     if (scappbase) {

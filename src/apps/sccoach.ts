@@ -1,5 +1,5 @@
 import { BrowserWindow, Menu, MenuItem } from "electron";
-import { SCBase } from "../base/scbase";
+import { SCBase } from "./scbase";
 
 export class SCCoach extends SCBase {
     public constructor(win: BrowserWindow) {

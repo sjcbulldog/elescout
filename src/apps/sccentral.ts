@@ -1,4 +1,4 @@
-import { SCBase } from '../base/scbase';
+import { SCBase } from './scbase';
 import { BlueAlliance } from '../bluealliance/ba';
 import { Project } from '../project/project';
 import { BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;

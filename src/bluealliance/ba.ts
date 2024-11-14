@@ -106,14 +106,6 @@ export class BlueAlliance {
         return ret ;        
     }
 
-    private extractNumberFromKey(key: string) : number {
-        let ret = -1 ;
-
-        if (key.startsWith('frc')) {
-            ret = +key.substring(3) ;
-        }
-        return ret ;
-    }
 
     private appendToUint8Array(original: Uint8Array, dataToAdd: Uint8Array) {
         const result = new Uint8Array(original.length + dataToAdd.length);
