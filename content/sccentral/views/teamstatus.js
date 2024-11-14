@@ -8,69 +8,53 @@ function teamStatus() {
     window.scoutingAPI.send("get-team-status");
 }
 
-function displayTeamStatus(table, data) {
-    for(let one of data) {
-        let t = table.addRow([one.number, one.status, one.tablet, one.teamname]);
-        if (one.status === 'Y') {
-            t.style.backgroundColor = '#92ed96' ;
-        }
-        else {
-            t.style.backgroundColor = 'rgb(246, 149, 149)' ;            
-        }
-    }
-}
+function doStatusFormat(cell) {
+    let val = cell.getValue();
+    let el = cell.getElement();
 
-function teamStatusCompareFn(order, astr, bstr) {
-    let ret = 0 ;
-
-    if (Math.abs(order) === 1) {
-        let anum = parseInt(astr) ;
-        let bnum = parseInt(bstr) ;
-
-        if (this.sortOrder > 0) {
-            if (anum < bnum) {
-                ret = -1 ;
-            }
-            else if (anum > bnum) {
-                ret = 1 ;
-            }
-        }
-        else {
-            if (anum < bnum) {
-                ret = 1 ;
-            }
-            else if (anum > bnum) {
-                ret = -1 ;
-            }            
-        }
+    if (val == 'Y') {
+        el.style.backgroundColor = "RGB(173, 250, 170)";
     }
     else {
-        if (this.sortOrder < 0) {
-            ret = bstr.localeCompare(astr);
-        } else {
-            ret = astr.localeCompare(bstr);
-        }        
+        el.style.backgroundColor = "RGB(217, 126, 126)";
     }
 
-    return ret;
+    return val;
 }
 
 function updateTeamStatus(data) {
-    let topdiv = document.createElement('div') ;
-    topdiv.id = 'team-status-top-div' ;
-
-    let sttable = new BwgTable(["Number", "Status", "Tablet", "Name"], { 
-        prefix: "team-status", 
-        sortable: true,
-        sortfun: teamStatusCompareFn 
-    }) ;
-    topdiv.append(sttable.top) ;
-
     $("#rightcontent").empty() ;
-    $("#rightcontent").append(topdiv) ;
+    let div = document.createElement('div') ;
+    $("#rightcontent").append(div) ;
+    div.id = 'tablediv' ;
 
-    displayTeamStatus(sttable, data) ;
-    sttable.setSortOrder(1) ;
+    let cols = [] ;
+    cols.push({
+        field: 'number',
+        title: 'Number'
+    }) ;
+    cols.push({
+        field: 'tablet',
+        title: 'Tablet'
+    }) ;
+    cols.push({
+        field: 'status',
+        title: 'Status',
+        formatter: doStatusFormat,
+    }) ;
+    cols.push({
+        field: 'teamname',
+        title: 'Team Name'
+    }) ;
+
+    var table = new Tabulator(div, 
+            {
+                data:data,
+                layout:"fitDataStretch",
+                resizableColumnFit:true,
+                columns:cols
+            });
+   table.id = 'table' ;
 }
 
 window.scoutingAPI.receive("send-team-status", (args)=>updateTeamStatus(args[0])) ;

@@ -181,6 +181,27 @@ function removeAll() {
     placeTablets() ;
 }
 
+function autoAssign() {
+    let purpose ;
+
+    frctablets = [] ;
+    for(let i = 1 ; i <= 7 ; i++) {
+        if (i === 7) {
+            purpose = tabletTeam ;
+        }
+        else {
+            purpose = tabletMatch ;
+        }
+
+        let tab = {
+            name: 'Tablet ' + i,
+            purpose: purpose
+        }
+        frctablets.push(tab) ;
+    }
+    placeTablets() ;   
+}
+
 function placeTablets() {
     $("#assign-tablets-available-holder").empty() ;
     $("#assign-tablets-match-holder").empty() ;
@@ -236,6 +257,11 @@ function updateTablets(data) {
     let buttondiv = document.createElement('div') ;
     buttondiv.id = "assign-tablets-buttons" ;
     topdiv.append(buttondiv) ;
+
+    let autoassign = document.createElement('button') ;
+    autoassign.innerText = 'Auto Assign' ;
+    buttondiv.append(autoassign) ;
+    autoassign.onclick = autoAssign ;
 
     let add = document.createElement('button') ;
     add.innerText = 'Add Tablet' ;

@@ -3,14 +3,8 @@
 //
 import * as fs from 'fs' ;
 import * as path from 'path' ;
-import { Team } from './team';
-import { Match, MatchResult } from './match';
 import { Tablet } from './tablet';
 import { BlueAlliance } from '../bluealliance/ba';
-import { FRCEvent } from './frcevent';
-import { BrowserWindow } from 'electron';
-import { MatchData } from './matchdata';
-import { TeamData } from './teamdata';
 import { SCBase } from '../base/scbase';
 import { TeamTablet } from './teamtablet';
 import { MatchTablet } from './matchtablet';
@@ -19,24 +13,25 @@ import * as uuid from 'uuid' ;
 import { SCCentral } from '../central/sccentral';
 import { TeamDataModel } from '../model/teammodel';
 import { MatchDataModel } from '../model/matchmodel';
+import winston from 'winston';
+import { BAEvent, BAMatch, BATeam } from '../bluealliance/badata';
 
 export class ProjectInfo {
-    public frcev_? : FRCEvent ;
-    public uuid_? : string ;
-    public name_? : string ;
-    public teamform_? : string ;
-    public matchform_? : string ;
-    public tablets_? : Tablet[] ;
-    public teams_? : Team[] ;
-    public matches_? : Match[] ;
-    public results_? : MatchResult[] ;
-    public matchdata_? : MatchData ;
-    public teamdata_? : TeamData ;
-    public teamassignments_?: TeamTablet[] ;
-    public matchassignements_?: MatchTablet[] ;
-    public locked_ : boolean ;
-    public teamdb_?: sqlite3.Database ;
-    public matchdb_?: sqlite3.Database ;
+    public frcev_? : BAEvent ;                          // Information defining the blue alliance event, null for non-BA events
+    public uuid_? : string ;                            // The UUID for this event, will be sent to tablets via sync
+    public name_? : string ;                            // The name of this event if a non-BA event (i.e. frcev_ === null)
+    public teamform_? : string ;                        // The path to the form for team scouting
+    public matchform_? : string ;                       // The path to the form for match scouting
+    public tablets_? : Tablet[] ;                       // The set of tablets to be used for scouting
+    public teams_? : BATeam[] ;                         // The set of teams at the event
+    public matches_? : BAMatch[] ;                      // The set of matches for the event
+    public teamassignments_?: TeamTablet[] ;            // The tablets assignments to teams for team scouting
+    public matchassignements_?: MatchTablet[] ;         // The tablets assignments to matches for match scouting
+    public locked_ : boolean ;                          // If true, the event is locked and ready for scouting
+    public teamdb_?: sqlite3.Database ;                 // The database containing team information
+    public matchdb_?: sqlite3.Database ;                // The database containing match information
+    public scouted_team_: number[] = [] ;               // The list of teams that have scouting data
+    public scouted_match_: string[] = [] ;              // The list of matches that have scouring data
 
     constructor() {
 
@@ -47,7 +42,7 @@ export class ProjectInfo {
         let ret: string | undefined = undefined ;
 
         if (this.frcev_ !== undefined) {
-            ret = this.frcev_.desc ;
+            ret = this.frcev_.name ;
         }
         else {
             ret = this.name_ ;
@@ -68,20 +63,20 @@ export class Project {
     private info_ : ProjectInfo ;
     private teamdb_ : TeamDataModel ;
     private matchdb_ : MatchDataModel ;
+    private logger_ : winston.Logger ;
 
-    constructor(dir: string) {
+    constructor(logger: winston.Logger, dir: string) {
         this.location_ = dir ;
         this.info_ = new ProjectInfo() ;
+        this.logger_ = logger ;
+
         let filename: string ;
-        let infoname: string ;
 
         filename = path.join(dir, 'team.db') ;
-        infoname = path.join(dir, 'team.info') ;
-        this.teamdb_ = new TeamDataModel(filename, infoname) ;
+        this.teamdb_ = new TeamDataModel(filename, logger) ;
 
         filename = path.join(dir, 'match.db') ;
-        infoname = path.join(dir, 'match.info') ;
-        this.matchdb_ = new MatchDataModel(filename, infoname) ;
+        this.matchdb_ = new MatchDataModel(filename, logger) ;
     }
 
     public init() : Promise<void> {
@@ -104,20 +99,33 @@ export class Project {
         return ret;
     }
 
+    public async processResults(obj: any) {
+        if (obj.purpose) {
+            if (obj.purpose === 'match') {
+                let status = await this.matchDB.processScoutingResults(obj.results) ;
+                for(let st of status) {
+                    if (!this.info_.scouted_match_.includes(st)) {
+                        this.info_.scouted_match_.push(st) ;
+                    }
+                }
+            }
+            else {
+                let teams = await this.teamDB.processScoutingResults(obj.results) ;
+                for (let st of teams) {
+                    if (!this.info_.scouted_team_.includes(st)) {
+                        this.info_.scouted_team_.push(st) ;
+                    }
+                }
+            }
+        }
+    }
+
     public get teamDB() : TeamDataModel {
         return this.teamdb_ ;
     }
 
     public get matchDB() : MatchDataModel {
         return this.matchdb_ ;
-    }
-
-    public get hasTeamData() : boolean {
-        return true ;
-    }
-
-    public get hasMatchData() : boolean {
-        return true ;
     }
 
     public get info() : ProjectInfo {
@@ -156,7 +164,7 @@ export class Project {
         this.writeEventFile() ;        
     }
 
-    public static async createEvent(dir: string) : Promise<Project> {
+    public static async createEvent(logger: winston.Logger, dir: string) : Promise<Project> {
         let ret: Promise<Project> = new Promise<Project>((resolve, reject) => {
             if (!fs.existsSync(dir)) {
                 //
@@ -175,7 +183,7 @@ export class Project {
                 reject(err) ;
             }
 
-            let proj: Project = new Project(dir) ;
+            let proj: Project = new Project(logger, dir) ;
             let err = proj.writeEventFile() ;
             if (err) {
                 reject(err) ;
@@ -193,7 +201,7 @@ export class Project {
         return ret ;
     }
 
-    public static async openEvent(filepath: string) : Promise<Project> {
+    public static async openEvent(logger: winston.Logger, filepath: string) : Promise<Project> {
         let ret: Promise<Project> = new Promise<Project>((resolve, reject) => {
 
             let loc: string = path.dirname(filepath) ;
@@ -204,7 +212,7 @@ export class Project {
                 reject(err) ;
             }
 
-            let proj: Project = new Project(loc) ;
+            let proj: Project = new Project(logger, loc) ;
             let err = proj.readEventFile() ;
             if (err) {
                 reject(err) ;
@@ -221,26 +229,26 @@ export class Project {
         return ret ;
     }
 
-    public loadMatchData(base: SCBase, ba: BlueAlliance, frcev: FRCEvent) : Promise<number> {
-        let ret: Promise<number> = new Promise<number>((resolve, reject) => {
-            ba.getMatches(frcev.evkey)
-            .then((matches) => {
+
+    public loadMatchData(base: SCBase, ba: BlueAlliance, frcev: BAEvent) : Promise<number> {
+        let ret: Promise<number> = new Promise<number>(async (resolve, reject) => {
+            try {
+                let matches = await ba.getMatches(frcev.key);
                 if (matches.length > 0) {
                     this.info_.matches_ = matches ;
-                    this.matchdb_.processBAData(matches)
-                        .then(() => {
-                            resolve(matches.length) ;
-                        })
-                        .catch((err) => {
-                            reject(err) ;
-                        })
+                    await this.matchDB.processBAData(matches) ;
+                    let rankings = await this.loadRanking(ba);
+                    if (rankings.length > 0) {
+                        await this.teamDB.processRankings(rankings) ;
+                    }
                 }
-            })
-            .catch((err) => {
+                resolve(matches.length) ;
+            } 
+            catch(err) {
                 this.info_.frcev_ = undefined ;
                 this.info_.teams_ = undefined ;
                 reject(err) ;
-            })
+            }
         }) ;
         
         return ret;
@@ -274,21 +282,74 @@ export class Project {
     public setTeamData(data: any[]) {
         this.info_.teams_ = [] ;
         for(let d of data) {
-            let team = new Team("", d.number_, "", d.nickname_, "", "", "", "", "", "", "", 0, 0) ;
+            let team : BATeam = {
+                key: '',
+                team_number: d.number_,
+                nickname: d.nickname_,
+                name: d.nickname_,
+                school_name: '',
+                city: '',
+                state_prov: '',
+                country: '',
+                address: '',
+                postal_code: '',
+                gmaps_place_id: '',
+                gmaps_url: '',
+                lat: 0,
+                lng: 0,
+                location_name: '',
+                website: '',
+                rookie_year: 0
+            }
             this.info_.teams_.push(team) ;
         }
         this.writeEventFile() ;
+        this.teamDB.processBAData(this.info_.teams_!) ;
     }
 
-    public setMatchData(data: any[]) {
+    //
+    // This is called from the renderer for events that are not created using
+    // Blue Alliance.  The data from the UI side of the application is sent to this
+    // method to initialize the the match list.
+    //
+    public async setMatchData(data: any[]) {
         this.info.matches_ = []; 
         for(let d of data) {
-            let match = new Match("", d.type_, 1, d.number_) ;
-            match.red_alliance_ = { teams_ : d.red_ , surragate_teams_ : [], dq_teams_ : [] } ;
-            match.blue_alliance_ = { teams_ : d.blue_ , surragate_teams_ : [], dq_teams_ : [] } ;
+            let match: BAMatch = {
+                key: '',
+                comp_level: d.type_,
+                set_number: 0,
+                match_number: d.number_,
+                alliances: {
+                  red: {
+                    score: 0,
+                    team_keys: [ d.red_[0], d.red_[1], d.red_[2]],
+                    surrogate_team_keys: [],
+                    dq_team_keys: []
+                  },
+                  blue: {
+                    score: 0,
+                    team_keys: [ d.blue_[0], d.blue_[1], d.blue_[2]],
+                    surrogate_team_keys: [],
+                    dq_team_keys: []
+                  }
+                },
+                winning_alliance: '',
+                event_key: '',
+                time: 0,
+                actual_time: 0,
+                predicted_time: 0,
+                post_result_time: 0,
+                score_breakdown: {
+                  blue: undefined,
+                  red: undefined,
+                },
+                videos: []
+            } ;
             this.info.matches_.push(match) ;
         }
         this.writeEventFile() ;
+        await this.matchDB.processBAData(this.info.matches_) ;
     }
 
     public setTabletData(data:any[]) {
@@ -305,68 +366,61 @@ export class Project {
         this.writeEventFile() ;
     }
 
-    public loadBAEvent(base: SCCentral, ba: BlueAlliance, frcev: FRCEvent) : Promise<void> {
-        let ret: Promise<void> = new Promise<void>((resolve, reject) => {
+    public loadBAEvent(base: SCCentral, ba: BlueAlliance, frcev: BAEvent) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
             this.info_.frcev_ = frcev ;
             base.sendToRenderer('set-status-text', 'Loading teams from the event') ;
-            ba.getTeams(frcev.evkey)
-                .then((teams) => {
-                    if (teams.length > 0) {
-                        this.teamDB.processBAData(teams) ;
-                        this.info_.teams_ = teams ;
-                        let msg: string = teams.length + " teams loaded\n" ;
-                        msg += "Loading matches from the event" ;
-                        base.sendToRenderer('set-status-text', msg) ;
-                        this.loadMatchData(base, ba, frcev)
-                            .then(() => {
-                                let msg: string = teams.length + " teams loaded\n" ;
-                                msg += this.info.matches_!.length + " matches loaded\n" ;
-                                let err = this.writeEventFile() ;
-                                if (err) {
-                                    msg += "Error saving the event file - " + err.message + '\n' ;
-                                }
-                                else {
-                                    msg += "Event file saved\n" ;
-                                }
-                                msg += "Event loaded sucessfully\n" ;
-                                base.sendToRenderer('set-status-text', msg) ;
-                                base.sendToRenderer('set-status-close-button-visible', true) ;
-                                resolve() ;
-                            })
-                            .catch((err) => {
-                                reject(err) ;
-                            }) ;
+            try {
+                let teams = await ba.getTeams(frcev.key) ;
+                if (teams.length > 0) {
+                    await this.teamDB.processBAData(teams) ;
+                    this.info_.teams_ = teams ;
+                    let msg: string = teams.length + " teams loaded\n" ;
+                    msg += "Loading matches from the event" ;
+                    base.sendToRenderer('set-status-text', msg) ;
+                    await this.loadMatchData(base, ba, frcev)
+                    msg = teams.length + " teams loaded\n" ;
+                    msg += this.info.matches_!.length + " matches loaded\n" ;
+                    let err = this.writeEventFile() ;
+                    if (err) {
+                        msg += "Error saving the event file - " + err.message + '\n' ;
                     }
                     else {
-                        this.info_.frcev_ = undefined ;
-                        base.sendToRenderer('set-status-text', "Event has no teams assigned yet, cannot load event from Blue Alliance") ;
-                        base.sendToRenderer('set-status-close-button-visible', true) ;
+                        msg += "Event file saved\n" ;
                     }
-                })
-                .catch((err) => {
+                    msg += "Event loaded sucessfully\n" ;
+                    base.sendToRenderer('set-status-text', msg) ;
+                    base.sendToRenderer('set-status-close-button-visible', true) ;
+                }
+                else {
                     this.info_.frcev_ = undefined ;
-                    reject(err) ;
-                }) ;
+                    base.sendToRenderer('set-status-text', "Event has no teams assigned yet, cannot load event from Blue Alliance") ;
+                    base.sendToRenderer('set-status-close-button-visible', true) ;
+                }
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
         }) ;
 
         return ret;
     }
 
-    public hasTeamScoutingResults(number: number) : boolean {
-        return true;
+    public hasTeamScoutingResults(team: number) : boolean {
+        return this.info_.scouted_team_.includes(team) ;
     }
 
-    public hasMatchScoutingResult(type: string, set: number, match: number, team: number) : boolean {
-        let ret:boolean = false ;
-
-        return ret ;
+    public hasMatchScoutingResult(type: string, set: number, match: number, team: string) : string {
+        let str: string = type + '-' + set + '-' + match ;
+        return this.info_.scouted_match_.includes(str) ? 'Y' : 'N' ;
     }
     
-    public getMatchScoutingTablet(type: string, set: number, match: number, team: number) : string {
+    public getMatchScoutingTablet(type: string, set: number, match: number, teamkey: string) : string {
         let ret: string = "" ;
         if (this.info.matchassignements_) {
             for(let t of this.info.matchassignements_) {
-                if (t.type === type && t.set === set && t.matchnumber === match && t.teamnumber === team) {
+                if (t.type === type && t.setno === set && t.matchno === match && t.teamkey === teamkey) {
                     ret = t.tablet ;
                     break ;
                 }
@@ -375,12 +429,12 @@ export class Project {
         return ret ;
     }
 
-    public findTeamByNumber(number: number) : Team | undefined {
-        let ret: Team | undefined ;
+    public findTeamByNumber(number: number) : BATeam | undefined {
+        let ret: BATeam | undefined ;
 
         if (this.info_.teams_) {
             for(let t of this.info_.teams_) {
-                if (t.number_ === number) {
+                if (t.team_number === number) {
                     ret = t ;
                     break ;
                 }
@@ -388,6 +442,34 @@ export class Project {
         }
 
         return ret ;
+    }
+
+    public findTabletForMatch(type:string, setno: number, matchno: number, team: string) : string {
+        let ret: string = '????';
+
+        if (this.info_.matchassignements_) {
+            for(let t of this.info_.matchassignements_) {
+                if (t.type === type && t.setno === setno && t.matchno === matchno && t.teamkey === team) {
+                    ret = t.tablet ;
+                    break ;
+                }
+            }
+        }
+
+        return ret ;
+    }
+    
+    private loadRanking(ba: BlueAlliance) : Promise<any> {
+        let ret = new Promise<any>((resolve, reject) => {
+            ba.getRankings(this.info_.frcev_?.key!)
+                .then((obj) => {
+                    resolve(obj) ;
+                })
+                .catch((err) => {
+                    reject(err) ;
+                }) ;
+        }) ;
+        return ret;
     }
 
     private getTabletsForPurpose(purpose: string) : Tablet[] {
@@ -414,7 +496,7 @@ export class Project {
         let index = 0 ;
         this.info_.teamassignments_ = [] ;
         for(let t of this.info_.teams_) {
-            let assignment = new TeamTablet(t.number_, teamtab[index].name) ;
+            let assignment = new TeamTablet(t.team_number, teamtab[index].name) ;
             this.info_.teamassignments_.push(assignment);
             index++ ;
             if (index >= teamtab.length) {
@@ -427,49 +509,42 @@ export class Project {
         this.info_.matchassignements_ = [] ;
 
         for(let m of this.info_.matches_) {
-            //
-            // This should never happen.
-            //
-            if (!m.red_alliance_ || !m.blue_alliance_) {
-                return false ;
-            }
-
-            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.red_alliance_.teams_[0], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.red.team_keys[0], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.red_alliance_.teams_[1], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.red.team_keys[1], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }       
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.red_alliance_.teams_[2], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.red.team_keys[2], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.blue_alliance_.teams_[0], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.blue.team_keys[0], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.blue_alliance_.teams_[1], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.blue.team_keys[1], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }            
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level_, m.match_number_, m.set_number_, m.blue_alliance_.teams_[2], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.blue.team_keys[2], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;

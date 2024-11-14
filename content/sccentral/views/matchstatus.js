@@ -8,176 +8,214 @@ function matchStatus() {
     window.scoutingAPI.send("get-match-status");
 }
 
-function displayMatchStatus(table, data) {
-    for(let one of data) {
-        let data = [] ;
-        data.push(one.type) ;
-        data.push(one.set) ;
-        data.push(one.number) ;
-
-        data.push(one.rteam1) ;
-        data.push(one.rtablet1) ;
-        data.push(one.rstatus1) ;
-
-        data.push(one.rteam2) ;
-        data.push(one.rtablet2) ;
-        data.push(one.rstatus2) ;
-
-        data.push(one.rteam3) ;
-        data.push(one.rtablet3) ;
-        data.push(one.rstatus3) ;   
-        
-        data.push(one.bteam1) ;
-        data.push(one.btablet1) ;
-        data.push(one.bstatus1) ;
-
-        data.push(one.bteam2) ;
-        data.push(one.btablet2) ;
-        data.push(one.bstatus2) ;
-
-        data.push(one.bteam3) ;
-        data.push(one.btablet3) ;
-        data.push(one.bstatus3) ; 
-        
-        let r = table.addRow(data) ;
-        
-        if (one.rstatus1 === 'Y') {
-            r.childNodes[5].style.backgroundColor = '#92ed96' ;
-        }
-        else {
-            r.childNodes[5].style.backgroundColor = 'rgb(246, 149, 149)' ;            
-        }
-
-        if (one.rstatus2 === 'Y') {
-            r.childNodes[8].style.backgroundColor = '#92ed96' ;
-        }
-        else {
-            r.childNodes[8].style.backgroundColor = 'rgb(246, 149, 149)' ;            
-        }
-
-        if (one.rstatus3 === 'Y') {
-            r.childNodes[11].style.backgroundColor = '#92ed96' ;
-        }
-        else {
-            r.childNodes[11].style.backgroundColor = 'rgb(246, 149, 149)' ;            
-        }
-
-        if (one.bstatus1 === 'Y') {
-            r.childNodes[14].style.backgroundColor = '#92ed96' ;
-        }
-        else {
-            r.childNodes[14].style.backgroundColor = 'rgb(246, 149, 149)' ;            
-        }
-
-        if (one.bstatus2 === 'Y') {
-            r.childNodes[17].style.backgroundColor = '#92ed96' ;
-        }
-        else {
-            r.childNodes[17].style.backgroundColor = 'rgb(246, 149, 149)' ;            
-        }
-
-        if (one.bstatus3 === 'Y') {
-            r.childNodes[20].style.backgroundColor = '#92ed96' ;
-        }
-        else {
-            r.childNodes[20].style.backgroundColor = 'rgb(246, 149, 149)' ;            
-        }        
-    }
+function sizeCellFormatter(cell) {
+    let val = cell.getValue();
+    let el = cell.getElement();
+    el.style.fontSize = '16px' ;
+    return val ;
 }
 
-function mapMatchType(type) {
-    let ret = 1 ;
+function sizeColorCellFormatter(cell) {
+    let val = cell.getValue();
+    let el = cell.getElement();
 
-    if (type === 'sf') {
-        ret = 2 ;
-    }
-    else if (type === 'f') {
-        ret = 3 ;
-    }
-
-    return ret;
-}
-
-function matchStatusCompareFn(order, a, b) {
-    let ret = 0 ;
-    let index = Math.abs(order) ;
-
-    if (index === 1) {
-        let at = mapMatchType(a[0]) ;
-        let bt = mapMatchType(b[0]) ;
-        let am = parseInt(a[2]) ;
-        let bm = parseInt(b[2]) ;
-
-        if (at !== bt) {
-            if (order < 0) {
-                ret = (bt < at) ? -1 : 1 ;
-            }
-            else {
-                ret = (bt < at) ? 1 : -1 ;
-            }
-        }
-        else {
-            if (order < 0) {
-                ret = (bm < am) ? -1 : 1 ;
-            }
-            else {
-                ret = (bm < am) ? 1 : -1 ;
-            }
-        }
+    if (val == 'Y') {
+        el.style.backgroundColor = "RGB(173, 250, 170)";
     }
     else {
-        let astr = a[index - 1] ;
-        let bstr = b[index - 1] ;
-
-        if (order < 0) {
-            ret = bstr.localeCompare(astr);
-        } else {
-            ret = astr.localeCompare(bstr);
-        }
+        el.style.backgroundColor = "RGB(217, 126, 126)";
     }
-    return ret;
+    el.style.fontSize = '16px' ;
+
+    return val;
+}
+
+function createColDescs() {
+    let cols = [
+        {
+            field: "comp_level",
+            title: "Type",
+            sorter: sortCompFun,
+            formatter: sizeCellFormatter
+        },
+        {
+            field: "set_number",
+            title: "Set",
+            formatter: sizeCellFormatter,
+            headerTooltip: 'Set Number',
+            headerSort: false,
+        },
+        {
+            field: "match_number",
+            title: "Match",
+            formatter: sizeCellFormatter,
+            headerTooltip: 'Match Number',
+            headerSort: false,
+        },
+        {
+            title: 'Red 1',
+            headerHozAlign:"center",
+            columns: [
+                {
+                    field: "red1",
+                    title: "Team",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "redtab1",
+                    title: "Tablet",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "redst1",
+                    title: "Status",
+                    formatter: sizeColorCellFormatter,
+                    headerSort: false,
+                },
+            ]
+        },
+        {
+            title: 'Red 2',
+            headerHozAlign:"center",
+            columns: [
+                {
+                    field: "red2",
+                    title: "Team",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "redtab2",
+                    title: "Tablet",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "redst2",
+                    title: "Status",
+                    formatter: sizeColorCellFormatter,
+                    headerSort: false,
+                },
+            ]
+        },
+        {
+            title: 'Red 3',
+            headerHozAlign:"center",
+            columns: [
+                {
+                    field: "red3",
+                    title: "Team",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "redtab3",
+                    title: "Tablet",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "redst3",
+                    title: "Status",
+                    formatter: sizeColorCellFormatter,
+                    headerSort: false,
+                },
+            ]
+        },
+        {
+            title: 'Blue 1',
+            headerHozAlign:"center",
+            columns: [        
+                {
+                    field: "blue1",
+                    title: "Team",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+
+                {
+                    field: "bluetab1",
+                    title: "Tablet",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "bluest1",
+                    title: "Status",
+                    formatter: sizeColorCellFormatter,
+                    headerSort: false,
+                },
+            ]
+        },
+        {
+            title: 'Blue 2',
+            headerHozAlign:"center",
+            columns: [
+                {
+                    field: "blue2",
+                    title: "Team",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "bluetab2",
+                    title: "Tablet",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "bluest2",
+                    title: "Status",
+                    formatter: sizeColorCellFormatter,
+                    headerSort: false,
+                },
+            ]
+        },
+        {
+            title: 'Blue 3',
+            headerHozAlign:"center",
+            columns: [
+                {
+                    field: "blue3",
+                    title: "Team",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "bluetab3",
+                    title: "Tablet",
+                    formatter: sizeCellFormatter,
+                    headerSort: false,
+                },
+                {
+                    field: "bluest3",
+                    title: "Status",
+                    formatter: sizeColorCellFormatter,
+                    headerSort: false,
+                }, 
+            ]
+        }
+    ]
+    return cols;
 }
 
 function updateMatchStatus(data) {
-    let topdiv = document.createElement('div') ;
-    topdiv.id = 'match-status-top-div' ;
-
-    let cols = [] ;
-    cols.push("Type") ;
-    cols.push("Set") ;
-    cols.push("Match") ;
-
-    cols.push("Red Team 1") ;
-    cols.push("Red Tablet 1") ;
-    cols.push("Red Status 1") ;
-    cols.push("Red Team 2") ;
-    cols.push("Red Tablet 2") ;
-    cols.push("Red Status 2") ;
-    cols.push("Red Team 3") ;
-    cols.push("Red Tablet 3") ;
-    cols.push("Red Status 3") ;
-    cols.push("Blue Team 1") ;
-    cols.push("Blue Tablet 1") ;
-    cols.push("Blue Status 1") ;
-    cols.push("Blue Team 2") ;
-    cols.push("Blue Tablet 2") ;
-    cols.push("Blue Status 2") ;
-    cols.push("Blue Team 3") ;
-    cols.push("Blue Tablet 3") ;
-    cols.push("Blue Status 3") ;
-
-    let sttable = new BwgTable(cols, { 
-        prefix: "match-status", 
-        sortable: true,
-        sortrowfun: matchStatusCompareFn 
-    }) ;
-    topdiv.append(sttable.top) ;
-
     $("#rightcontent").empty() ;
-    $("#rightcontent").append(topdiv) ;
+    let div = document.createElement('div') ;
+    $("#rightcontent").append(div) ;
+    div.id = 'tablediv' ;
 
-    displayMatchStatus(sttable, data) ;
-    sttable.setSortOrder(1) ;
+    var table = new Tabulator(div, 
+            {
+                data:data,
+                layout:"fitDataFill",
+                resizableColumnFit:true,
+                columns:createColDescs(),
+                initialSort:[{column:"comp_level", dir:"asc"}],
+            });
+   table.id = 'table' ;
 }
 
 window.scoutingAPI.receive("send-match-status", (args)=>updateMatchStatus(args[0])) ;

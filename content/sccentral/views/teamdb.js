@@ -1,7 +1,7 @@
 function teamDBView() {
     $("#rightcontent").empty() ;
     let div = document.createElement("div") ;
-    div.innerHTML = "<b>Team Data</b>" ;
+    div.innerHTML = "<b>Team data loading.  Please wait ....</b>" ;
     div.id = "info" ;
     $("#rightcontent").append(div) ;
 

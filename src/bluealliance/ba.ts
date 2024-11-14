@@ -1,9 +1,8 @@
 import { ClientRequest, IncomingMessage, net } from 'electron';
 import * as https from 'https' ;
-import { Match, MatchAlliance, MatchResult } from '../project/match';
-import { Team } from '../project/team';
-import { FRCEvent } from '../project/frcevent';
 import { ObjectFlags } from 'typescript';
+import { DataRecord } from '../model/datamodel';
+import { BAEvent, BAMatch, BARankings, BATeam } from './badata';
 
 export class BlueAlliance {
 
@@ -44,57 +43,16 @@ export class BlueAlliance {
         return ret;
     }
 
-    public async getEvents(year ?:number) : Promise<FRCEvent[]> {
+    public async getEvents(year ?:number) : Promise<BAEvent[]> {
         if (!year) {
             year = this.current_season_ ;
         }
         
-        let ret: Promise<FRCEvent[]> = new Promise<FRCEvent[]>((resolve, reject) => {
+        let ret: Promise<BAEvent[]> = new Promise<BAEvent[]>((resolve, reject) => {
             let query = "/events/" + year + "/simple" ;
             this.request(query)
                 .then((obj) => {
-                    let result : FRCEvent[] = [] ;
-                    for(let ev of obj) {
-                        if (ev.key && ev.name) {
-                            let frcev = new FRCEvent(ev.key, ev.name) ;
-                            if (ev.city) {
-                                frcev.city = ev.city ;
-                            }
-
-                            if (ev.country) {
-                                frcev.country = ev.country ;
-                            }
-
-                            if (ev.district) {
-                                frcev.district = ev.district ;
-                            }
-
-                            if (ev.end_date) {
-                                frcev.end_date = ev.end_date;
-                            }
-
-                            if (ev.event_code) {
-                                frcev.event_code = ev.event_code ;
-                            }
-
-                            if (ev.event_type) {
-                                frcev.event_type = ev.event_type ;
-                            }
-
-                            if (ev.start_date) {
-                                frcev.start_date = ev.start_date ;
-                            }
-
-                            if (ev.state_prov) {
-                                frcev.state_prov = ev.state_prov ;
-                            }
-                            result.push(frcev) ;
-                        }
-                    }
-
-                    resolve(result) ;
-
-                    console.log(obj) ;
+                    resolve(obj) ;
                 })
                 .catch((err) => {
                     reject(err) ;
@@ -104,127 +62,41 @@ export class BlueAlliance {
         return ret;
     }
 
-    private extractBreakdown(bd: Map<String, number>, obj: any) {
-        for(let key of Object.keys(obj)) {
-            const v = obj[key] ;
-            bd.set(key, v);
-        }
-    }
-
-    public async fakeGetMatchesNone(evkey: string) : Promise<Match[]> {
-        let ret: Promise<Match[]> = new Promise<Match[]>((resolve, reject) => {
-            resolve([]) ;
-        }) ;
-
-        return ret;
-    }
-
-    public async fakeGetMatchesPartial(evkey: string) : Promise<Match[]> {
-        let ret: Promise<Match[]> = new Promise<Match[]>((resolve, reject) => {
-            
-        }) ;
-
-        return ret;
-    }
-
-    public async getMatches(evkey: string) : Promise<Match[]> {
-        let ret: Promise<Match[]> = new Promise<Match[]>((resolve, reject) => {
-            let query = "/event/" + evkey + "/matches" ;
+    public async getRankings(evkey: string) : Promise<BARankings[]> {
+        let ret: Promise<BARankings[]> = new Promise<BARankings[]>((resolve, reject) => {
+            let query = "/event/" + evkey + "/rankings" ;
             this.request(query)
-                .then((obj) => {
-                    let result : Match[] = [] ;
-                    for(let t of obj) {
-                        let m: Match = new Match(t.key, t.comp_level, t.set_number, t.match_number) ;
-
-                        m.red_alliance_ = new MatchAlliance() ;
-                        for(let k of t.alliances.red.team_keys) {
-                            m.red_alliance_.teams_.push(k) ;
-                        }
-
-                        for(let k of t.alliances.red.surrogate_team_keys) {
-                            m.red_alliance_.surragate_teams_.push(k) ;
-                        }  
-                        
-                        for(let k of t.alliances.red.dq_team_keys) {
-                            m.red_alliance_.dq_teams_.push(k) ;
-                        }     
-
-                        if (t.alliances.red.score) {
-                            if (!m.results_) {
-                                m.results_ = new MatchResult() ;
-                            }
-                            m.results_.red_score_ = t.alliances.red.score ;
-                        }
-                        
-                        m.blue_alliance_ = new MatchAlliance() ;
-                        for(let k of t.alliances.blue.team_keys) {
-                            m.blue_alliance_.teams_.push(k) ;
-                        }
-
-                        for(let k of t.alliances.blue.surrogate_team_keys) {
-                            m.blue_alliance_.surragate_teams_.push(k) ;
-                        }  
-                        
-                        for(let k of t.alliances.blue.dq_team_keys) {
-                            m.blue_alliance_.dq_teams_.push(k) ;
-                        }                         
-
-                        if (t.alliances.blue.score) {
-                            if (!m.results_) {
-                                m.results_ = new MatchResult() ;
-                            }
-                            m.results_.blue_score_ = t.alliances.blue.score ;
-                        }           
-                        
-                        if (t.winning_alliance) {
-                            if (!m.results_) {
-                                m.results_ = new MatchResult() ;
-                            }
-                            m.results_.winner_ = t.winning_alliance ;
-                        }
-
-                        if (t.score_breakdown) {
-                            if (t.score_breakdown.red) {
-                                if (!m.results_) {
-                                    m.results_ = new MatchResult() ;
-                                }
-                                this.extractBreakdown(m.results_.red_score_breakdown_, t.score_breakdown.red) ;
-                            }
-
-                            if (t.score_breakdown.blue) {
-                                if (!m.results_) {
-                                    m.results_ = new MatchResult() ;
-                                }                                
-                                this.extractBreakdown(m.results_.blue_score_breakdown_, t.score_breakdown.blue) ;
-                            }              
-                        }          
-
-                        result.push(m)
-                    } 
-                    
-                    resolve(result) ;
+                .then((rankings) => {
+                    resolve(rankings) ;
                 })
                 .catch((err) => {
                     reject(err) ;
+                }) ;
+            }) ;
+        return ret ;
+    }
+
+    public async getMatches(evkey: string) : Promise<BAMatch[]> {
+        let ret: Promise<BAMatch[]> = new Promise<BAMatch[]>((resolve, reject) => {
+            let query = "/event/" + evkey + "/matches" ;
+            this.request(query)
+                .then((obj) => {
+                    resolve(obj) ;
                 })
-        }) ;
+                .catch((err) => {
+                    reject(err) ;
+                });
+            });
 
         return ret ;
     }
 
-    public async getTeams(evkey:string) : Promise<Team[]> {
-        let ret: Promise<Team[]> = new Promise<Team[]>((resolve, reject) => {
+    public async getTeams(evkey:string) : Promise<BATeam[]> {
+        let ret: Promise<BATeam[]> = new Promise<BATeam[]>((resolve, reject) => {
             let query = "/event/" + evkey + "/teams" ;
             this.request(query)
                 .then((obj) => {
-                    let result : Team[] = [] ;
-                    for(let t of obj) {
-                        let team: Team = new Team(t.key, t.team_number, t.name, t.nickname, t.city, t.state_prov, t.country,
-                                                  t.school_name, t.address, t.postal_code, t.location_name, t.lng, t.lat) ;
-                        result.push(team) ;
-                    }       
-
-                    resolve(result) ;             
+                    resolve(obj) ;             
                 })
                 .catch((err) => {
                     reject(err) ;
@@ -232,6 +104,15 @@ export class BlueAlliance {
         }) ;
 
         return ret ;        
+    }
+
+    private extractNumberFromKey(key: string) : number {
+        let ret = -1 ;
+
+        if (key.startsWith('frc')) {
+            ret = +key.substring(3) ;
+        }
+        return ret ;
     }
 
     private appendToUint8Array(original: Uint8Array, dataToAdd: Uint8Array) {

@@ -1,25 +1,31 @@
 import { SCBase } from '../base/scbase';
 import { BlueAlliance } from '../bluealliance/ba';
-import { FRCEvent } from '../project/frcevent';
 import { Project } from '../project/project';
 import { BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
 import Papa from 'papaparse';
 import * as fs from 'fs' ;
-import { Team } from '../project/team';
 import { TCPSyncServer } from '../sync/tcpserver';
 import { Packet } from '../sync/packet';
 import { PacketType } from '../sync/packettypes';
-import { ValueType } from '../model/datamodel';
+import { FieldAndType, ValueType } from '../model/datamodel';
+import { MatchDataModel } from '../model/matchmodel';
+import { BAEvent, BAMatch, BATeam } from '../bluealliance/badata';
+import { TeamDataModel } from '../model/teammodel';
 
 export class SCCentral extends SCBase {
-    private project_? : Project = undefined ;
-    private ba_? : BlueAlliance = undefined ;
-    private baloading_ : boolean ;
-    private frcevents_? : FRCEvent[] = undefined ;
-    private tcpsyncserver_? : TCPSyncServer = undefined ;
-    private previewfile_? : string = undefined ;
-    private syncingTablet_? : string = undefined ;
-    private syncingPurpose_? : string = undefined;
+
+    private static readonly matchStatusFields: string[] = [
+        'comp_level',
+        'set_number',
+        'match_number',
+        'team_key',
+        'r1',
+        'r2',
+        'r3',
+        'b1',
+        'b2',
+        'b3'
+    ] ;
 
     private static readonly openExistingEvent : string = 'open-existing' ;
     private static readonly createNewEvent: string = 'create-new' ;
@@ -41,6 +47,16 @@ export class SCCentral extends SCBase {
     private static readonly viewMatchDB: string = "view-match-db" ;
     private static readonly viewPreviewForm: string = "view-preview-form" ;
     private static readonly viewHelp: string = "view-help" ;
+
+    private project_? : Project = undefined ;
+    private ba_? : BlueAlliance = undefined ;
+    private baloading_ : boolean ;
+    private tcpsyncserver_? : TCPSyncServer = undefined ;
+    private previewfile_? : string = undefined ;
+    private baevents_? : BAEvent[] ;
+    private syncingTablet_? : string = undefined ;
+    private syncingPurpose_? : string = undefined;
+
 
     constructor(win: BrowserWindow) {
         super(win, 'server') ;
@@ -189,65 +205,75 @@ export class SCCentral extends SCBase {
         this.sendToRenderer('send-preview-form', ret) ;
     }
 
-    public sendMatchStatus() {
+    public async sendMatchStatus() {
         interface data {
-            type: string,
-            set: number,
-            number: number,
+            comp_level: string,
+            set_number: number,
+            match_number: number,
+            red1: number,
+            redtab1: string,
+            redst1: string,
+            red2: number,
+            redtab2: string,
+            redst2: string,
+            red3: number,
+            redtab3: string,
+            redst3: string,
+            blue1: number,
+            bluetab1: string,
+            bluest1: string,
+            blue2: number,
+            bluetab2: string,
+            bluest2: string,
+            blue3: number,
+            bluetab3: string,
+            bluest3: string
+        } ;
 
-            rteam1: number,
-            rtablet1: string,
-            rstatus1: string,
-            rteam2: number,
-            rtablet2: string,
-            rstatus2: string,
-            rteam3: number,
-            rtablet3: string,
-            rstatus3: string,
+        try {
+            let ret: data[] = [] ;
 
-            bteam1: number,
-            btablet1: string,
-            bstatus1: string,
-            bteam2: number,
-            btablet2: string,
-            bstatus2: string,
-            bteam3: number,
-            btablet3: string,
-            bstatus3: string,            
-        }
-        let ret : data[] = [] ;
+            for(let one of this.project_?.info.matches_!) {
+                let r1 = one.alliances.red.team_keys[0] ;
+                let r2 = one.alliances.red.team_keys[1] ;
+                let r3 = one.alliances.red.team_keys[2] ;
+                let b1 = one.alliances.blue.team_keys[0] ;
+                let b2 = one.alliances.blue.team_keys[1] ;
+                let b3 = one.alliances.blue.team_keys[2] ;
 
-        if (this.project_ && this.project_.info && this.project_.info.matches_ && this.project_.info.matchassignements_) {
-            for(let t of this.project_.info.matches_) {
-                ret.push({
-                    type: t.comp_level_,
-                    set: t.set_number_,
-                    number: t.match_number_,
-                    rteam1: t.red_alliance_!.teams_[0],
-                    rtablet1: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[0]),
-                    rstatus1: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[0]) ? "Y":"N",
-                    rteam2: t.red_alliance_!.teams_[1],
-                    rtablet2: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[1]),
-                    rstatus2: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[1]) ? "Y":"N",
-                    rteam3: t.red_alliance_!.teams_[2],
-                    rtablet3: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[2]),
-                    rstatus3: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.red_alliance_!.teams_[2]) ? "Y":"N",
-                    bteam1: t.blue_alliance_!.teams_[0],
-                    btablet1: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[0]),
-                    bstatus1: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[0]) ? "Y":"N",
-                    bteam2: t.blue_alliance_!.teams_[1],
-                    btablet2: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[1]),
-                    bstatus2: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[1]) ? "Y":"N",
-                    bteam3: t.blue_alliance_!.teams_[2],
-                    btablet3: this.project_.getMatchScoutingTablet(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[2]),
-                    bstatus3: this.project_.hasMatchScoutingResult(t.comp_level_, t.set_number_, t.match_number_, t.blue_alliance_!.teams_[2]) ? "Y":"N",
-                }) ;
+                let obj = {
+                    comp_level: one.comp_level,
+                    set_number: one.set_number,
+                    match_number: one.match_number,
+                    red1: this.keyToTeamNumber(r1),
+                    redtab1: this.project_!.findTabletForMatch(one.comp_level, one.set_number, one.match_number, r1),
+                    redst1: this.project_!.hasMatchScoutingResult(one.comp_level, one.set_number, one.match_number, r1),
+                    red2: this.keyToTeamNumber(r2),
+                    redtab2: this.project_!.findTabletForMatch(one.comp_level, one.set_number, one.match_number, r2),
+                    redst2: this.project_!.hasMatchScoutingResult(one.comp_level, one.set_number, one.match_number, r2),
+                    red3: this.keyToTeamNumber(r3),
+                    redtab3: this.project_!.findTabletForMatch(one.comp_level, one.set_number, one.match_number, r3),
+                    redst3: this.project_!.hasMatchScoutingResult(one.comp_level, one.set_number, one.match_number, r3),
+                    blue1: this.keyToTeamNumber(b1),
+                    bluetab1: this.project_!.findTabletForMatch(one.comp_level, one.set_number, one.match_number, b1),
+                    bluest1: this.project_!.hasMatchScoutingResult(one.comp_level, one.set_number, one.match_number, b1),
+                    blue2: this.keyToTeamNumber(b2),
+                    bluetab2: this.project_!.findTabletForMatch(one.comp_level, one.set_number, one.match_number, b2),
+                    bluest2: this.project_!.hasMatchScoutingResult(one.comp_level, one.set_number, one.match_number, b2),
+                    blue3: this.keyToTeamNumber(b3),
+                    bluetab3: this.project_!.findTabletForMatch(one.comp_level, one.set_number, one.match_number, b3),
+                    bluest3: this.project_!.hasMatchScoutingResult(one.comp_level, one.set_number, one.match_number, b3),
+                } ;
+                ret.push(obj) ;
             }
+            this.sendToRenderer('send-match-status', ret) ;            
         }
-
-        this.sendToRenderer('send-match-status', ret) ;
+        catch(err) {
+            let errobj: Error = err as Error ;
+            dialog.showErrorBox('Error', 'Error retreiving match data - ' + errobj.message) ;
+        }
     }
-
+    
     public sendTeamStatus() {
         interface data {
             number: number,
@@ -261,9 +287,9 @@ export class SCCentral extends SCBase {
         if (this.project_ && this.project_.info.teamassignments_) {
             for(let t of this.project_.info.teamassignments_) {
                 let status: string = (this.project_.hasTeamScoutingResults(t.team) ? "Y" : "N") ;
-                let team: Team | undefined = this.project_.findTeamByNumber(t.team) ;
+                let team: BATeam | undefined = this.project_.findTeamByNumber(t.team) ;
                 if (team) {
-                    ret.push({ number: t.team, status: status, tablet: t.tablet, teamname: team.nickname_ }) ;
+                    ret.push({ number: t.team, status: status, tablet: t.tablet, teamname: team.nickname }) ;
                 }
             }
         }
@@ -294,6 +320,21 @@ export class SCCentral extends SCBase {
         this.sendToRenderer('send-match-form', ret) ;
     }
 
+    private keyToTeamNumber(key: string) {
+        let ret: number = -1 ;
+        let m1 = /^frc[0-9]+$/ ;
+        let m2 = /^[0-9]+$/ ;
+
+        if (m1.test(key)) {
+            ret = +key.substring(3) ;
+        }
+        else if (m2.test(key)) {
+            ret = +key ;
+        }
+
+        return ret ;
+    }
+
     private shortenString(str: string | undefined) : string | undefined {
         let ret: string | undefined ;
 
@@ -313,8 +354,8 @@ export class SCCentral extends SCBase {
         if (this.project_) {
             let obj = {
                 location_ : this.project_.location,
-                bakey_ : this.project_.info.frcev_?.evkey,
-                name_ : this.project_.info.frcev_ ? this.project_.info.frcev_.desc : this.project_.info.name_,
+                bakey_ : this.project_.info.frcev_?.key,
+                name_ : this.project_.info.frcev_ ? this.project_.info.frcev_.name : this.project_.info.name_,
                 teamform_ : this.shortenString(this.project_.info.teamform_),
                 matchform_ : this.shortenString(this.project_.info.matchform_),
                 tablets_ : this.project_.info.tablets_,
@@ -370,7 +411,7 @@ export class SCCentral extends SCBase {
         if (this.project_) {
             this.project_.matchDB.getColumns()
                 .then((cols) => {
-                    this.project_?.matchDB.getAllData()
+                    this.project_?.matchDB.getAllData(MatchDataModel.MatchTableName)
                         .then((data) => {
                             let dataobj = {
                                 cols: cols,
@@ -392,7 +433,7 @@ export class SCCentral extends SCBase {
         if (this.project_) {
             this.project_.teamDB.getColumns()
                 .then((cols) => {
-                    this.project_?.teamDB.getAllData()
+                    this.project_?.teamDB.getAllData(TeamDataModel.TeamTableName)
                         .then((data) => {
                             let dataobj = {
                                 cols: cols,
@@ -416,18 +457,15 @@ export class SCCentral extends SCBase {
             if (this.project_.info.matches_) {
                 for(let t of this.project_.info.matches_) {
                     let d = {
-                        type_ : t.comp_level_,
-                        number_ : t.match_number_,
-                        red_: [
-                            t.red_alliance_?.teams_[0],
-                            t.red_alliance_?.teams_[1],
-                            t.red_alliance_?.teams_[2],
-                        ],
-                        blue_: [
-                            t.blue_alliance_?.teams_[0],
-                            t.blue_alliance_?.teams_[1],
-                            t.blue_alliance_?.teams_[2],
-                        ]
+                        comp_level : t.comp_level,
+                        set_number : t.set_number,
+                        match_number: t.match_number,
+                        red1: this.keyToTeamNumber(t.alliances.red.team_keys[0]),
+                        red2: this.keyToTeamNumber(t.alliances.red.team_keys[1]),
+                        red3: this.keyToTeamNumber(t.alliances.red.team_keys[2]),
+                        blue1: this.keyToTeamNumber(t.alliances.blue.team_keys[0]),
+                        blue2: this.keyToTeamNumber(t.alliances.blue.team_keys[1]),
+                        blue3: this.keyToTeamNumber(t.alliances.blue.team_keys[2])
                     }
                     data.push(d) ;
                 }
@@ -439,8 +477,8 @@ export class SCCentral extends SCBase {
     public sendEventData() : void {
         if (this.project_ && this.isBAAvailable()) {
             this.ba_?.getEvents()
-                .then((frcevs) => {
-                    this.frcevents_ = frcevs ;
+                .then((frcevs: BAEvent[]) => {
+                    this.baevents_ = frcevs;
                     this.sendToRenderer('send-event-data', frcevs) ;
                 })
                 .catch((err) => {
@@ -462,15 +500,20 @@ export class SCCentral extends SCBase {
             return ;
         }
 
-        let fev: FRCEvent | undefined = this.getEventFromKey(args[0]) ;        
+        let fev: BAEvent | undefined = this.getEventFromKey(args[0]) ;        
         if (fev) {
-            this.sendToRenderer('set-status-title', 'Loading event \'' + fev.desc + '\'') ;
+            this.sendToRenderer('set-status-title', 'Loading event \'' + fev.name + '\'') ;
             this.project_!.loadBAEvent(this, this.ba_!, fev)
                 .then(() => {
                     this.sendNavData() ;
                     this.setView('info') ;
                 })
                 .catch((err) => {
+                    this.sendToRenderer('set-status-visible', true) ;
+                    this.sendToRenderer('set-status-title', 'Error Importing Match Data') ;
+                    this.sendToRenderer('set-status-html',  'Error importing data - ' + err.message) ;
+                    this.sendToRenderer('set-status-close-button-visible', true) ;
+                    this.setView('info') ;
                 }) ;
         }
         else {
@@ -497,10 +540,10 @@ export class SCCentral extends SCBase {
             return ;
         }
 
-        let fev: FRCEvent | undefined = this.project_?.info.frcev_ ;
+        let fev: BAEvent | undefined = this.project_?.info.frcev_ ;
         if (fev) {
             this.sendToRenderer('set-status-visible', true) ;            
-            this.sendToRenderer('set-status-title', 'Loading match data for event \'' + fev.desc + '\'') ;
+            this.sendToRenderer('set-status-title', 'Loading match data for event \'' + fev.name + '\'') ;
             this.sendToRenderer('set-status-html',  'Loading data ...') ;
             this.project_!.loadMatchData(this, this.ba_!, fev)
                 .then((count) => {
@@ -517,11 +560,11 @@ export class SCCentral extends SCBase {
         }
     }
 
-    private getEventFromKey(key: string) : FRCEvent | undefined {
-        let ret: FRCEvent | undefined = undefined ;
+    private getEventFromKey(key: string) :  BAEvent | undefined {
+        let ret: BAEvent | undefined = undefined ;
 
-        if (this.frcevents_) {
-            ret = this.frcevents_.find((element) => element.evkey === key) ;
+        if (this.baevents_) {
+            ret = this.baevents_.find((element) => element.key === key) ;
         }
 
         return ret;
@@ -590,6 +633,7 @@ export class SCCentral extends SCBase {
             this.project_!.lockEvent() ;
             this.startSyncServer() ;
             this.setView('info') ;
+            this.sendNavData() ;
         }
         else if (cmd === SCCentral.editTeams) {
             this.setView('editteams') ;
@@ -610,10 +654,21 @@ export class SCCentral extends SCBase {
             this.setView('matchform') ;
         }
         else if (cmd === SCCentral.viewTeamStatus) {
-            this.setView('teamstatus') ;
+            if (!this.project_?.info.teamassignments_) {
+                this.sendToRenderer('update-main-window-view', 'empty', 'Scouting schedule not generated yet') ;
+            }
+            else {
+                this.setView('teamstatus') ;
+             }
+
         }
         else if (cmd === SCCentral.viewMatchStatus) {
-            this.setView('matchstatus') ;
+            if (!this.project_?.info.matchassignements_) {
+                this.sendToRenderer('update-main-window-view', 'empty', 'Scouting schedule not generated yet') ;
+            }
+            else {
+                this.setView('matchstatus') ;
+            }
         }
         else if (cmd === SCCentral.viewMatchDB) {
             this.setView('matchdb') ;
@@ -766,35 +821,59 @@ export class SCCentral extends SCBase {
             transformHeader(header, index) {
                 let ret = header ;
 
-                if (index == 0) {
-                    ret = 'type_' ;
+                if (index === 0) {
+                    ret = 'comp_level' ;
                 }
-                else if (index == 1) {
-                    ret = 'number_' ;
+                else if (index === 1) {
+                    ret = 'set_number' ;
                 }
-                else if (index == 2) {
+                else if (index === 2) {
+                    ret = 'match_number' ;
+                }
+                else if (index === 3) {
                     ret = 'r1_' ;
                 }
-                else if (index == 3) {
+                else if (index === 4) {
                     ret = 'r2_' ;
                 }
-                else if (index == 4) {
+                else if (index === 5) {
                     ret = 'r3_' ;
                 }
-                else if (index == 5) {
+                else if (index === 6) {
                     ret = 'b1_' ;
                 }
-                else if (index == 6) {
+                else if (index === 7) {
                     ret = 'b2_' ;
                 }
-                else if (index == 7) {
+                else if (index === 8) {
                     ret = 'b3_' ;
                 }
         
                 return ret ;
             },
             complete: (results) => {
-              this.sendToRenderer('send-match-data', this.transformData(results.data), this.project_!.info.teams_) ;
+                if (!this.project_?.info.matches_) {
+                    this.project_!.info.matches_ = [] ;
+                }
+                for(let one of results.data) {
+                    let oneobj = one as any ;
+                    let obj : BAMatch = {
+                        key: '',
+                        comp_level: oneobj.comp_level,
+                        set_number: oneobj.set_number,
+                        match_number: oneobj.match_number,
+                        alliances: {
+                            red: {
+                                team_keys: [ oneobj.r1_, oneobj.r2_, oneobj.r3_],
+                            },
+                            blue: {
+                                team_keys: [ oneobj.b1_, oneobj.b2_, oneobj.b3_],
+                            }
+                        }
+                    };
+                    this.project_?.info.matches_.push(obj) ;
+                }
+                this.sendMatchData();
             },
             error: (error: any) => {
                 let errobj: Error = error as Error ;
@@ -826,7 +905,7 @@ export class SCCentral extends SCBase {
 
         path.then((pathname) => {
             if (!pathname.canceled) {
-                Project.createEvent(pathname.filePaths[0])
+                Project.createEvent(this.logger_, pathname.filePaths[0])
                     .then((p) => {
                         this.project_ = p ;
                         this.setView('info') ;
@@ -1105,7 +1184,7 @@ export class SCCentral extends SCBase {
 
         path.then((pathname) => {
             if (!pathname.canceled) {
-                Project.openEvent(pathname.filePaths[0])
+                Project.openEvent(this.logger_, pathname.filePaths[0])
                     .then((p) => {
                         this.project_ = p ;
                         if (this.project_.info.locked_) {
@@ -1141,8 +1220,8 @@ export class SCCentral extends SCBase {
 
             let evname ;
 
-            if (this.project_?.info.frcev_?.desc) {
-                evname = this.project_.info.frcev_.desc ;
+            if (this.project_?.info.frcev_?.name) {
+                evname = this.project_.info.frcev_.name ;
             }
             else {
                 evname = this.project_?.info.name_ ;
@@ -1212,7 +1291,7 @@ export class SCCentral extends SCBase {
         else if (p.type_ === PacketType.ProvideResults) {
             try {
                 let obj = JSON.parse(p.payloadAsString()) ;
-                this.processResults(obj) ;
+                this.project_!.processResults(obj) ;
                 resp = new Packet(PacketType.ReceivedResults) ;
             }
             catch(err) {
@@ -1264,17 +1343,5 @@ export class SCCentral extends SCBase {
                 this.tcpsyncserver_?.shutdown() ;
             }
         });
-    }
-
-    private processResults(obj: any) {
-        this.logger_.silly('received results from tablet ' + this.syncingTablet_, obj) ;
-        if (obj.purpose) {
-            if (obj.purpose === 'match') {
-                this.project_!.matchDB.processScoutingResults(obj.results) ;
-            }
-            else {
-                this.project_!.teamDB.processScoutingResults(obj.results) ;
-            }
-        }
     }
 }

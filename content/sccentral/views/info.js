@@ -311,6 +311,23 @@ function addLocked(info) {
     return row ;
 }
 
+function addGeneratorComment(info) {
+    let row = document.createElement('tr') ;
+    let label = document.createElement('td') ;
+    if (!info.locked_) {
+        label.innerHTML = 'Locking the event will generate the scouting schedule' ;
+    }
+    else {
+        label.innerHTML = '' ;
+    }
+    label.className = "info-table-cell" ;
+    label.colSpan = 3 ;
+    label.style.textAlign = 'center' ;
+    row.append(label) ;
+
+    return row;
+}
+
 function updateInfoView(info) {
     let row ;
 
@@ -348,6 +365,9 @@ function updateInfoView(info) {
     table.append(row) ;
 
     row = addLocked(info) ;
+    table.append(row) ;
+
+    row = addGeneratorComment(info) ;
     table.append(row) ;
     
     $("#rightcontent").append(div) ;

@@ -28,58 +28,55 @@ function loadBAEvent(key, desc) {
     window.scoutingAPI.send("load-ba-event-data", key);
 }
 
-function displayEvents(table)
-{
-    let tabrow = 1 ;
-    for(let frcev of frcevs) {
-
-        let data = [] ;
-        data.push(frcev.evkey) ;
-
-        let distname = "" ;
-        if (frcev.district) {
-            distname = frcev.district.display_name;
-        }
-        data.push(distname) ;
-
-        data.push(frcev.start_date) ;
-        data.push(frcev.desc) ;
-
-        let row = evtable.addRow(data) ;
-        row.onclick = () => { loadBAEvent(frcev.evkey, frcev.desc);}
-        
-        tabrow++ ;
-    }
-}
-
-function dateCompareFn(a, b) {
-    let adate = Date.parse(a.start_date) ;
-    let bdate = Date.parse(b.start_date) ;
-
-    if (adate < bdate) {
-        return -1 ;
-    }
-    else if (adate > bdate) {
-        return 1;
-    }
-
-    return a.desc.localeCompare(b.desc) ;
+function evDistMutator(value, data, type, params, component) {
+    return (value === null) ? '' : value ;
 }
 
 function updateSelectEvent(data) {
     frcevs = data[0] ;
-    
-    let topdiv = document.createElement('div') ;
-    topdiv.id = 'select-event-top-div' ;
-
-    evtable = new BwgTable(["Key", "District", "Date", "Name"], { prefix: "select-event", sortable: true }) ;
-    topdiv.append(evtable.top) ;
 
     $("#rightcontent").empty() ;
-    $("#rightcontent").append(topdiv) ;
+    let div = document.createElement('div') ;
+    $("#rightcontent").append(div) ;
+    div.id = 'tablediv' ;
 
-    displayEvents(evtable) ;
-    evtable.setSortOrder(1) ;
+    let cols = [] ;
+    cols.push({
+        field: 'key',
+        title: 'Event Key',
+    }) ;
+
+    cols.push({
+        field: 'name',
+        title: 'Name',
+    }) ;
+
+    cols.push({
+        field: 'district.display_name',
+        title: 'District',
+        mutator: evDistMutator,
+    }) ;
+
+    cols.push({
+        field: 'start_date',
+        title: 'Date'
+    })
+    
+    var table = new Tabulator(div, 
+        {
+            data:frcevs,
+            layout:"fitDataFill",
+            resizableColumnFit:true,
+            columns:cols
+        });
+    table.id = 'table' ;
+
+    table.on("cellDblClick", function(e, cell){
+        let row = cell.getRow() ;
+        let key = row.getData().key ;
+        let desc = row.getData().name ;
+        loadBAEvent(key, desc) ;
+    });
 }
 
 window.scoutingAPI.receive("send-event-data", (args)=>updateSelectEvent(args)) ;

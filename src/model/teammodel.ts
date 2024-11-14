@@ -1,37 +1,30 @@
 import * as sqlite3 from 'sqlite3' ;
 import { DataModel, DataRecord, ValueType } from "./datamodel";
+import winston from 'winston';
+import { BARankings, BATeam } from '../bluealliance/badata';
+
+interface scoutvalue {
+    tag: string,
+    type: string,
+    value: any
+} ;
 
 export class TeamDataModel extends DataModel {
     static readonly TeamTableName: string = 'teams' ;
 
-    public constructor(dbname: string, infoname: string) {
-        super(dbname, infoname) ;
+    public constructor(dbname: string, logger: winston.Logger) {
+        super(dbname, logger) ;
     }
 
     public getColumns() : Promise<string[]> {
         return this.getColumnNames(TeamDataModel.TeamTableName) ;
     }
 
-    public getAllData() : Promise<any> {
-        let ret = new Promise<any>((resolve, reject) => {
-            let query = 'select * from ' + TeamDataModel.TeamTableName + ';' ;
-            this.all(query)
-                .then((rows) => {
-                    resolve(rows as any) ;
-                })
-                .catch((err) => {
-                    reject(err) ;
-                }) ;
-        }) ;
-
-        return ret ;
-    }
-
     public init() : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
             super.init()
             .then(() => {
-                this.createTeamTableIfNecessary()
+                this.createTableIfNecessary(TeamDataModel.TeamTableName)
                     .then(()=> {
                         resolve() ;
                     })
@@ -47,106 +40,121 @@ export class TeamDataModel extends DataModel {
         return ret;
     }
 
-    private createTeamTableIfNecessary() : Promise<void> {
-        let ret = new Promise<void>((resolve, reject) => {
-            this.getTableNames()
-                .then((tables : string[]) => {
-                    if (!tables.includes(TeamDataModel.TeamTableName)) {
-                        //
-                        // create the table
-                        //
-                        this.runQuery(this.createTableQuery())
-                            .then((result: sqlite3.RunResult) => {
-                                resolve() ;
-                            })
-                            .catch((err) => {
-                                reject(err) ;
-                            });
-                    }
-                    else {
-                        resolve() ;
-                    }
-                })
-                .catch((err) => {
-                    reject(err) ;
-                })
-            }) ;
-        return ret ;
-    }
-
-    private createTableQuery() : string {
+    protected createTableQuery() : string {
         let ret = 'create table teams (' ;
-        ret += 'KEY TEXT NOT NULL' ;
+        ret += 'key TEXT';
+        ret += ', team_number INTEGER NOT NULL' ;
         ret += ');' ;
 
         return ret ;
     }
 
-    public processBAData(data: any) : Promise<void> {
+    private convertTeamToRecord(team: BATeam) : DataRecord {
+        let dr = new DataRecord() ;
+
+        dr.addfield('key', team.key) ;
+        dr.addfield('team_number', team.team_number) ;
+        dr.addfield('nickname', team.nickname) ;
+        dr.addfield('name', team.name) ;
+        dr.addfield('school_name', team.school_name) ;
+        dr.addfield('city', team.city) ;
+        dr.addfield('state_prov', team.state_prov) ;
+        dr.addfield('country', team.country) ;
+        dr.addfield('address', team.address) ;
+        dr.addfield('postal_code', team.postal_code) ;
+        dr.addfield('gmaps_place_id', team.gmaps_place_id) ;
+        dr.addfield('gmaps_url', team.gmaps_url) ;
+        dr.addfield('lat', team.lat) ;
+        dr.addfield('lng', team.lng) ;
+        dr.addfield('location_name', team.location_name) ;
+        dr.addfield('website', team.website) ;
+        dr.addfield('rookie_year', team.rookie_year) ;
+
+        return dr ;
+    }
+
+    public processBAData(data: BATeam[]) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
             let records: DataRecord[] = [] ;
-            let reccolnames: Set<string> = new Set<string>() ;
 
             for(let one of data) {
-                let dr = new DataRecord() ;
+                let dr = this.convertTeamToRecord(one) ;
                 records.push(dr) ;
-
-                for(let key of Object.keys(one)) {
-                    if (key === 'key_') {
-                        dr.addfield('KEY', one[key]) ;
-                    }
-                    else {
-                        dr.addfield(key, one[key]) ;
-                    }
-
-                    for(let key of dr.keys()) {
-                        reccolnames.add(key) ;
-                    }
-                }
             }
 
-            let existing: string[] = [] ;
-            
             try {
-                existing = await this.getColumnNames(TeamDataModel.TeamTableName) ;
+                await this.addColsAndData(TeamDataModel.TeamTableName, ['team_number'], records) ;
+                resolve() ;
             }
             catch(err) {
                 reject(err) ;
             }
-
-            let toadd: string[][] = [] ;
-            for(let key of reccolnames.keys()) {
-                if (!existing.includes(key)) {
-                    let type = this.extractType(key, records) ;
-                    let pair = [key, type] ;
-                    toadd.push(pair) ;
-                }
-            }
-
-            if (toadd.length > 0) {
-                try {
-                    await this.createColumns(TeamDataModel.TeamTableName, toadd) ;
-                }
-                catch(err) {
-                    reject(err) ;
-                }
-            }
-
-            for(let record of records) {
-                try {
-                    await this.insertOrUpdate(TeamDataModel.TeamTableName, ['KEY'], record) ;
-                }
-                catch(err) {
-                    reject(err) ;
-                }
-            }
-
-            resolve() ;
         }) ;
 
         return ret;        
     }
 
-    public processScoutingResults(results: any) {        
+    private convertRankingToRecord(ranking: BARankings) : DataRecord {
+        let dr = new DataRecord() ;
+        return dr ;
+    }
+
+    public processRankings(rankings: any[]) : Promise<void> {
+        let ret = new Promise<void>(async (resolve, reject) => {
+            let records : DataRecord[] = [];
+
+            for(let t of rankings) {
+                records.push(this.convertRankingToRecord(t)) ;
+            }
+
+            try {
+                await this.addColsAndData(TeamDataModel.TeamTableName, ['team_number'], records) ;
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret ;
+    }    
+
+    public async processScoutingResults(data: any[]) : Promise<number[]> {
+        let ret = new Promise<number[]>(async (resolve, reject) => {
+            let records: DataRecord[] = [] ;
+            let reccolnames: Set<string> = new Set<string>() ;
+
+            let teams: number[] = [] ;
+            let i = 0 ;
+            while (i < data.length) {
+                let team = data[i++] as string ;
+                let result = data[i++] as scoutvalue[] ;
+                if (team.startsWith('st-')) {
+                    let num = + team.substring(3) ;
+                    teams.push(num) ;
+                }
+                let dr = new DataRecord() ;
+
+                for(let field of result) {
+                    reccolnames.add(field.tag) ;
+                    dr.addfield(field.tag, field.value) ;
+                }
+
+                records.push(dr) ;
+            }
+
+            try {
+                // await this.addNecessaryCols(TeamDataModel.TeamTableName, reccolnames, records) ;
+                // for(let record of records) {
+                //     await this.insertOrUpdate(TeamDataModel.TeamTableName, ['KEY'], record) ;
+                // }
+            }
+            catch(err) {
+                reject(err) ;
+            }            
+
+            resolve(teams) ;
+        }) ;
+        return ret ;
     }
 }

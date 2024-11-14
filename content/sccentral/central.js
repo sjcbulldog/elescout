@@ -54,6 +54,9 @@ function updateView(args) {
   if (view === undefined) {
     updateMainWindow("error") ;
   }
+  else if (args[0] === 'empty' && args.length > 1) {
+    emptyView(args[1]) ;
+  }
   else {
     updateMainWindow(view) ;
   }

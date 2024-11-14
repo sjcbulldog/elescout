@@ -64,7 +64,7 @@ export abstract class SCBase {
     }
 
     public sendToRenderer(ev: string, ...args: any[]) {
-        this.logger_.silly('sendToRenderer', ev, args);
+        this.logger_.silly('sendToRenderer', { event: ev, args: args});
         this.win_.webContents.send(ev, args) ;
     }
 

@@ -1,9 +1,17 @@
 import * as sqlite3 from 'sqlite3' ;
+import winston from 'winston';
 
 export type ValueType = string | number | boolean | null ;
 
+export interface FieldAndType
+{
+    name: string ;
+    type: string ;
+} ;
+
 export class DataRecord {
     private data_ : Map<string, ValueType> ;
+
 
     public constructor() {
         this.data_ = new Map<string, ValueType>() ;
@@ -31,21 +39,25 @@ export class DataRecord {
     }
 }
 
-export class DataModel {
+export abstract class DataModel {
     private static readonly ColummTableName: string = 'cols' ;
+    private static queryno_ : number = 0 ;
 
     private dbname_ : string ;
-    private infoname_ : string ;
     private db_? : sqlite3.Database ;
+    private logger_ : winston.Logger ;
 
-    constructor(dbname: string, infoname: string) {
+    constructor(dbname: string, logger: winston.Logger) {
         this.dbname_ = dbname ;
-        this.infoname_ = infoname ;
+        this.logger_ = logger ;
     }
 
     public runQuery(query: string) : Promise<sqlite3.RunResult> {
         let ret = new Promise<sqlite3.RunResult>((resolve, reject) => {
+            let qno = DataModel.queryno_++ ;
+            this.logger_.debug(qno + ': runQuery \'' + query + '\'') ;
             this.db_?.run(query, (res: sqlite3.RunResult, err: Error) => {
+                this.logger_.debug(qno + ": result", { err: err, res: res}) ;
                 if (err) {
                     reject(err) ;
                 }
@@ -54,6 +66,65 @@ export class DataModel {
                 }
             }) ;
         }) ;
+        return ret ;
+    }
+
+    public all(query: string) : Promise<unknown[]> {
+        let ret = new Promise<unknown[]>((resolve, reject) => {
+            let qno = DataModel.queryno_++ ;
+            this.logger_.debug(qno + ': all \'' + query + '\'') ;
+            this.db_?.all(query, (err, rows) => {
+                this.logger_.debug(qno + ": result", { err: err, rows: rows}) ;
+                if (err) {
+                    reject(err) ;
+                }
+                else {
+                    resolve(rows) ;
+                }
+            }) ;
+        }) ;
+        return ret ;
+    }
+
+    public getAllData(table: string) : Promise<any> {
+        let ret = new Promise<any>((resolve, reject) => {
+            let query = 'select * from ' + table + ';' ;
+            this.all(query)
+                .then((rows) => {
+                    resolve(rows as any) ;
+                })
+                .catch((err) => {
+                    reject(err) ;
+                }) ;
+        }) ;
+
+        return ret ;
+    }
+
+    public getAllDataWithFields(table: string, fields: string[]) : Promise<any> {
+        let ret = new Promise<any>((resolve, reject) => {
+            let query = 'select ' ;
+
+            let first = true ;
+            for(let field of fields) {
+                if (!first) {
+                    query += ", " ;
+                }
+
+                query += field ;
+                first = false ;
+            }
+            
+            query += ' from ' + table + ';' ;
+            this.all(query)
+                .then((rows) => {
+                    resolve(rows as any) ;
+                })
+                .catch((err) => {
+                    reject(err) ;
+                }) ;
+        }) ;
+
         return ret ;
     }
 
@@ -95,19 +166,6 @@ export class DataModel {
         return ret ;
     }
 
-    public all(query: string) : Promise<unknown[]> {
-        let ret = new Promise<unknown[]>((resolve, reject) => {
-            this.db_?.all(query, (err, rows) => {
-                if (err) {
-                    reject(err) ;
-                }
-                else {
-                    resolve(rows) ;
-                }
-            }) ;
-        }) ;
-        return ret ;
-    }
 
     public init() : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
@@ -122,6 +180,94 @@ export class DataModel {
         }) ;
 
         return ret ;
+    }
+
+    private containsField(fields: FieldAndType[], name: string) {
+        for(let f of fields) {
+            if (f.name === name)
+                return true ;
+        }
+
+        return false ;
+    }
+
+    protected addColsAndData(table: string, keys: string[], records: DataRecord[]) : Promise<void> {
+        let fields: FieldAndType[] = [] ;
+
+        //
+        // Find the unique set of fields across all records and associated type
+        //
+        for(let r of records) {
+            for (let f of r.keys()) {
+                if (!this.containsField(fields, f)) {
+                    let type = this.extractType(f, records) ;
+                    fields.push({name: f, type: type}) ;
+                }
+            }
+        }
+
+        let ret = new Promise<void>(async (resolve, reject) => {
+            await this.addNecessaryCols(table, fields) ;
+            for(let record of records) {
+                try {
+                    await this.insertOrUpdate(table, keys, record) ;
+                }
+                catch(err) {
+                    reject(err) ;
+                }
+            }
+            resolve() ;
+        }) ;
+
+        return ret ;
+    }
+
+    protected mapTeamKeyString(field: string, namemap?: Map<string, string>) : string {
+        if (namemap && namemap.has(field)) {
+            return namemap.get(field)! ;
+        }
+
+        if (field.endsWith('_')) {
+            field = field.substring(0, field.length - 1) ;
+            if (namemap && namemap.has(field)) {
+                return namemap.get(field)! ;
+            }
+        }
+
+        return field ;
+    }
+
+    public addNecessaryCols(table: string, fields: FieldAndType[]) : Promise<void> {
+        let ret = new Promise<void>(async (resolve, reject) => {
+            let existing: string[] = [] ;
+                
+            try {
+                existing = await this.getColumnNames(table) ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+
+            let toadd: FieldAndType[] = [] ;
+            for(let key of fields) {
+                if (!existing.includes(key.name)) {
+                    toadd.push(key) ;
+                }
+            }
+
+            if (toadd.length > 0) {
+                try {
+                    await this.createColumns(table, toadd) ;
+                }
+                catch(err) {
+                    reject(err) ;
+                }
+            }
+
+            resolve() ;
+        }) ;
+
+        return ret;
     }
 
     protected extractType(key: string, records: DataRecord[]) {
@@ -193,7 +339,16 @@ export class DataModel {
         let ret: string ;
 
         if (typeof v === 'string') {
-            ret = '\'' + v + '\'' ;
+            ret = '\'' ;
+            for(let ch of v) {
+                if (ch === '\'') {
+                    ret += '\'\'' ;
+                }
+                else {
+                    ret += ch ;
+                }
+            }
+            ret += '\'' ;
         }
         else if (v === null) {
             ret = 'NULL' ;
@@ -228,19 +383,26 @@ export class DataModel {
             let query = 'update ' + table + ' SET ' ;
             let first = true ;
             for(let key of dr.keys()) {
-                let v = dr.value(key) ;
+                if (!keys.includes(key)) {
+                    let v = dr.value(key) ;
 
-                if (!first) {
-                    query += ', ' ;
+                    if (!first) {
+                        query += ', ' ;
+                    }
+
+                    query += key + '=' + this.valueToString(v!) ;
+                    first = false ;
                 }
-
-                query += key + '=' + this.valueToString(v!) ;
-                first = false ;
             }
 
-            query += ') ' + this.generateWhereClause(keys, dr) ;
-            this.runQuery(query).then(()=> resolve()).catch((err) =>reject(err)) ;
-
+            query += ' ' + this.generateWhereClause(keys, dr) ;
+            this.runQuery(query)
+            .then(()=> {
+                resolve()
+            })
+            .catch((err) => {
+                reject(err)
+            }) ;
         }) ;
         
         return ret;
@@ -265,14 +427,20 @@ export class DataModel {
             }
 
             query += ') ' + valstr + ');' ;
-            this.runQuery(query).then(()=> resolve()).catch((err) =>reject(err)) ;
+            this.runQuery(query)
+                .then(()=> { 
+                    resolve() 
+                })
+                .catch((err) => {
+                    reject(err)
+                }) ;
         }) ;
         
         return ret;
     }
 
-    public insertOrUpdate(table: string, keys: string[], dr: DataRecord) : Promise<void> {
-        let ret = new Promise<void>((resolve,reject) => {
+    public async insertOrUpdate(table: string, keys: string[], dr: DataRecord) : Promise<void> {
+        let ret = new Promise<void>(async (resolve,reject) => {
             for(let key of keys) {
                 if (!dr.has(key)) {
                     let err = new Error('The data record is missing a value for the key \'' + key + '\'') ;
@@ -280,51 +448,71 @@ export class DataModel {
                 }
             }
 
-            let query: string = 'select * from ' + table + this.generateWhereClause(keys, dr) ;
-
-            this.all(query)
-                .then((rows: unknown[])=> {
-                    if (rows.length) {
-                        // Update the record in the database
-                        this.updateRecord(table, keys, dr)
-                            .then(() => {
-                                resolve() ;
-                            })
-                            .catch((err) => {
-                                reject(err) ;
-                            }) ;
-                    }
-                    else {
-                        // Insert the record into the database
-                        this.insertRecord(table, dr)
-                            .then(() => {
-                                resolve() ;
-                            })
-                            .catch((err) => {
-                                reject(err) ;
-                            }) ;                        
-                    }
-                })
-                .catch((err) => {
-                    reject(err) ;
-                }) ;
+            try {
+                let query: string = 'select * from ' + table + this.generateWhereClause(keys, dr) ;
+                let rows = await this.all(query) ;
+                if (rows.length > 0) {
+                    await this.updateRecord(table, keys, dr)
+                }
+                else {
+                    await this.insertRecord(table, dr) ;
+                }
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
         }) ;
         return ret;
     }
 
-    public createColumns(table: string, toadd:string[][]) : Promise<void> {
+    public createColumns(table: string, toadd:FieldAndType[]) : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
             let allpromises = [] ;
 
             for(let one of toadd) {
-                let query: string = 'alter table ' + table + ' add column ' + one[0] + ' ' + one[1] + ';' ;
+                let query: string = 'alter table ' + table + ' add column ' + one.name + ' ' + one.type + ';' ;
                 let pr = this.runQuery(query) ;
                 allpromises.push(pr) ;
             }
 
-            Promise.all(allpromises).then(() => resolve()).catch((err) => reject(err)) ;
+            Promise.all(allpromises)
+                .then(() => {
+                    this.logger_.debug('finished all createColumns promises') ;
+                    resolve();
+                })
+                .catch((err) => reject(err)) ;
         }) ;
 
+        return ret ;
+    }
+
+    protected abstract createTableQuery() : string ;
+
+    protected createTableIfNecessary(table: string) : Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
+            this.getTableNames()
+                .then((tables : string[]) => {
+                    if (!tables.includes(table)) {
+                        //
+                        // create the table
+                        //
+                        this.runQuery(this.createTableQuery())
+                            .then((result: sqlite3.RunResult) => {
+                                resolve() ;
+                            })
+                            .catch((err) => {
+                                reject(err) ;
+                            });
+                    }
+                    else {
+                        resolve() ;
+                    }
+                })
+                .catch((err) => {
+                    reject(err) ;
+                })
+            }) ;
         return ret ;
     }
 }

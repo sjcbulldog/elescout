@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "compile",
+			"group": "build",
+			"problemMatcher": ["$tsc"],
+			"label": "npm: compile",
+			"detail": "tsc && copyfiles content/*.html content/*.css content/*.js content/*/*.html content/*/*.css content/*/*.js content/*/*/*.js content/*/*/*.css dist"
+		}
+	]
+}

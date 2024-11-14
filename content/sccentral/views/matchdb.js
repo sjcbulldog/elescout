@@ -1,7 +1,7 @@
 function matchDBView() {
     $("#rightcontent").empty() ;
     let div = document.createElement("div") ;
-    div.innerHTML = "<b>Match Data</b>" ;
+    div.innerHTML = "<b>Match data loading.  Please wait ....</b>" ;
     div.id = "info" ;
     $("#rightcontent").append(div) ;
 
@@ -38,8 +38,8 @@ function sortCompFun(a, b, aRow, bRow, col, dir, sorterParams) {
         ret = 1 ;
     }
     else {
-        let amat = aRow.getData().MATCHNO ;
-        let bmat = bRow.getData().MATCHNO ;
+        let amat = aRow.getData().match_number ;
+        let bmat = bRow.getData().match_number ;
         if (amat < bmat) {
             ret = -1 ;
         }
@@ -47,8 +47,8 @@ function sortCompFun(a, b, aRow, bRow, col, dir, sorterParams) {
             ret = 1 ;
         }
         else {
-            let aset = aRow.getData().SETNO ;
-            let bset = bRow.getData().SETNO ;
+            let aset = aRow.getData().set_number ;
+            let bset = bRow.getData().set_number ;
             if (aset < bset) {
                 ret = -1 ;
             }
@@ -69,7 +69,6 @@ function updateMatchData(args) {
     $("#rightcontent").append(div) ;
     div.id = 'tablediv' ;
 
-
     let cols = [] ;
     for(let col of args.cols) {
         let coldesc = {
@@ -77,7 +76,7 @@ function updateMatchData(args) {
             title: col,
         } ;
 
-        if (col === 'TYPE') {
+        if (col === 'comp_level') {
             coldesc.sorter = sortCompFun;
         }
         cols.push(coldesc) ;
