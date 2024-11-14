@@ -58,6 +58,7 @@ export abstract class SCBase {
     public abstract executeCommand(cmd: string) : void ;
     public abstract createMenu() : Menu | null ;
     public abstract windowCreated() : void ;
+    public abstract canQuit() : boolean ;
 
     public isScoutingTablet() : boolean { 
         return true ;

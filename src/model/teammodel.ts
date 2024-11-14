@@ -121,39 +121,7 @@ export class TeamDataModel extends DataModel {
 
     public async processScoutingResults(data: any[]) : Promise<number[]> {
         let ret = new Promise<number[]>(async (resolve, reject) => {
-            let records: DataRecord[] = [] ;
-            let reccolnames: Set<string> = new Set<string>() ;
-
-            let teams: number[] = [] ;
-            let i = 0 ;
-            while (i < data.length) {
-                let team = data[i++] as string ;
-                let result = data[i++] as scoutvalue[] ;
-                if (team.startsWith('st-')) {
-                    let num = + team.substring(3) ;
-                    teams.push(num) ;
-                }
-                let dr = new DataRecord() ;
-
-                for(let field of result) {
-                    reccolnames.add(field.tag) ;
-                    dr.addfield(field.tag, field.value) ;
-                }
-
-                records.push(dr) ;
-            }
-
-            try {
-                // await this.addNecessaryCols(TeamDataModel.TeamTableName, reccolnames, records) ;
-                // for(let record of records) {
-                //     await this.insertOrUpdate(TeamDataModel.TeamTableName, ['KEY'], record) ;
-                // }
-            }
-            catch(err) {
-                reject(err) ;
-            }            
-
-            resolve(teams) ;
+            resolve([3]) ;
         }) ;
         return ret ;
     }

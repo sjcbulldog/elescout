@@ -9,6 +9,10 @@ export class SCCoach extends SCBase {
     public basePage() : string  {
         return "content/scscouter/sccoach.html"
     }
+    
+    public canQuit(): boolean {
+        return true ;
+    }
 
     public sendNavData() : any {
         this.sendToRenderer('send-tree-data', null);

@@ -81,6 +81,22 @@ export class SCCentral extends SCBase {
         return 'content/sccentral/central.html'
     }
 
+    public canQuit(): boolean {
+        let ret: boolean = true ;
+
+        if (this.project_?.teamDB) {
+            if (!this.project_.teamDB.close()) {
+                ret = false;
+            }
+
+            if (!this.project_.matchDB.close()) {
+                ret = false ;
+            }
+        }
+
+        return ret;
+    }
+
     public createMenu() : Menu | null {
         let ret: Menu | null = new Menu() ;
 

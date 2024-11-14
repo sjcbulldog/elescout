@@ -19,6 +19,7 @@ function updateTeamData(args) {
         let coldesc = {
             field: col,
             title: col,
+            headerMenu:headerMenu
         } ;
         cols.push(coldesc) ;
     }

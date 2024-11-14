@@ -25,43 +25,6 @@ function mapMatchType(mtype) {
     return ret;
 }
 
-function sortCompFun(a, b, aRow, bRow, col, dir, sorterParams) {
-    let ret = 0 ;
-
-    let atype = mapMatchType(a) ;
-    let btype = mapMatchType(b) ;
-
-    if (atype < btype) {
-        ret = -1 ;
-    }
-    else if (atype > btype) {
-        ret = 1 ;
-    }
-    else {
-        let amat = aRow.getData().match_number ;
-        let bmat = bRow.getData().match_number ;
-        if (amat < bmat) {
-            ret = -1 ;
-        }
-        else if (amat > bmat) {
-            ret = 1 ;
-        }
-        else {
-            let aset = aRow.getData().set_number ;
-            let bset = bRow.getData().set_number ;
-            if (aset < bset) {
-                ret = -1 ;
-            }
-            else if (aset > bset) {
-                ret = 1 ;
-            }
-            else {
-                ret = 0 ;
-            }
-        }
-    }
-    return ret ;
-}
 
 function updateMatchData(args) {
     $("#rightcontent").empty() ;
@@ -74,6 +37,7 @@ function updateMatchData(args) {
         let coldesc = {
             field: col,
             title: col,
+            headerMenu:headerMenu,
         } ;
 
         if (col === 'comp_level') {

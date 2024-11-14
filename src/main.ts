@@ -91,3 +91,11 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 });
+
+app.on('before-quit', (ev) => {
+    if (scappbase) {
+        if (!scappbase.canQuit()) {
+            ev.preventDefault() ;
+        }
+    }
+}) ;

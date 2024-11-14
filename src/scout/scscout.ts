@@ -54,6 +54,10 @@ export class SCScout extends SCBase {
         return "content/scscouter/scouter.html"
     }
 
+    public canQuit(): boolean {
+        return true ;
+    }
+
     public sendNavData() : any {
         let treedata : any[] = [] ;
 

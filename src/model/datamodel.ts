@@ -52,6 +52,20 @@ export abstract class DataModel {
         this.logger_ = logger ;
     }
 
+    public close() : boolean {
+        let ret: boolean = true ;
+
+        if (this.db_) {
+            this.db_.close(function(err: Error | null) {
+                if (err) {
+                    ret = false ;
+                }
+            }) ;
+        }
+        
+        return true ;
+    }
+
     public runQuery(query: string) : Promise<sqlite3.RunResult> {
         let ret = new Promise<sqlite3.RunResult>((resolve, reject) => {
             let qno = DataModel.queryno_++ ;
@@ -62,6 +76,12 @@ export abstract class DataModel {
                     reject(err) ;
                 }
                 else {
+                    if (res) {
+                        let obj = res as any ;
+                        if (obj.code === 'SQLITE_ERROR') {
+                            reject(new Error(obj.message)) ;
+                        }
+                    }
                     resolve(res) ;
                 }
             }) ;
@@ -165,7 +185,6 @@ export abstract class DataModel {
         }) ;
         return ret ;
     }
-
 
     public init() : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
