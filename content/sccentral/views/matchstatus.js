@@ -36,6 +36,7 @@ function createColDescs() {
             field: "comp_level",
             title: "Type",
             sorter: sortCompFun,
+            headerVertical: true,
             formatter: sizeCellFormatter
         },
         {
@@ -44,6 +45,7 @@ function createColDescs() {
             formatter: sizeCellFormatter,
             headerTooltip: 'Set Number',
             headerSort: false,
+            headerVertical: true,
         },
         {
             field: "match_number",
@@ -51,6 +53,7 @@ function createColDescs() {
             formatter: sizeCellFormatter,
             headerTooltip: 'Match Number',
             headerSort: false,
+            headerVertical: true,
         },
         {
             title: 'Red 1',
@@ -61,18 +64,21 @@ function createColDescs() {
                     title: "Team",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "redtab1",
                     title: "Tablet",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "redst1",
                     title: "Status",
                     formatter: sizeColorCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
             ]
         },
@@ -85,18 +91,21 @@ function createColDescs() {
                     title: "Team",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "redtab2",
                     title: "Tablet",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "redst2",
                     title: "Status",
                     formatter: sizeColorCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
             ]
         },
@@ -109,18 +118,21 @@ function createColDescs() {
                     title: "Team",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "redtab3",
                     title: "Tablet",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "redst3",
                     title: "Status",
                     formatter: sizeColorCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
             ]
         },
@@ -133,6 +145,7 @@ function createColDescs() {
                     title: "Team",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
 
                 {
@@ -140,12 +153,14 @@ function createColDescs() {
                     title: "Tablet",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "bluest1",
                     title: "Status",
                     formatter: sizeColorCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
             ]
         },
@@ -158,18 +173,21 @@ function createColDescs() {
                     title: "Team",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "bluetab2",
                     title: "Tablet",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "bluest2",
                     title: "Status",
                     formatter: sizeColorCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
             ]
         },
@@ -182,18 +200,21 @@ function createColDescs() {
                     title: "Team",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "bluetab3",
                     title: "Tablet",
                     formatter: sizeCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 },
                 {
                     field: "bluest3",
                     title: "Status",
                     formatter: sizeColorCellFormatter,
                     headerSort: false,
+                    headerVertical: true,
                 }, 
             ]
         }
@@ -210,7 +231,7 @@ function updateMatchStatus(data) {
     var table = new Tabulator(div, 
             {
                 data:data,
-                layout:"fitDataFill",
+                layout:"fitColumns",
                 resizableColumnFit:true,
                 columns:createColDescs(),
                 initialSort:[{column:"comp_level", dir:"asc"}],

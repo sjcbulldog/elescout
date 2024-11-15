@@ -1,3 +1,5 @@
+let matchdbtable = undefined ;
+
 function matchDBView() {
     $("#rightcontent").empty() ;
     let div = document.createElement("div") ;
@@ -8,6 +10,19 @@ function matchDBView() {
     window.scoutingAPI.send("get-match-db");
 }
 
+function shutdownMatchDBView() {
+    let data = [] ;
+    for(let col of matchdbtable.getColumns()) {
+        let info = {
+            name: col.getField(),
+            hidden: !col.isVisible(),
+            width: col.getWidth(),
+        }
+        data.push(info) ;
+    }
+    window.scoutingAPI.send('send-match-col-config', data) ;
+    matchdbtable = undefined ;
+}
 
 function mapMatchType(mtype) {
     let ret= -1 ;
@@ -38,6 +53,7 @@ function updateMatchData(args) {
             field: col,
             title: col,
             headerMenu:headerMenu,
+            headerVertical: false,
         } ;
 
         if (col === 'comp_level') {
@@ -45,7 +61,7 @@ function updateMatchData(args) {
         }
         cols.push(coldesc) ;
     }
-    var table = new Tabulator(div, 
+    matchdbtable = new Tabulator(div, 
             {
                 data:args.data,
                 layout:"fitDataStretch",
@@ -53,7 +69,21 @@ function updateMatchData(args) {
                 columns:cols,
                 movableColumns: true,
             });
-   table.id = 'table' ;
+}
+
+function configMatchCols(cols) {
+    if (matchdbtable) {
+        for (let col of cols) {
+            let colobj = getTableColByID(matchdbtable, col.name) ;
+            if (colobj) {
+                if (col.hidden) {
+                    colobj.hide() ;
+                }
+                colobj.setWidth(col.width) ;
+            }
+        }
+    }
 }
 
 window.scoutingAPI.receive("send-match-db", (args)=>updateMatchData(args[0])) ;
+window.scoutingAPI.receive("send-match-col-config", (args)=>configMatchCols(args[0])) ;

@@ -15,6 +15,14 @@ import { TeamDataModel } from '../model/teammodel';
 import { MatchDataModel } from '../model/matchmodel';
 import winston from 'winston';
 import { BAEvent, BAMatch, BATeam } from '../bluealliance/badata';
+import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
+
+export interface ProjColConfig
+{
+    name: string,
+    width: number,
+    hidden: boolean
+} ;
 
 export class ProjectInfo {
     public frcev_? : BAEvent ;                          // Information defining the blue alliance event, null for non-BA events
@@ -32,6 +40,8 @@ export class ProjectInfo {
     public matchdb_?: sqlite3.Database ;                // The database containing match information
     public scouted_team_: number[] = [] ;               // The list of teams that have scouting data
     public scouted_match_: string[] = [] ;              // The list of matches that have scouring data
+    public matchdb_col_config_ : ProjColConfig[] = [] ;              // List of hidden columns in match data
+    public teamdb_col_config_ : ProjColConfig[] = [] ;              // List of hidden columns in team data
 
     constructor() {
 
@@ -97,6 +107,21 @@ export class Project {
         }) ;
 
         return ret;
+    }
+
+    public closeEvent() {
+        this.writeEventFile() ;
+        this.info_ = new ProjectInfo() ;
+    }
+
+    public setMatchColConfig(data: any[]) {
+        this.info.matchdb_col_config_ = data ;
+        this.writeEventFile() ;
+    }
+
+    public setTeamColConfig(data: any[]) {
+        this.info.teamdb_col_config_ = data ;
+        this.writeEventFile() ;
     }
 
     public async processResults(obj: any) {
@@ -458,7 +483,7 @@ export class Project {
 
         return ret ;
     }
-    
+
     private loadRanking(ba: BlueAlliance) : Promise<any> {
         let ret = new Promise<any>((resolve, reject) => {
             ba.getRankings(this.info_.frcev_?.key!)

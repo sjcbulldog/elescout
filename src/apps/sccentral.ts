@@ -2,8 +2,6 @@ import { SCBase } from './scbase';
 import { BlueAlliance } from '../bluealliance/ba';
 import { Project } from '../project/project';
 import { BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
-import Papa from 'papaparse';
-import * as fs from 'fs' ;
 import { TCPSyncServer } from '../sync/tcpserver';
 import { Packet } from '../sync/packet';
 import { PacketType } from '../sync/packettypes';
@@ -11,6 +9,8 @@ import { FieldAndType, ValueType } from '../model/datamodel';
 import { MatchDataModel } from '../model/matchmodel';
 import { BAEvent, BAMatch, BATeam } from '../bluealliance/badata';
 import { TeamDataModel } from '../model/teammodel';
+import Papa from 'papaparse';
+import * as fs from 'fs' ;
 
 export class SCCentral extends SCBase {
 
@@ -28,6 +28,7 @@ export class SCCentral extends SCBase {
     ] ;
 
     private static readonly openExistingEvent : string = 'open-existing' ;
+    private static readonly closeEvent: string = 'close-event' ;
     private static readonly createNewEvent: string = 'create-new' ;
     private static readonly selectTeamForm: string = 'select-team-form' ;
     private static readonly selectMatchForm: string = 'select-match-form' ;
@@ -56,7 +57,7 @@ export class SCCentral extends SCBase {
     private baevents_? : BAEvent[] ;
     private syncingTablet_? : string = undefined ;
     private syncingPurpose_? : string = undefined;
-
+    private menuitems_: Map<string, MenuItem> = new Map<string, MenuItem>() ;
 
     constructor(win: BrowserWindow) {
         super(win, 'server') ;
@@ -112,7 +113,8 @@ export class SCCentral extends SCBase {
             id: 'create-event',
             click: () => { this.executeCommand(SCCentral.createNewEvent)}
         }) ;
-        filemenu.submenu?.insert(0, createitem) ;
+        filemenu.submenu!.append(createitem) ;
+        this.menuitems_.set('file/create', createitem) ;
 
         let openitem: MenuItem = new MenuItem( {
             type: 'normal',
@@ -120,9 +122,20 @@ export class SCCentral extends SCBase {
             id: 'open-event',
             click: () => { this.executeCommand(SCCentral.openExistingEvent)}            
         }) ;
-        filemenu.submenu?.insert(1, openitem) ;
+        filemenu.submenu!.append(openitem) ;
+        this.menuitems_.set('file/open', openitem) ;
 
-        filemenu.submenu?.insert(2, new MenuItem({type: 'separator'}));
+        filemenu.submenu!.append(new MenuItem({type: 'separator'}));
+
+        let closeitem: MenuItem = new MenuItem( {
+            type: 'normal',
+            label: 'Close Event',
+            id: 'close-event',
+            enabled: false,
+            click: () => { this.executeCommand(SCCentral.closeEvent)}            
+        }) ;
+        filemenu.submenu!.append(closeitem) ;
+        this.menuitems_.set('file/close', closeitem) ;
 
         ret.append(filemenu) ;
 
@@ -135,25 +148,31 @@ export class SCCentral extends SCBase {
         let downloadMatchData: MenuItem = new MenuItem( {
             type: 'normal',
             label: 'Import Match Data',
+            enabled: false,
             click: () => { this.downloadMatchData();}
         }) ;
         loadmenu.submenu?.append(downloadMatchData) ;
+        this.menuitems_.set('data/loadmatchdata', downloadMatchData) ;
 
         loadmenu.submenu?.append(new MenuItem({type: 'separator'}));
 
         let exportTeamData: MenuItem = new MenuItem( {
             type: 'normal',
             label: 'Export Team Data',
-            click: () => { this.doExportTeamData();}
+            enabled: false,
+            click: () => { this.doExportData(TeamDataModel.TeamTableName);}
         }) ;
         loadmenu.submenu?.append(exportTeamData) ;
+        this.menuitems_.set('data/exportteam', exportTeamData) ;
 
         let exportMatchData: MenuItem = new MenuItem( {
             type: 'normal',
             label: 'Export Match Data',
-            click: () => { this.doExportMatchData();}
+            enabled: false,
+            click: () => { this.doExportData(MatchDataModel.MatchTableName);}
         }) ;
         loadmenu.submenu?.append(exportMatchData) ;
+        this.menuitems_.set('data/exportmatch', exportMatchData) ;
 
         ret.append(loadmenu) ;
 
@@ -169,10 +188,45 @@ export class SCCentral extends SCBase {
     public windowCreated(): void {
     }
 
-    private doExportTeamData() {
+    private enableMenuItem(item: string, state: boolean) {
+        if (this.menuitems_.has(item)) {
+            this.menuitems_.get(item)!.enabled = state;
+        }
     }
 
-    private doExportMatchData() {
+    private updateMenuState(hasEvent: boolean) {
+        let items : string[] = ['data/exportmatch', 'data/exportteam', 'data/loadmatchdata', 'file/close'] ;
+        for(let item of items) {
+            this.enableMenuItem(item, hasEvent) ;
+        }
+    }
+
+    private doExportData(table: string) {
+        var path = dialog.showSaveDialog({
+            title: 'Select CSV Output File',
+            message: 'Select file for CSV output for table \'' + table + '\'',
+            filters: [
+                {
+                    extensions: ['csv'],
+                    name: 'CSV File'
+                },
+            ],
+            properties: [
+                'showOverwriteConfirmation'
+            ],
+        });
+
+        path.then((pathname) => {
+            if (!pathname.canceled) {
+                if (table === TeamDataModel.TeamTableName) {
+                    this.project_?.teamDB.exportToCSV(pathname.filePath, table) ;
+                }
+                else {
+                    this.project_?.matchDB.exportToCSV(pathname.filePath, table) ;
+                }
+
+            }
+        }) ;
     }
 
     public sendTeamForm() {
@@ -397,6 +451,14 @@ export class SCCentral extends SCBase {
         }
     }
 
+    public setMatchColConfig(data: any[]) {
+        this.project_!.setMatchColConfig(data) ;
+    }
+
+    public setTeamColConfig(data: any[]) {
+        this.setTeamColConfig(data) ;
+    }
+
     public setTeamData(data: any[]) {
         if (this.project_) {
             this.project_.setTeamData(data) ;
@@ -434,6 +496,7 @@ export class SCCentral extends SCBase {
                                 data: data
                             } ;
                             this.sendToRenderer('send-match-db', dataobj) ;
+                            this.sendToRenderer('send-match-col-config', this.project_!.info.matchdb_col_config_) ;
                         })
                         .catch((err) => {
 
@@ -456,6 +519,7 @@ export class SCCentral extends SCBase {
                                 data: data
                             } ;
                             this.sendToRenderer('send-team-db', dataobj) ;
+                            this.sendToRenderer('send-team-col-config', this.project_!.info.teamdb_col_config_) ;
                         })
                         .catch((err) => {
                             this.logger_.error('error getting data from database for send-team-db', err) ;
@@ -633,6 +697,9 @@ export class SCCentral extends SCBase {
         else if (cmd === SCCentral.openExistingEvent) {
             this.openEvent() ;
             this.sendNavData() ;
+        }
+        else if (cmd === SCCentral.closeEvent) {
+            this.closeEvent() ;
         }
         else if (cmd === SCCentral.selectMatchForm) {
             this.selectMatchForm() ;
@@ -950,6 +1017,7 @@ export class SCCentral extends SCBase {
                 Project.createEvent(this.logger_, pathname.filePaths[0])
                     .then((p) => {
                         this.project_ = p ;
+                        this.updateMenuState(true) ;
                         this.setView('info') ;
                     })
                     .catch((err) => {
@@ -1209,6 +1277,16 @@ export class SCCentral extends SCBase {
         }) ;
     }    
 
+    private closeEvent() {
+        if (this.project_) {
+            this.project_.closeEvent() ;
+            this.project_ = undefined ;
+            this.updateMenuState(false) ;
+            this.sendNavData() ;
+            this.setView('empty') ;
+        }
+    }
+
     private openEvent() {
         var path = dialog.showOpenDialog({
             title: 'Event descriptor file',
@@ -1229,6 +1307,7 @@ export class SCCentral extends SCBase {
                 Project.openEvent(this.logger_, pathname.filePaths[0])
                     .then((p) => {
                         this.project_ = p ;
+                        this.updateMenuState(true) ;
                         if (this.project_.info.locked_) {
                             this.startSyncServer() ;
                         }

@@ -36,6 +36,16 @@ function sortCompFun(a, b, aRow, bRow, col, dir, sorterParams) {
     return ret ;
 }
 
+function getTableColByID(table, id) {
+    for(let col of table.getColumns()) {
+        if (col.getField() === id) {
+            return col ;
+        }
+    }
+
+    return undefined ;
+}
+
 function headerMenu() {
     var menu = [];
     var columns = this.getColumns();
@@ -66,6 +76,7 @@ function headerMenu() {
                 column.toggle();
 
                 //change menu item icon
+                let f = column.getDefinition().field ;
                 if(column.isVisible()){
                     icon.innerHTML = '&check;'
                 }else{

@@ -70,7 +70,7 @@ export class MatchDataModel extends DataModel {
     }
 
     protected createTableQuery() : string {
-        let ret = 'create table matches (' ;
+        let ret = 'create table ' + MatchDataModel.MatchTableName + ' (' ;
         ret += 'key TEXT NOT NULL' ;
         ret += ', comp_level TEXT NOT NULL' ;
         ret += ', set_number REAL NOT NULL' ;

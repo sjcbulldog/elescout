@@ -23,6 +23,7 @@ function doStatusFormat(cell) {
 }
 
 function updateTeamStatus(data) {
+    let hdrvert = false ;
     $("#rightcontent").empty() ;
     let div = document.createElement('div') ;
     $("#rightcontent").append(div) ;
@@ -31,26 +32,30 @@ function updateTeamStatus(data) {
     let cols = [] ;
     cols.push({
         field: 'number',
-        title: 'Number'
+        title: 'Number',
+        headerVertical: hdrvert,
     }) ;
     cols.push({
         field: 'tablet',
-        title: 'Tablet'
+        title: 'Tablet',
+        headerVertical: hdrvert,
     }) ;
     cols.push({
         field: 'status',
         title: 'Status',
         formatter: doStatusFormat,
+        headerVertical: hdrvert,
     }) ;
     cols.push({
         field: 'teamname',
-        title: 'Team Name'
+        title: 'Team Name',
+        headerVertical: hdrvert,
     }) ;
 
     var table = new Tabulator(div, 
             {
                 data:data,
-                layout:"fitDataStretch",
+                layout:"fitColumns",
                 resizableColumnFit:true,
                 columns:cols,
                 movableColumns: true,

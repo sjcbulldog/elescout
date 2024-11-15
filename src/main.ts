@@ -4,17 +4,16 @@ import { SCBase } from "./apps/scbase";
 import { SCScout } from "./apps/scscout";
 import { SCCentral } from "./apps/sccentral";
 import { SCCoach } from "./apps/sccoach";
-import { ContentManager } from "./cmgr";
 import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
          setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm, 
          getTeamStatus, getMatchStatus, setTabletNamePurpose, getPreviewForm, 
          provideResult,
          setEventName,
          getMatchDB,
-         getTeamDB} from "./ipchandlers" ;
+         getTeamDB,
+         sendMatchColConfig,
+         sendTeamColConfig} from "./ipchandlers" ;
 
-
-let cmgr: ContentManager = new ContentManager() ;
 
 export let scappbase : SCBase | undefined = undefined ;
 
@@ -52,7 +51,7 @@ function createWindow() : void {
     }
   
     win
-      .loadFile(cmgr.getStaticPage(scappbase!.basePage()))
+      .loadFile(scappbase!.basePage())
       .then(() => {
       })
       .catch((e) => console.error(e));
@@ -84,6 +83,8 @@ app.on("ready", () => {
     ipcMain.on('execute-command', (event, ...args) => { executeCommand(...args)}) ;
     ipcMain.on('set-tablet-name-purpose', (event, ...args) => { setTabletNamePurpose(...args)}) ;
     ipcMain.on('provide-result', (event, ...args) => { provideResult(...args)}) ;
+    ipcMain.on('send-match-col-config', (event, ...args) => { sendMatchColConfig(...args)}) ;
+    ipcMain.on('send-team-col-config', (event, ...args) => { sendTeamColConfig(...args)}) ;
     createWindow() ;
 }) ;
 

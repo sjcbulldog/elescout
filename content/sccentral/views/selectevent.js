@@ -65,7 +65,7 @@ function updateSelectEvent(data) {
     var table = new Tabulator(div, 
         {
             data:frcevs,
-            layout:"fitDataFill",
+            layout:"fitColumns",
             resizableColumnFit:true,
             columns:cols
         });

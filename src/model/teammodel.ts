@@ -10,7 +10,7 @@ interface scoutvalue {
 } ;
 
 export class TeamDataModel extends DataModel {
-    static readonly TeamTableName: string = 'teams' ;
+    public static readonly TeamTableName: string = 'teams' ;
 
     public constructor(dbname: string, logger: winston.Logger) {
         super(dbname, logger) ;
@@ -41,7 +41,7 @@ export class TeamDataModel extends DataModel {
     }
 
     protected createTableQuery() : string {
-        let ret = 'create table teams (' ;
+        let ret = 'create table ' + TeamDataModel.TeamTableName + ' (' ;
         ret += 'key TEXT';
         ret += ', team_number INTEGER NOT NULL' ;
         ret += ');' ;

@@ -1,5 +1,20 @@
+let mainwintype = undefined ;
 
 async function updateMainWindow(mtype) {
+  shutdownExistingView() ;
+  setNewMainView(mtype) ;
+}
+
+function shutdownExistingView() {
+  if (mainwintype === 'matchdb') {
+    shutdownMatchDBView() ;
+  }
+  else if (mainwintype === 'teamdb') {
+    shutdownTeamDBView() ;
+  }
+}
+
+function setNewMainView(mtype) {
   mainwintype = mtype ;
   
   if (mainwintype === "empty") {

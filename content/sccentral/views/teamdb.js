@@ -1,3 +1,5 @@
+let teamdbtable = undefined ;
+
 function teamDBView() {
     $("#rightcontent").empty() ;
     let div = document.createElement("div") ;
@@ -6,6 +8,20 @@ function teamDBView() {
     $("#rightcontent").append(div) ;
 
     window.scoutingAPI.send("get-team-db");
+}
+
+function shutdownTeamDBView() {
+    let data = [] ;
+    for(let col of teamdbtable.getColumns()) {
+        let info = {
+            name: col.getField(),
+            hidden: !col.isVisible(),
+            width: col.getWidth(),
+        }
+        data.push(info) ;
+    }
+    window.scoutingAPI.send('send-team-col-config', data) ;
+    teamdbtable = undefined ;
 }
 
 function updateTeamData(args) {
@@ -19,12 +35,13 @@ function updateTeamData(args) {
         let coldesc = {
             field: col,
             title: col,
-            headerMenu:headerMenu
+            headerMenu:headerMenu,
+            headerVertical: false,
         } ;
         cols.push(coldesc) ;
     }
 
-    var table = new Tabulator(div, 
+    teamdbtable = new Tabulator(div, 
         {
             data:args.data,
             layout:"fitDataStretch",
@@ -32,7 +49,22 @@ function updateTeamData(args) {
             columns:cols,
             movableColumns: true,
         });
-    table.id = 'table' ;
+}
+
+
+function configTeamCols(cols) {
+    if (teamdbtable) {
+        for (let col of cols) {
+            let colobj = getTableColByID(teamdbtable, col.name) ;
+            if (colobj) {
+                if (col.hidden) {
+                    colobj.hide() ;
+                }
+                colobj.setWidth(col.width) ;
+            }
+        }
+    }
 }
 
 window.scoutingAPI.receive("send-team-db", (args)=>updateTeamData(args[0])) ;
+window.scoutingAPI.receive("send-team-col-config", (args)=>configTeamCols(args[0])) ;

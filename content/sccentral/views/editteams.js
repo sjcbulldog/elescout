@@ -54,6 +54,13 @@ function saveTeamData() {
     window.scoutingAPI.send('set-team-data', data) ;
 }
 
+function delTeam() {
+    var selectedRows = teamtable.getSelectedRows();
+    for(let row of selectedRows) {
+        row.delete() ;
+    }
+}
+
 function editTeamCreateButtonBar() {
     let buttondiv = document.createElement('div');
     buttondiv.id = 'edit-teams-buttons';
@@ -62,6 +69,11 @@ function editTeamCreateButtonBar() {
     add.innerText = 'Add Team';
     buttondiv.append(add);
     add.onclick = addNewTeam;
+
+    let del = document.createElement('button');
+    del.innerText = 'Delete Team';
+    buttondiv.append(del);
+    del.onclick = delTeam;
 
     let impbut = document.createElement('button');
     impbut.innerText = 'Import Teams';
@@ -92,7 +104,8 @@ function updateTeamsView(teams) {
     teamtable = new Tabulator(div,
         {
             data: teams,
-            layout: "fitDataFill",
+            selectableRows: true,
+            layout: "fitColumns",
             resizableColumnFit: true,
             columns: createColsDescsEditTeams(),
             initialSort: [{ column: "team_number", dir: "asc" }],

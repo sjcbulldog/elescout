@@ -1,5 +1,7 @@
 import * as sqlite3 from 'sqlite3' ;
+import * as fs from 'fs' ;
 import winston from 'winston';
+import { format } from '@fast-csv/format';
 
 export type ValueType = string | number | boolean | null ;
 
@@ -52,6 +54,33 @@ export abstract class DataModel {
         this.logger_ = logger ;
     }
 
+    public exportToCSV(filename: string, table: string) : Promise<void> {
+        let ret = new Promise<void>(async (resolve, reject) => {
+            try {
+                let cols = await this.getColumnNames(table) ;
+
+                const csvStream = format(
+                    { 
+                        headers: cols,
+                    }) ; 
+
+                const outputStream = fs.createWriteStream(filename);
+                csvStream.pipe(outputStream).on('end', () => { 
+                    csvStream.end() ;
+                    resolve()
+                }) ;
+                let records = await this.getAllData(table) ;
+                for(let record of records) {
+                    csvStream.write(record) ;
+                }
+                csvStream.end();
+            }
+            catch(err) {
+                reject(err) ;
+            }        
+        }) ;
+        return ret ;
+    }
     
     public static extractNumberFromKey(key: string) : number {
         let ret = -1 ;

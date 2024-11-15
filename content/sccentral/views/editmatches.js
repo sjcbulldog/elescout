@@ -162,6 +162,13 @@ function saveMatchData() {
     window.scoutingAPI.send('set-match-data', data) ;
 }
 
+function delMatch() {
+    var selectedRows = matchtable.getSelectedRows();
+    for(let row of selectedRows) {
+        row.delete() ;
+    }
+}
+
 function editMatchCreateButtonBar() {
     let buttondiv = document.createElement('div');
     buttondiv.id = 'edit-matches-buttons';
@@ -170,6 +177,11 @@ function editMatchCreateButtonBar() {
     add.innerText = 'Add Match';
     buttondiv.append(add);
     add.onclick = addNewMatch;
+
+    let del = document.createElement('button');
+    del.innerText = 'Delete Match';
+    buttondiv.append(del);
+    del.onclick = delMatch;
 
     let impbut = document.createElement('button');
     impbut.innerText = 'Import Matches';
@@ -201,7 +213,8 @@ function updateMatchesView(matches, teams) {
     matchtable = new Tabulator(div,
         {
             data: matches,
-            layout: "fitDataFill",
+            selectableRows: true,
+            layout: "fitColumns",
             resizableColumnFit: true,
             columns: createColsDescsEditMatches(),
             initialSort: [{ column: "comp_level", dir: "asc" }],

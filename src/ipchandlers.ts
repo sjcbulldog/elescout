@@ -77,6 +77,21 @@ export async function setTeamData(...args: any[]) {
     } 
 }
 
+
+export async function sendMatchColConfig(...args: any[]) {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.setMatchColConfig(args[0]) ;
+    } 
+}
+
+export async function sendTeamColConfig(...args: any[]) {
+    if (scappbase && !scappbase.isScoutingTablet()) {
+        let central : SCCentral = scappbase as SCCentral ;
+        central.setTeamColConfig(args[0]) ;
+    } 
+}
+
 export async function setTabletNamePurpose(...args: any[]) {
     if (scappbase && scappbase.isScoutingTablet()) {
         let scout : SCScout = scappbase as SCScout ;
@@ -90,6 +105,7 @@ export async function provideResult(...args: any[]) {
         scout.provideResults(args[0]) ;
     } 
 }
+
 
 export async function getMatchDB() {
     if (scappbase && !scappbase.isScoutingTablet()) {
