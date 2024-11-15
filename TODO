@@ -3,7 +3,6 @@ Base
 
 Central
 -------
-    Grey menu items when not valid
     Compute team data from match data
     Process team form data
     Process match form data
@@ -15,6 +14,7 @@ Central
 
 Scout
 -------
+    Left nav pane does not have scroll bars
     Left nav pane visible appearance needs improvement
     Team scouting tablet sort and scroll
 

@@ -407,10 +407,11 @@ export class SCCentral extends SCBase {
 
     private shortenString(str: string | undefined) : string | undefined {
         let ret: string | undefined ;
+        let maxlen = 50 ;
 
         if (str) {
-            if (str.length > 32) {
-                ret = '...' + str.substring(str.length - 32) ;
+            if (str.length > maxlen) {
+                ret = '...' + str.substring(str.length - maxlen) ;
             }
             else {
                 ret = str ;
@@ -427,12 +428,15 @@ export class SCCentral extends SCBase {
                 bakey_ : this.project_.info.frcev_?.key,
                 name_ : this.project_.info.frcev_ ? this.project_.info.frcev_.name : this.project_.info.name_,
                 teamform_ : this.shortenString(this.project_.info.teamform_),
+                teamformfull_ : this.project_.info.teamform_,
                 matchform_ : this.shortenString(this.project_.info.matchform_),
+                matchformfull_: this.project_.info.matchform_,
                 tablets_ : this.project_.info.tablets_,
                 tablets_valid_ : this.project_.areTabletsValid(),
                 teams_ : this.project_.info.teams_,
                 matches_ : this.project_.info.matches_,
-                locked_ : this.project_.info.locked_
+                locked_ : this.project_.info.locked_,
+                uuid_: this.project_.info.uuid_,
             };
             this.sendToRenderer('send-info-data', obj);
         }

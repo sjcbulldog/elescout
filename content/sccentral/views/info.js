@@ -46,6 +46,22 @@ function addname(info) {
     return row ;
 }
 
+function adduuid(info) {
+    let row = document.createElement('tr') ;
+
+    let label = document.createElement('td') ;
+    label.innerHTML = 'Id:  ' ;
+    label.className = "info-table-cell" ;
+    row.append(label) ;
+
+    let evname = document.createElement('td')
+    evname.className = "info-table-cell" ;
+    evname.innerHTML = info.uuid_ ;
+
+    row.append(evname) ;
+    return row ;
+}
+
 function addbakey(info) {
     let row = document.createElement('tr') ;
 
@@ -85,6 +101,7 @@ function addteamform(info) {
     let value = document.createElement('td');
     value.innerHTML = (info.teamform_ ? info.teamform_ : 'NONE') ;
     value.className = "info-table-cell" ;
+    value.title = info.teamformfull_ ;
     row.append(value) ;
 
     let cell = document.createElement('td') ;
@@ -123,6 +140,7 @@ function addmatchform(info) {
 
     let value = document.createElement('td');
     value.innerHTML = (info.matchform_ ? info.matchform_ : 'NONE') ;
+    value.title = info.matchformfull_ ;
     value.className = "info-table-cell" ;
     row.append(value) ;
 
@@ -344,6 +362,9 @@ function updateInfoView(info) {
     table.append(row) ;
 
     row = addname(info) ;
+    table.append(row) ;
+
+    row = adduuid(info) ;
     table.append(row) ;
 
     row = addbakey(info) ;
