@@ -71,7 +71,7 @@ export class MatchDataModel extends DataModel {
 
     protected createTableQuery() : string {
         let ret = 'create table ' + MatchDataModel.MatchTableName + ' (' ;
-        ret += 'key TEXT NOT NULL' ;
+        ret += 'key TEXT' ;
         ret += ', comp_level TEXT NOT NULL' ;
         ret += ', set_number REAL NOT NULL' ;
         ret += ', match_number REAL NOT NULL'
@@ -183,36 +183,54 @@ export class MatchDataModel extends DataModel {
     private parseMatchString(str: string) : any | undefined {
         let ret ;
 
-        const regex = /^sm-([a-z]+)-([0-9]+)-([0-9]+)-([0-9])$/;
+        const regex = /^sm-([a-z]+)-([0-9]+)-([0-9]+)-([a-zA-Z0-9]+)$/;
         let match = regex.exec(str) ;
         if (match) {
             ret = {
-                type: 'qm',
+                type: match[1],
                 setno: +match[2],
                 match: +match[3],
-                team: +match[4]
+                teamkey: match[4]
             } ;
         }
 
         return ret ;
     }
 
-    public processScoutingResults(results: any) : Promise<string[]> {
-        let ret = new Promise<string[]>((resolve, reject) => {
-            let i = 0 ;
+    private convertScoutDataToRecord(match: any, data:any[]) : DataRecord {
+        let dr = new DataRecord() ;
+        let teamnumber = -1 ;
+
+        let item = this.parseMatchString(match as string) ;
+
+        dr.addfield('comp_level', item.type) ;
+        dr.addfield('set_number', item.setno) ;
+        dr.addfield('match_number', item.match) ;
+        dr.addfield('team_key', item.teamkey) ;
+
+        for(let field of data) {
+            dr.addfield(field.tag, field.value) ;
+        }
+        return dr ;
+    }
+
+    private static allKeys = ['comp_level', 'match_number', 'set_number', 'team_key'] ;
+
+    public async processScoutingResults(data: any[]) : Promise<string[]> {
+        let ret = new Promise<string[]>(async (resolve, reject) => {
+            let ret: string[] = [] ;
             let records: DataRecord[] = [] ;
-            let status: string[] = [] ;
-
-            while (i < results.length) {
-                let which = results[i++] ;
-                let data = results[i++] ;
-                status.push(which) ;
-                let keys = this.parseMatchString(which) ;
+            let index = 0;
+            while (index < data.length) {
+                let team = data[index++] ;
+                let sc = data[index++] ;
+                let dr = this.convertScoutDataToRecord(team, sc) ;
+                ret.push(team) ;
+                records.push(dr) ;
             }
-
-            resolve(status) ;
+            await this.addColsAndData(MatchDataModel.MatchTableName, MatchDataModel.allKeys, records) ;
+            resolve(ret) ;
         }) ;
-
         return ret ;
     }
 }

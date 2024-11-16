@@ -125,9 +125,37 @@ export class TeamDataModel extends DataModel {
         return ret ;
     }    
 
+    private convertScoutDataToRecord(team: any, data:any[]) : DataRecord {
+        let dr = new DataRecord() ;
+        let teamnumber = -1 ;
+        let tstr: string = team as string ;
+
+        if (tstr.startsWith('st-')) {
+            teamnumber = +tstr.substring(3) ;
+        }
+
+        dr.addfield('team_number', teamnumber) ;
+
+        for(let field of data) {
+            dr.addfield(field.tag, field.value) ;
+        }
+        return dr ;
+    }
+
     public async processScoutingResults(data: any[]) : Promise<number[]> {
         let ret = new Promise<number[]>(async (resolve, reject) => {
-            resolve([3]) ;
+            let ret: number[] = [] ;
+            let records: DataRecord[] = [] ;
+            let index = 0;
+            while (index < data.length) {
+                let team = data[index++] ;
+                let sc = data[index++] ;
+                let dr = this.convertScoutDataToRecord(team, sc) ;
+                ret.push(dr.value('team_number')! as number);
+                records.push(dr) ;
+            }
+            await this.addColsAndData(TeamDataModel.TeamTableName, ['team_number'], records) ;
+            resolve(ret) ;
         }) ;
         return ret ;
     }

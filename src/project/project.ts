@@ -437,7 +437,7 @@ export class Project {
     }
 
     public hasMatchScoutingResult(type: string, set: number, match: number, team: string) : string {
-        let str: string = type + '-' + set + '-' + match ;
+        let str: string = 'sm-' + type + '-' + set + '-' + match + '-' + team ;
         return this.info_.scouted_match_.includes(str) ? 'Y' : 'N' ;
     }
     

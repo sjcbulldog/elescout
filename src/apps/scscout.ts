@@ -41,6 +41,7 @@ export class SCScout extends SCBase {
     private tablets_?: any[] ;
     private conn_?: SyncClient ;
     private current_scout_? : string ;
+    private current_list_entry_? : any[] ;
     private next_scout_? : string ;
     private want_sync_ : boolean = false ;
 
@@ -85,9 +86,20 @@ export class SCScout extends SCBase {
 
         for(let t of this.info_.teamlist_!) {      
             if (t.tablet === this.info_.tablet_) {
-                ret.push({type: 'item', command: 'st-' + t.team, title: "Team: " + t.team}) ;
+                ret.push({type: 'item', command: 'st-' + t.team, title: "Team: " + t.team, number: t.team}) ;
             }
         }
+
+        ret.sort((a,b) : number => { 
+            if (a.number < b.number) {
+                return -1 ;
+            }
+            else if (a.number > b.number) {
+                return 1 ;
+            }
+
+            return 0 ;
+        }) ;
         return ret ;
     }
 
@@ -146,19 +158,15 @@ export class SCScout extends SCBase {
 
         for(let t of ofinterest) {
             if (t.tablet === this.info_.tablet_) {
-                let numstr: string = t.teamnumber ;
+                let numstr: string = t.teamkey ;
                 if (numstr.startsWith('frc')) {
                     numstr = numstr.substring(3);
                 }
                 let mtype:string = t.type ;
                 
-                let cmd: string = 'sm-' + t.type + '-' + t.set + '-' + t.matchnumber + '-' + numstr ;
+                let cmd: string = 'sm-' + t.type + '-' + t.setno + '-' + t.matchno + '-' + t.teamkey ;
                 let title: string ;
-                    if (mtype === 'sf') {
-                    title = mtype.toUpperCase() + '-' + t.matchnumber + ' - ' + t.set + '-' + numstr ;
-                } else {
-                    title = mtype.toUpperCase() + '-' + t.matchnumber + ' - ' + numstr ;
-                }
+                title = mtype.toUpperCase() + '-' + t.matchno + ' - ' + t.setno + '-' + numstr ;
                 ret.push({type: 'item', command: cmd, title: title}) ;
             }        
         }
@@ -176,11 +184,28 @@ export class SCScout extends SCBase {
             }
         }
         else if (cmd === SCScout.resetTablet) {
+            let lastfile: string = path.join(this.appdir_, SCScout.last_event_file) ;
+            if (fs.existsSync(lastfile)) {
+                fs.rmSync(lastfile) ;
+            }
+            
+            if (this.info_.uuid_) {
+                let datafile: string = path.join(this.appdir_, this.uuidToFileName(this.info_.uuid_)) ;
+                if (fs.existsSync(datafile)) {
+                    fs.rmSync(datafile) ;
+                }
+            }
+
             this.info_.purpose_ = undefined ;
             this.info_.tablet_ = undefined ;
             this.info_.results_ = [];
             this.info_.uuid_ = undefined ;
             this.info_.evname_ = undefined ;
+            this.info_.teamform_ = undefined ;
+            this.info_.matchform_ = undefined ;
+            this.info_.teamlist_ = undefined ;
+            this.info_.matchlist_ = undefined ;
+
             this.sendNavData() ;
             this.setView('empty') ;
         }
@@ -210,7 +235,6 @@ export class SCScout extends SCBase {
     // The 'team-form' or 'match-form' request to the renderer view then causes the sendTeamForm()
     // or sendMatchForm() method to get called.
     //
-
     private scoutTeam(team: string, force: boolean = false) {
         if (this.current_scout_ && !force) {
             //
@@ -593,7 +617,9 @@ export class SCScout extends SCBase {
         let lastfile: string = path.join(this.appdir_, SCScout.last_event_file) ;
 
         let obj = {
-            lastevent: this.info_.uuid_
+            lastevent: this.info_.uuid_,
+            tablet: this.info_.tablet_,
+            purpose: this.info_.purpose_
         } ;
         const lastFileJson = JSON.stringify(obj) ;
         fs.writeFile(lastfile, lastFileJson, (err) => {

@@ -68,6 +68,7 @@ function updateMatchData(args) {
                 resizableColumnFit:true,
                 columns:cols,
                 movableColumns: true,
+                initialSort: [{ column: "comp_level", dir: "asc" }],
             });
 }
 

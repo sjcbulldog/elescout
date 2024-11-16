@@ -55,8 +55,8 @@ export class SCCentral extends SCBase {
     private tcpsyncserver_? : TCPSyncServer = undefined ;
     private previewfile_? : string = undefined ;
     private baevents_? : BAEvent[] ;
-    private syncingTablet_? : string = undefined ;
-    private syncingPurpose_? : string = undefined;
+    //private syncingTablet_? : string = undefined ;
+    // private syncingPurpose_? : string = undefined;
     private menuitems_: Map<string, MenuItem> = new Map<string, MenuItem>() ;
 
     constructor(win: BrowserWindow) {
@@ -407,7 +407,7 @@ export class SCCentral extends SCBase {
 
     private shortenString(str: string | undefined) : string | undefined {
         let ret: string | undefined ;
-        let maxlen = 50 ;
+        let maxlen = 40;
 
         if (str) {
             if (str.length > maxlen) {
@@ -1336,8 +1336,6 @@ export class SCCentral extends SCBase {
             if (p.data_.length > 0) {
                 try {
                     let obj = JSON.parse(p.payloadAsString()) ;
-                    this.syncingPurpose_ = obj.purpose ;
-                    this.syncingTablet_ = obj.tablet ;
                 }
                 catch(err) {
                 }
@@ -1427,8 +1425,6 @@ export class SCCentral extends SCBase {
         else if (p.type_ === PacketType.Goodbye) {
             resp = undefined ;
             let msg: string = 'Tablet \'' + p.payloadAsString() + '\' has completed sync' ;
-            this.syncingTablet_ = undefined ;
-            this.syncingPurpose_ = undefined ;
 
             dialog.showMessageBox(this.win_, {
                 title: 'Synchronization Complete',
