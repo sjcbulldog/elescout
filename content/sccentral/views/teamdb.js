@@ -1,4 +1,6 @@
 let teamdbtable = undefined ;
+let teamdbdata = undefined ;
+let teamcolcfg = undefined ;
 
 function teamDBView() {
     $("#rightcontent").empty() ;
@@ -20,8 +22,23 @@ function shutdownTeamDBView() {
         }
         data.push(info) ;
     }
-    window.scoutingAPI.send('send-team-col-config', data) ;
+    let colcfg = {
+        columns: data,
+        frozenColumnCount: frozenColumnCount
+    } ;
+
+    window.scoutingAPI.send('send-team-col-config', colcfg) ;
     teamdbtable = undefined ;
+}
+
+function findTeamColCfg(name) {
+    for(let one of teamcolcfg.columns) {
+        if (one.name === name) {
+            return one ;
+        }
+    }
+
+    return undefined ;
 }
 
 function updateTeamData(args) {
@@ -30,14 +47,28 @@ function updateTeamData(args) {
     $("#rightcontent").append(div) ;
     div.id = 'tablediv' ;
 
+    teamdbdata = args ;
+
+    let count = frozenColumnCount ;
     let cols = [] ;
     for(let col of args.cols) {
+        let one = findTeamColCfg(col) ;
         let coldesc = {
             field: col,
             title: col,
-            headerMenu:headerMenu,
+            headerMenu: headerMenu,
             headerVertical: false,
+            frozen: (count-- > 0),
         } ;
+
+        if (one.hidden) {
+            coldesc['hidden'] = one.hidden ;
+        }
+
+        if (one.width) {
+            coldesc['width'] = one.width ;
+        }
+
         cols.push(coldesc) ;
     }
 
@@ -53,17 +84,8 @@ function updateTeamData(args) {
 
 
 function configTeamCols(cols) {
-    if (teamdbtable) {
-        for (let col of cols) {
-            let colobj = getTableColByID(teamdbtable, col.name) ;
-            if (colobj) {
-                if (col.hidden) {
-                    colobj.hide() ;
-                }
-                colobj.setWidth(col.width) ;
-            }
-        }
-    }
+    teamcolcfg = cols ;
+    frozenColumnCount = cols.frozenColumnCount ;
 }
 
 window.scoutingAPI.receive("send-team-db", (args)=>updateTeamData(args[0])) ;

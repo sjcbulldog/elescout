@@ -12,7 +12,8 @@
         },
         "args" : [
           ".",
-          "central"
+          "central",
+          "--year:2024"
         ],
         "outputCapture": "std",
         "preLaunchTask": "npm: compile"

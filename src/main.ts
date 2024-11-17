@@ -19,6 +19,7 @@ export let scappbase : SCBase | undefined = undefined ;
 
 function createWindow() : void {
     const args = process.argv;
+    let year = 2024 ;
   
     const win = new BrowserWindow({
       webPreferences: {
@@ -32,16 +33,17 @@ function createWindow() : void {
     win.maximize() ;
 
     if (process.argv.length > 2) {
+        let args = process.argv.slice(3) ;
+
         if (process.argv[2] === "scout") {
-            scappbase = new SCScout(win) ;
+            scappbase = new SCScout(win, args) ;
         }
         else if (process.argv[2] === "coach") {
-            scappbase = new SCCoach(win) ;
+            scappbase = new SCCoach(win, args) ;
         }
-    }
-
-    if (!scappbase) {
-        scappbase = new SCCentral(win) ;
+        else if (process.argv[2] === 'central') {
+            scappbase = new SCCentral(win, args) ;
+        }
     }
 
     if (!scappbase) {
@@ -58,7 +60,7 @@ function createWindow() : void {
 
     Menu.setApplicationMenu(scappbase!.createMenu()) ;
 
-    scappbase.windowCreated() ;
+    scappbase!.windowCreated() ;
 }
 
 app.on("ready", () => {

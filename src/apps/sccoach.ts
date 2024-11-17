@@ -2,7 +2,7 @@ import { BrowserWindow, Menu, MenuItem } from "electron";
 import { SCBase } from "./scbase";
 
 export class SCCoach extends SCBase {
-    public constructor(win: BrowserWindow) {
+    public constructor(win: BrowserWindow, args: string[]) {
         super(win, 'coach') ;
     }
     

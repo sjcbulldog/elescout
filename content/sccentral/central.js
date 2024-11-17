@@ -15,10 +15,15 @@ function shutdownExistingView() {
 }
 
 function setNewMainView(mtype) {
+  let view = undefined ;
   mainwintype = mtype ;
+
+  let top = document.getElementById('rightcontent') ;
   
   if (mainwintype === "empty") {
-    emptyView("No Event Loaded") ;
+    emptyView("No Project Loaded") ;
+    // view = new TextView(top, 'No Event Loaded');
+    // view.render() ;
   }
   else if (mainwintype === "error") {
     emptyView("Internal Error Occurred") ;

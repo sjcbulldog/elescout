@@ -20,7 +20,13 @@ function shutdownMatchDBView() {
         }
         data.push(info) ;
     }
-    window.scoutingAPI.send('send-match-col-config', data) ;
+
+    let colcfg = {
+        columns: data,
+        frozenColumnCount: frozenColumnCount
+    } ;
+
+    window.scoutingAPI.send('send-match-col-config', colcfg) ;
     matchdbtable = undefined ;
 }
 
@@ -40,7 +46,6 @@ function mapMatchType(mtype) {
     return ret;
 }
 
-
 function updateMatchData(args) {
     $("#rightcontent").empty() ;
     let div = document.createElement('div') ;
@@ -52,7 +57,7 @@ function updateMatchData(args) {
         let coldesc = {
             field: col,
             title: col,
-            headerMenu:headerMenu,
+            headerMenu: headerMenu,
             headerVertical: false,
         } ;
 

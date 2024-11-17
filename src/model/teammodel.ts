@@ -1,7 +1,7 @@
 import * as sqlite3 from 'sqlite3' ;
 import { DataModel, DataRecord, ValueType } from "./datamodel";
 import winston from 'winston';
-import { BARankings, BATeam } from '../bluealliance/badata';
+import { BARankings, BATeam } from '../extnet/badata';
 
 interface scoutvalue {
     tag: string,
@@ -103,6 +103,41 @@ export class TeamDataModel extends DataModel {
         dr.addfield('team_key', ranking.team_key) ;
         dr.addfield('team_number', DataModel.extractNumberFromKey(ranking.team_key)) ;
         return dr ;
+    }
+
+    // t.epa.norm, t.epa.unitless, t.epa.ranks.district.rank
+    // t.epa.ranks.country.rank, t.epa.ranks.state.rank
+    // 
+    private convertStatsToRecord(t: any) {
+        let dr = new DataRecord() ;
+        // dr.addfield('rank', ranking.rank);
+        dr.addfield('team_number', t.team) ;
+        dr.addfield('st_epanorm', t.epa.norm) ;
+        dr.addfield('st_epaunitless', t.epa.unitless);
+        dr.addfield('st_district_rank', t.epa.ranks.district.rank) ;
+        dr.addfield('st_country_rank', t.epa.ranks.country.rank) ;
+        dr.addfield('st_state_rank', t.epa.ranks.state.rank) ;
+        
+        return dr ;
+    }
+
+    public processStats(stats: any[]) : Promise<void> {
+        let ret = new Promise<void>(async (resolve, reject) => {
+            let records : DataRecord[] = [];
+
+            for(let t of stats) {
+                records.push(this.convertStatsToRecord(t)) ;
+            }
+
+            try {
+                await this.addColsAndData(TeamDataModel.TeamTableName, ['team_number'], records) ;
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+        return ret ;
     }
 
     public processRankings(rankings: any[]) : Promise<void> {

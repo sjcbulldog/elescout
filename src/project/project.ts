@@ -4,7 +4,7 @@
 import * as fs from 'fs' ;
 import * as path from 'path' ;
 import { Tablet } from './tablet';
-import { BlueAlliance } from '../bluealliance/ba';
+import { BlueAlliance } from '../extnet/ba';
 import { SCBase } from '../apps/scbase';
 import { TeamTablet } from './teamtablet';
 import { MatchTablet } from './matchtablet';
@@ -14,14 +14,21 @@ import { SCCentral } from '../apps/sccentral';
 import { TeamDataModel } from '../model/teammodel';
 import { MatchDataModel } from '../model/matchmodel';
 import winston from 'winston';
-import { BAEvent, BAMatch, BATeam } from '../bluealliance/badata';
+import { BAEvent, BAMatch, BATeam } from '../extnet/badata';
 import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
+import { OPRCalculator } from '../math/OPRCalculator';
+import { StatBotics } from '../extnet/statbotics';
+
+export interface ProjectOneColCfg {
+    name: string,
+    width: number,
+    hidden: boolean,
+}
 
 export interface ProjColConfig
 {
-    name: string,
-    width: number,
-    hidden: boolean
+    columns: ProjectOneColCfg[],
+    frozenColumnCount: number,
 } ;
 
 export class ProjectInfo {
@@ -40,11 +47,10 @@ export class ProjectInfo {
     public matchdb_?: sqlite3.Database ;                // The database containing match information
     public scouted_team_: number[] = [] ;               // The list of teams that have scouting data
     public scouted_match_: string[] = [] ;              // The list of matches that have scouring data
-    public matchdb_col_config_ : ProjColConfig[] = [] ;              // List of hidden columns in match data
-    public teamdb_col_config_ : ProjColConfig[] = [] ;              // List of hidden columns in team data
+    public matchdb_col_config_? : ProjColConfig ; // List of hidden columns in match data
+    public teamdb_col_config_? : ProjColConfig ;  // List of hidden columns in team data
 
     constructor() {
-
         this.locked_ = false ;
     }
 
@@ -74,11 +80,13 @@ export class Project {
     private teamdb_ : TeamDataModel ;
     private matchdb_ : MatchDataModel ;
     private logger_ : winston.Logger ;
+    private year_ : number ;
 
-    constructor(logger: winston.Logger, dir: string) {
+    constructor(logger: winston.Logger, dir: string, year: number) {
         this.location_ = dir ;
         this.info_ = new ProjectInfo() ;
         this.logger_ = logger ;
+        this.year_ = year ;
 
         let filename: string ;
 
@@ -114,12 +122,12 @@ export class Project {
         this.info_ = new ProjectInfo() ;
     }
 
-    public setMatchColConfig(data: any[]) {
+    public setMatchColConfig(data: any) {
         this.info.matchdb_col_config_ = data ;
         this.writeEventFile() ;
     }
 
-    public setTeamColConfig(data: any[]) {
+    public setTeamColConfig(data: any) {
         this.info.teamdb_col_config_ = data ;
         this.writeEventFile() ;
     }
@@ -189,7 +197,7 @@ export class Project {
         this.writeEventFile() ;        
     }
 
-    public static async createEvent(logger: winston.Logger, dir: string) : Promise<Project> {
+    public static async createEvent(logger: winston.Logger, dir: string, year: number) : Promise<Project> {
         let ret: Promise<Project> = new Promise<Project>((resolve, reject) => {
             if (!fs.existsSync(dir)) {
                 //
@@ -208,7 +216,7 @@ export class Project {
                 reject(err) ;
             }
 
-            let proj: Project = new Project(logger, dir) ;
+            let proj: Project = new Project(logger, dir, year) ;
             let err = proj.writeEventFile() ;
             if (err) {
                 reject(err) ;
@@ -226,7 +234,7 @@ export class Project {
         return ret ;
     }
 
-    public static async openEvent(logger: winston.Logger, filepath: string) : Promise<Project> {
+    public static async openEvent(logger: winston.Logger, filepath: string, year: number) : Promise<Project> {
         let ret: Promise<Project> = new Promise<Project>((resolve, reject) => {
 
             let loc: string = path.dirname(filepath) ;
@@ -237,7 +245,7 @@ export class Project {
                 reject(err) ;
             }
 
-            let proj: Project = new Project(logger, loc) ;
+            let proj: Project = new Project(logger, loc, year) ;
             let err = proj.readEventFile() ;
             if (err) {
                 reject(err) ;
@@ -254,17 +262,57 @@ export class Project {
         return ret ;
     }
 
-
-    public loadMatchData(base: SCBase, ba: BlueAlliance, frcev: BAEvent) : Promise<number> {
+    public loadMatchData(base: SCBase, ba: BlueAlliance, sb: StatBotics, frcev: BAEvent, callback?: (result: string) => void) : Promise<number> {
         let ret: Promise<number> = new Promise<number>(async (resolve, reject) => {
             try {
                 let matches = await ba.getMatches(frcev.key);
+                if (callback) {
+                    callback('received ' + matches.length + ' matches<br><br>') ;
+                }
                 if (matches.length > 0) {
                     this.info_.matches_ = matches ;
+                    if (callback) {
+                        callback('Inserting match data into database ... ');
+                    }
                     await this.matchDB.processBAData(matches) ;
+                    if (callback) {
+                        callback('inserted ' + matches.length + ' matches<br><br>') ;
+                        callback('Requesting ranking data from the Blue Alliance ...');
+                    }
                     let rankings = await this.loadRanking(ba);
+                    if (callback) {
+                        callback(' received ' + rankings.rankings.length + ' records<br><br>') ;
+                    }
+
                     if (rankings.rankings && rankings.rankings.length > 0) {
+                        if (callback) {
+                            callback('Inserting rankings data into the database ... ') ;
+                        }
                         await this.teamDB.processRankings(rankings.rankings) ;
+
+                        if (callback) {
+                            callback(' inserted ' + rankings.rankings.length + ' records<br><br>') ;
+                        }
+                    }
+
+                    if (callback) {
+                        callback('Requesting statistics data from statbotics ...')
+                    }
+
+                    let stats = await this.loadStatbotics(sb) ;
+
+                    if (callback) {
+                        callback(' received ' + stats.length + ' records of data.<br><br>')
+                    }
+
+                    if (stats && stats.length > 0) {
+                        if (callback) {
+                            callback('Inserting statistics data into the database ... ') ;
+                        }
+                        await this.teamDB.processStats(stats) ;
+                        if (callback) {
+                            callback(' inserted ' + stats.length + ' records<br><br>') ;
+                        }
                     }
                 }
                 resolve(matches.length) ;
@@ -276,6 +324,22 @@ export class Project {
             }
         }) ;
         
+        return ret;
+    }
+
+    public loadStatbotics(sb: StatBotics) : Promise<any[]> {
+        let ret = new Promise<any[]>(async (resolve, reject) => {
+            if (this.info_.teams_) {
+                let teams = this.info_.teams_.map((v)=> { return v.team_number}) ;
+                try {
+                    let stats = await sb.getStats(teams) ;
+                    resolve(stats) ;
+                }
+                catch(err) {
+                    reject(err) ;
+                }
+            }
+        }) ;
         return ret;
     }
 
@@ -391,7 +455,7 @@ export class Project {
         this.writeEventFile() ;
     }
 
-    public loadBAEvent(base: SCCentral, ba: BlueAlliance, frcev: BAEvent) : Promise<void> {
+    public loadBAEvent(base: SCCentral, ba: BlueAlliance, sb: StatBotics, frcev: BAEvent) : Promise<void> {
         let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
             this.info_.frcev_ = frcev ;
             base.sendToRenderer('set-status-text', 'Loading teams from the event') ;
@@ -403,7 +467,7 @@ export class Project {
                     let msg: string = teams.length + " teams loaded\n" ;
                     msg += "Loading matches from the event" ;
                     base.sendToRenderer('set-status-text', msg) ;
-                    await this.loadMatchData(base, ba, frcev)
+                    await this.loadMatchData(base, ba, sb, frcev)
                     msg = teams.length + " teams loaded\n" ;
                     msg += this.info.matches_!.length + " matches loaded\n" ;
                     let err = this.writeEventFile() ;

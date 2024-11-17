@@ -1,16 +1,16 @@
 import { SCBase } from './scbase';
-import { BlueAlliance } from '../bluealliance/ba';
+import { BlueAlliance } from '../extnet/ba';
 import { Project } from '../project/project';
 import { BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
 import { TCPSyncServer } from '../sync/tcpserver';
 import { Packet } from '../sync/packet';
 import { PacketType } from '../sync/packettypes';
-import { FieldAndType, ValueType } from '../model/datamodel';
 import { MatchDataModel } from '../model/matchmodel';
-import { BAEvent, BAMatch, BATeam } from '../bluealliance/badata';
+import { BAEvent, BAMatch, BATeam } from '../extnet/badata';
 import { TeamDataModel } from '../model/teammodel';
 import Papa from 'papaparse';
 import * as fs from 'fs' ;
+import { StatBotics } from '../extnet/statbotics';
 
 export class SCCentral extends SCBase {
 
@@ -51,19 +51,33 @@ export class SCCentral extends SCBase {
 
     private project_? : Project = undefined ;
     private ba_? : BlueAlliance = undefined ;
+    private statbotics_? : StatBotics = undefined ;
     private baloading_ : boolean ;
     private tcpsyncserver_? : TCPSyncServer = undefined ;
     private previewfile_? : string = undefined ;
     private baevents_? : BAEvent[] ;
-    //private syncingTablet_? : string = undefined ;
-    // private syncingPurpose_? : string = undefined;
     private menuitems_: Map<string, MenuItem> = new Map<string, MenuItem>() ;
+    private year_? : number ;
+    private msg_? : string ;
 
-    constructor(win: BrowserWindow) {
+    constructor(win: BrowserWindow, args: string[]) {
         super(win, 'server') ;
+
+        for(let arg of args) {
+            if (arg.startsWith('--year:')) {
+                this.year_ = +arg.substring(7) ;
+            }
+        }
+
+        if (!this.year_) {
+            let dt = new Date() ;
+            this.year_ = dt.getFullYear() ;
+        }
+
+        this.statbotics_ = new StatBotics(this.year_) ;
     
         this.baloading_ = true ;
-        this.ba_ = new BlueAlliance() ;
+        this.ba_ = new BlueAlliance(this.year_) ;
         this.ba_.init()
             .then((up) => {
                 if (!up) {     
@@ -147,7 +161,7 @@ export class SCCentral extends SCBase {
 
         let downloadMatchData: MenuItem = new MenuItem( {
             type: 'normal',
-            label: 'Import Match Data',
+            label: 'Import Data',
             enabled: false,
             click: () => { this.downloadMatchData();}
         }) ;
@@ -460,7 +474,7 @@ export class SCCentral extends SCBase {
     }
 
     public setTeamColConfig(data: any[]) {
-        this.setTeamColConfig(data) ;
+        this.project_!.setTeamColConfig(data) ;
     }
 
     public setTeamData(data: any[]) {
@@ -499,8 +513,8 @@ export class SCCentral extends SCBase {
                                 cols: cols,
                                 data: data
                             } ;
-                            this.sendToRenderer('send-match-db', dataobj) ;
                             this.sendToRenderer('send-match-col-config', this.project_!.info.matchdb_col_config_) ;
+                            this.sendToRenderer('send-match-db', dataobj) ;
                         })
                         .catch((err) => {
 
@@ -522,8 +536,8 @@ export class SCCentral extends SCBase {
                                 cols: cols,
                                 data: data
                             } ;
-                            this.sendToRenderer('send-team-db', dataobj) ;
                             this.sendToRenderer('send-team-col-config', this.project_!.info.teamdb_col_config_) ;
+                            this.sendToRenderer('send-team-db', dataobj) ;
                         })
                         .catch((err) => {
                             this.logger_.error('error getting data from database for send-team-db', err) ;
@@ -591,7 +605,7 @@ export class SCCentral extends SCBase {
         let fev: BAEvent | undefined = this.getEventFromKey(args[0]) ;        
         if (fev) {
             this.sendToRenderer('set-status-title', 'Loading event \'' + fev.name + '\'') ;
-            this.project_!.loadBAEvent(this, this.ba_!, fev)
+            this.project_!.loadBAEvent(this, this.ba_!, this.statbotics_!, fev)
                 .then(() => {
                     this.sendNavData() ;
                     this.setView('info') ;
@@ -632,10 +646,11 @@ export class SCCentral extends SCBase {
         if (fev) {
             this.sendToRenderer('set-status-visible', true) ;            
             this.sendToRenderer('set-status-title', 'Loading match data for event \'' + fev.name + '\'') ;
-            this.sendToRenderer('set-status-html',  'Loading data ...') ;
-            this.project_!.loadMatchData(this, this.ba_!, fev)
+            this.msg_ = "Loading match results ... " ;
+            this.sendToRenderer('set-status-html',  'Requesting match data from the Blue Alliance ...') ;
+            this.project_!.loadMatchData(this, this.ba_!, this.statbotics_!, fev, (text) => { this.appendStatusText(text);})
                 .then((count) => {
-                    this.sendToRenderer('set-status-html',  'Loading data ... done, ' + count + ' match records processed') ;
+                    this.appendStatusText('All data loaded') ;
                     this.sendToRenderer('set-status-close-button-visible', true) ;                    
                 }) ;
         }
@@ -646,6 +661,11 @@ export class SCCentral extends SCBase {
             this.sendToRenderer('set-status-html',  html) ;
             this.sendToRenderer('set-status-close-button-visible', true) ;
         }
+    }
+
+    private appendStatusText(text: string) {
+        this.msg_ += text ;
+        this.sendToRenderer('set-status-html', this.msg_) ;
     }
 
     private getEventFromKey(key: string) :  BAEvent | undefined {
@@ -695,11 +715,11 @@ export class SCCentral extends SCBase {
             this.previewForm() ;
         } 
         else if (cmd === SCCentral.createNewEvent) {
-            this.createEvent() ;
+            this.createEvent(this.year_!) ;
             this.sendNavData() ;
         }
         else if (cmd === SCCentral.openExistingEvent) {
-            this.openEvent() ;
+            this.openEvent(this.year_!) ;
             this.sendNavData() ;
         }
         else if (cmd === SCCentral.closeEvent) {
@@ -1008,7 +1028,7 @@ export class SCCentral extends SCBase {
         }
     }
 
-    private createEvent() {
+    private createEvent(year: number) {
         var path = dialog.showOpenDialog({
             properties: [
                 'openDirectory',
@@ -1018,7 +1038,7 @@ export class SCCentral extends SCBase {
 
         path.then((pathname) => {
             if (!pathname.canceled) {
-                Project.createEvent(this.logger_, pathname.filePaths[0])
+                Project.createEvent(this.logger_, pathname.filePaths[0], year)
                     .then((p) => {
                         this.project_ = p ;
                         this.updateMenuState(true) ;
@@ -1291,7 +1311,7 @@ export class SCCentral extends SCBase {
         }
     }
 
-    private openEvent() {
+    private openEvent(year: number) {
         var path = dialog.showOpenDialog({
             title: 'Event descriptor file',
             message: 'Select event descriptor file',
@@ -1308,7 +1328,7 @@ export class SCCentral extends SCBase {
 
         path.then((pathname) => {
             if (!pathname.canceled) {
-                Project.openEvent(this.logger_, pathname.filePaths[0])
+                Project.openEvent(this.logger_, pathname.filePaths[0], year)
                     .then((p) => {
                         this.project_ = p ;
                         this.updateMenuState(true) ;

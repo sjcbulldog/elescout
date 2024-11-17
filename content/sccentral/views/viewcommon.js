@@ -1,3 +1,5 @@
+let frozenColumnCount = -1 ;
+
 function sortCompFun(a, b, aRow, bRow, col, dir, sorterParams) {
     let ret = 0 ;
 
@@ -46,7 +48,16 @@ function getTableColByID(table, id) {
     return undefined ;
 }
 
-function headerMenu() {
+function reloadTable() {
+    if (teamdbtable) {
+        teamDBView() ;
+    }
+    else {
+        matchDBView() ;
+    }
+}
+
+function headerMenu(e, c) {
     var menu = [];
     var columns = this.getColumns();
 
@@ -68,7 +79,7 @@ function headerMenu() {
         //create menu item
         menu.push({
             label:label,
-            action:function(e){
+            action:function(e) {
                 //prevent menu closing
                 e.stopPropagation();
 
@@ -82,9 +93,42 @@ function headerMenu() {
                 }else{
                     icon.innerHTML = ' ' ;
                 }
+
+                if (teamdbtable) {
+                    shutdownTeamDBView() ;
+                }
+                else if (matchdbtable) {
+                    shutdownMatchDBView() ;
+                }
             }
         });
     }
 
-   return menu;
+    menu.push({separator: true}) ;
+
+    menu.push({
+            label: 'Freeze',
+            action:function(e, c, a, b) {
+                let table = c.getTable() ;
+
+                frozenColumnCount = 0 ;
+                for(let col of table.getColumns()) {
+                    frozenColumnCount++ ;
+                    if (col === c) {
+                        break ;
+                    }
+                }
+
+                reloadTable() ;
+            }
+        }) ;
+
+        menu.push({
+            label: 'Unfreeze All',
+            action:function(e, c) {
+                frozenColumnCount = -1 ;
+                reloadTable() ;
+            }
+        }) ;
+    return menu;
 };

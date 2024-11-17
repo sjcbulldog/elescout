@@ -1,7 +1,7 @@
 import * as sqlite3 from 'sqlite3' ;
 import { DataModel, DataRecord, ValueType } from "./datamodel";
 import winston from 'winston';
-import { BAMatch } from '../bluealliance/badata';
+import { BAMatch } from '../extnet/badata';
 
 export class MatchDataModel extends DataModel {
     static readonly MatchTableName: string = 'matches' ;

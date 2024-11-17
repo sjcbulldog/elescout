@@ -45,7 +45,7 @@ export class SCScout extends SCBase {
     private next_scout_? : string ;
     private want_sync_ : boolean = false ;
 
-    public constructor(win: BrowserWindow) {
+    public constructor(win: BrowserWindow, args: string[]) {
         super(win, 'scout') ;
 
         this.checkLastEvent() ;

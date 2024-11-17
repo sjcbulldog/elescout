@@ -3,8 +3,6 @@ Base
 
 Central
 -------
-    Process team form data
-    Process match form data
     Compute team data from match data
     Recent files
 
@@ -14,9 +12,6 @@ Central
 
 Scout
 -------
-    Left nav pane does not have scroll bars
-    Left nav pane visible appearance needs improvement
-    Team scouting tablet sort and scroll
 
 Coach
 -----
