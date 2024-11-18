@@ -1,4 +1,21 @@
-let mainwintype = undefined ;
+let currentView = undefined ;
+
+const viewMap = new Map([
+  ['empty', EmptyView],
+  ['error', ErrorView],
+  ['preview', PreviewFormView],
+  ['info', InfoView],
+  ['select-event', SelectEventView],
+  ['assign-tablets', AssignTablets],
+  ['edit-teams', EditTeamsView],
+  ['edit-matches', EditMatchesView],
+  ['teamform', TeamFormView],
+  ['matchform', MatchFormView],
+  ['teamstatus', TeamStatusView],
+  ['matchstatus', MatchStatusView],
+  ['teamdb', TeamDBView],
+  ['matchdb', MatchDBView]
+]) ;
 
 async function updateMainWindow(mtype) {
   shutdownExistingView() ;
@@ -6,67 +23,25 @@ async function updateMainWindow(mtype) {
 }
 
 function shutdownExistingView() {
-  if (mainwintype === 'matchdb') {
-    shutdownMatchDBView() ;
+  if (currentView) {
+    currentView.close() ;
   }
-  else if (mainwintype === 'teamdb') {
-    shutdownTeamDBView() ;
-  }
+
+  currentView = undefined ;
 }
 
 function setNewMainView(mtype) {
-  let view = undefined ;
-  mainwintype = mtype ;
-
   let top = document.getElementById('rightcontent') ;
-  
-  if (mainwintype === "empty") {
-    emptyView("No Project Loaded") ;
-    // view = new TextView(top, 'No Event Loaded');
-    // view.render() ;
-  }
-  else if (mainwintype === "error") {
-    emptyView("Internal Error Occurred") ;
-  }
-  else if (mainwintype === "info") {
-    infoView() ;
-  }
-  else if (mainwintype === "selevent") {
-    selectEventView() ;
-  }
-  else if (mainwintype === "tablets") {
-    assignTabletView() ;
-  }
-  else if (mainwintype === "editteams") {
-    editTeamsView() ;
-  }
-  else if (mainwintype === "editmatches") {
-    editMatchView() ;
-  }
-  else if (mainwintype === "teamform") {
-    teamFormView() ;
-  }
-  else if (mainwintype === "matchform") {
-    matchFormView() ;
-  }
-  else if (mainwintype === "teamstatus") {
-    teamStatus() ;
-  }
-  else if (mainwintype === "matchstatus") {
-    matchStatus() ;
-  }
-  else if (mainwintype === "matchdb") {
-    matchDBView() ;
-  }
-  else if (mainwintype === "teamdb") {
-    teamDBView() ;
-  }
-  else if (mainwintype === 'preview') {
-    previewFormView() ;
+
+  if (viewMap.has(mtype)) {
+    let viewtype = viewMap.get(mtype) ;
+    currentView = new viewtype(top, mtype) ;
   }
   else {
-    emptyView('Unknown view \'' + mainwintype + '\'') ;
+    currentView = new TextView(top, 'Invalid View Requested - ' + mtype);
   }
+
+  currentView.render() ;
 }
 
 function updateView(args) {

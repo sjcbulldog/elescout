@@ -127,7 +127,7 @@ export class SCCentral extends SCBase {
             id: 'create-event',
             click: () => { this.executeCommand(SCCentral.createNewEvent)}
         }) ;
-        filemenu.submenu!.append(createitem) ;
+        filemenu.submenu!.insert(0, createitem) ;
         this.menuitems_.set('file/create', createitem) ;
 
         let openitem: MenuItem = new MenuItem( {
@@ -136,10 +136,10 @@ export class SCCentral extends SCBase {
             id: 'open-event',
             click: () => { this.executeCommand(SCCentral.openExistingEvent)}            
         }) ;
-        filemenu.submenu!.append(openitem) ;
+        filemenu.submenu!.insert(1, openitem) ;
         this.menuitems_.set('file/open', openitem) ;
 
-        filemenu.submenu!.append(new MenuItem({type: 'separator'}));
+        filemenu.submenu!.insert(2, new MenuItem({type: 'separator'}));
 
         let closeitem: MenuItem = new MenuItem( {
             type: 'normal',
@@ -735,7 +735,7 @@ export class SCCentral extends SCBase {
             this.loadBAEvent() ;
         }
         else if (cmd === SCCentral.assignTablets) {
-            this.setView('tablets') ;
+            this.setView('assign-tablets') ;
         }
         else if (cmd === SCCentral.viewInit) {
             this.setView('info') ;
@@ -747,10 +747,10 @@ export class SCCentral extends SCBase {
             this.sendNavData() ;
         }
         else if (cmd === SCCentral.editTeams) {
-            this.setView('editteams') ;
+            this.setView('edit-teams') ;
         }
         else if (cmd === SCCentral.editMatches) {
-            this.setView('editmatches') ;
+            this.setView('edit-matches') ;
         }
         else if (cmd === SCCentral.importTeams) {
             this.importTeams() ;
@@ -1461,28 +1461,30 @@ export class SCCentral extends SCBase {
     }
 
     private startSyncServer() {
-        this.tcpsyncserver_ = new TCPSyncServer(this.logger_) ;
-        this.tcpsyncserver_.init()
-            .then(() => { 
-                this.logger_.info('TCPSyncServer: initialization completed sucessfully') ;
-            })
-            .catch((err) => {
-                let errobj: Error = err ;
-                dialog.showErrorBox('TCP Sync', 'Cannot start TCP sync - ' + err.message) ;
-            }) ;
-        this.tcpsyncserver_.on('packet', (p: Packet) => { 
-            let reply: Packet | undefined = this.processPacket(p) ;
-            if (reply) {
-                this.tcpsyncserver_!.send(reply)
-                    .then(() => {
-                        if (reply.type_ === PacketType.Error) {
-                            this.tcpsyncserver_!.shutdown() ;
-                        }
-                    })
-            }
-            else {
-                this.tcpsyncserver_?.shutdown() ;
-            }
-        });
+        if (!this.tcpsyncserver_) {
+            this.tcpsyncserver_ = new TCPSyncServer(this.logger_) ;
+            this.tcpsyncserver_.init()
+                .then(() => { 
+                    this.logger_.info('TCPSyncServer: initialization completed sucessfully') ;
+                })
+                .catch((err) => {
+                    let errobj: Error = err ;
+                    dialog.showErrorBox('TCP Sync', 'Cannot start TCP sync - ' + err.message) ;
+                }) ;
+            this.tcpsyncserver_.on('packet', (p: Packet) => { 
+                let reply: Packet | undefined = this.processPacket(p) ;
+                if (reply) {
+                    this.tcpsyncserver_!.send(reply)
+                        .then(() => {
+                            if (reply.type_ === PacketType.Error) {
+                                this.tcpsyncserver_!.shutdown() ;
+                            }
+                        })
+                }
+                else {
+                    this.tcpsyncserver_?.shutdown() ;
+                }
+            });
+        }
     }
 }

@@ -7,54 +7,37 @@
     content="default-src 'self'; script-src 'self'; script-src 'self' ; connect-src ws: http: file: blob:">
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'self'; connect-src ws: http: file: blob:">
-  <link rel="stylesheet" href="central.css">
+
 
   <link href="../external/tabulator/tabulator_site.css" rel="stylesheet">
   <script type="text/javascript" src="../external/tabulator/tabulator.min.js"></script>
   <script type="text/javascript" src="../common/jquery-3.7.1.min.js"></script>
 
-  <script type="text/javascript" src="views/viewcommon.js"></script>
   <script type="text/javascript" src="../common/statuswin.js"></script>
   <link rel="stylesheet" href="../common/statuswin.css">
 
-  <link rel="stylesheet" href="views/empty.css">
-  <script type="text/javascript" src="views/empty.js"></script>
-
-  <link rel="stylesheet" href="views/info.css">
+  <script type="text/javascript" src="views/views.js"></script>
+  <script type="text/javascript" src="views/textviews.js"></script>
+  <script type="text/javascript" src="views/formviews.js"></script>
+  <script type="text/javascript" src="views/statusviews.js"></script>
+  <script type="text/javascript" src="views/dbviews.js"></script>
   <script type="text/javascript" src="views/info.js"></script>
-
-  <link rel="stylesheet" href="views/selectevent.css">
   <script type="text/javascript" src="views/selectevent.js"></script>
-
-  <link rel="stylesheet" href="views/assigntablets.css">
   <script type="text/javascript" src="views/assigntablets.js"></script>
-
-  <link rel="stylesheet" href="views/editteams.css">
   <script type="text/javascript" src="views/editteams.js"></script>
-
-  <link rel="stylesheet" href="views/editmatches.css">
   <script type="text/javascript" src="views/editmatches.js"></script>
 
+  <link rel="stylesheet" href="views/empty.css">
+  <link rel="stylesheet" href="views/info.css">
+  <link rel="stylesheet" href="views/selectevent.css">
+  <link rel="stylesheet" href="views/assigntablets.css">
+  <link rel="stylesheet" href="views/editteams.css">
+  <link rel="stylesheet" href="views/editmatches.css">
   <link rel="stylesheet" href="views/teamform.css">
-  <script type="text/javascript" src="views/teamform.js"></script>
-
   <link rel="stylesheet" href="views/matchform.css">
-  <script type="text/javascript" src="views/matchform.js"></script>
-
-  <link rel="stylesheet" href="views/teamstatus.css">
-  <script type="text/javascript" src="views/teamstatus.js"></script>
-
-  <link rel="stylesheet" href="views/matchstatus.css">
-  <script type="text/javascript" src="views/matchstatus.js"></script>
-
   <link rel="stylesheet" href="views/preview.css">
-  <script type="text/javascript" src="views/preview.js"></script>
-
   <link rel="stylesheet" href="views/matchdb.css">
-  <script type="text/javascript" src="views/matchdb.js"></script>
-
   <link rel="stylesheet" href="views/teamdb.css">
-  <script type="text/javascript" src="views/teamdb.js"></script>
 
   <link rel="stylesheet" href="../common/nav.css">
   <script type="text/javascript" src="../common/nav.js"></script>
@@ -63,6 +46,7 @@
   <script type="text/javascript" src="../common/formview.js"></script>
 
   <script type="text/javascript" src="central.js"></script>
+  <link rel="stylesheet" href="central.css">
 </head>
 
 <body>
