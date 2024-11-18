@@ -1,18 +1,31 @@
-import { BrowserWindow, ipcMain, ipcRenderer, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, ipcRenderer, Menu, nativeImage } from "electron";
 import * as path from 'path' ;
 import * as os from 'os' ;
 import * as fs from 'fs' ;
 import * as winston from 'winston' ;
 import * as crypto from 'crypto' ;
+import settings from 'electron-settings';
+
+export enum XeroAppType {
+    None,
+    Central,
+    Scouter,
+    Coach
+} ;
+
+export interface XeroVersion {
+    major: number;
+    minor: number;
+    patch: number;
+  }
 
 export abstract class SCBase {
     private static readonly appdirName = '.xeroscout' ;
-    private static readonly isDevelop = true ;
 
     protected typestr_ : string ;
     protected win_ : BrowserWindow ;
     protected appdir_ : string ;
-    protected logger_ : winston.Logger ;
+    public logger_ : winston.Logger ;
 
     protected constructor(win: BrowserWindow, type: string) {
         this.typestr_ = type ;
@@ -30,7 +43,7 @@ export abstract class SCBase {
 
         let logfileName ;
         
-        if (SCBase.isDevelop) {
+        if (this.isDevelop) {
             logfileName = 'xeroscout-' + this.typestr_ ;
         }
         else {
@@ -43,14 +56,25 @@ export abstract class SCBase {
         }
 
         this.logger_ = winston.createLogger({
-            level: 'silly',
-            format: winston.format.json(),
+            level: this.isDevelop ? 'silly' : 'info',
+            format: winston.format.combine(
+                winston.format.timestamp({format: 'YYYY-MM-DDTHH:mm:ss'}),
+                winston.format.printf(info => `${JSON.stringify({timestamp: info.timestamp, level: info.level, message: info.message, args: info.args})}`)
+              ),
             transports: [    
                 new winston.transports.File({filename: logfileName})
             ]
         }) ;
 
-        this.logger_.info('XeroScout program started') ;
+        this.logger_.info(
+            {
+                message: 'XeroScout program started',
+                args: {
+                    electronVersion: this.getVersion('electron'),
+                    application: this.getVersion('application'),
+                    nodejs: this.getVersion('nodejs')
+                }
+            }) ;
     }
 
     public abstract basePage() : string ;
@@ -60,12 +84,73 @@ export abstract class SCBase {
     public abstract windowCreated() : void ;
     public abstract canQuit() : boolean ;
 
-    public isScoutingTablet() : boolean { 
-        return true ;
+    // process.vesions.node
+    // process.version
+    
+    public getVersion(type: string) : XeroVersion {
+        let str = '0.0.0';
+        let ret = {
+            major: -1,
+            minor: -1,
+            patch: -1
+        } ;
+
+        if (type === 'electron') {
+            str = process.version.substring(1);            
+        }
+        else if (type === 'node') {
+            str = process.versions.node as string ;
+        }
+        else if (type === 'application') {
+            str = app.getVersion() ;
+        }
+
+        if (str) {
+            let comps = str.split('.') ;
+            if (comps.length === 3) {
+                ret.major = +comps[0] ;
+                ret.minor = +comps[1] ;
+                ret.patch = +comps[2] ;
+            }
+        }
+
+        return ret ;
+    }
+
+    public setSetting(name: string, value: any) {
+        settings.setSync(name, value) ;
+    }
+
+    public getSetting(name: string) : any {
+        return settings.getSync(name) ;
+    }
+
+    public hasSetting(name: string) : boolean {
+        return settings.hasSync(name) ;
+    }
+
+    public get isDevelop() : boolean {
+        //
+        // So, if the path to the executable contains both cygwin64 and my home directory, then
+        // we are developing the application.  This puts the program in development mode which 
+        // primarily puts the log files in the home directory of the source instead of buried down
+        // in the users home directory
+        //
+        return process.argv[0].indexOf('cygwin64') != -1 && process.argv[0].indexOf('butch') != -1 ;
+    }
+
+    public get applicationType() : XeroAppType { 
+        return XeroAppType.None ;
     }
 
     public sendToRenderer(ev: string, ...args: any[]) {
-        this.logger_.silly('sendToRenderer', { event: ev, args: args});
+        this.logger_.silly({
+            message: 'main -> renderer', 
+            args: {
+                event: ev,
+                evargs: args}
+        }) ;
+
         this.win_.webContents.send(ev, args) ;
     }
 

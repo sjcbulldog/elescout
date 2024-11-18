@@ -1,5 +1,5 @@
 import { BrowserWindow, Menu, MenuItem } from "electron";
-import { SCBase } from "./scbase";
+import { SCBase, XeroAppType } from "./scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
 import { Packet } from "../sync/packet";
@@ -49,6 +49,10 @@ export class SCScout extends SCBase {
         super(win, 'scout') ;
 
         this.checkLastEvent() ;
+    }
+
+    public get applicationType() : XeroAppType { 
+        return XeroAppType.Scouter ;
     }
     
     public basePage() : string  {

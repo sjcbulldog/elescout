@@ -7,7 +7,7 @@
 			"group": "build",
 			"problemMatcher": ["$tsc"],
 			"label": "npm: compile",
-			"detail": "tsc && copyfiles content/*.html content/*.css content/*.js content/*/*.html content/*/*.css content/*/*.js content/*/*/*.js content/*/*/*.css dist"
+			"detail": "tsc && copyfiles content/**/* dist"
 		}
 	]
 }

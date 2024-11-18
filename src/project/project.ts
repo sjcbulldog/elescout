@@ -5,7 +5,6 @@ import * as fs from 'fs' ;
 import * as path from 'path' ;
 import { Tablet } from './tablet';
 import { BlueAlliance } from '../extnet/ba';
-import { SCBase } from '../apps/scbase';
 import { TeamTablet } from './teamtablet';
 import { MatchTablet } from './matchtablet';
 import * as sqlite3 from 'sqlite3' ;
@@ -262,86 +261,6 @@ export class Project {
         return ret ;
     }
 
-    public loadMatchData(base: SCBase, ba: BlueAlliance, sb: StatBotics, frcev: BAEvent, callback?: (result: string) => void) : Promise<number> {
-        let ret: Promise<number> = new Promise<number>(async (resolve, reject) => {
-            try {
-                let matches = await ba.getMatches(frcev.key);
-                if (callback) {
-                    callback('received ' + matches.length + ' matches<br><br>') ;
-                }
-                if (matches.length > 0) {
-                    this.info_.matches_ = matches ;
-                    if (callback) {
-                        callback('Inserting match data into database ... ');
-                    }
-                    await this.matchDB.processBAData(matches) ;
-                    if (callback) {
-                        callback('inserted ' + matches.length + ' matches<br><br>') ;
-                        callback('Requesting ranking data from the Blue Alliance ...');
-                    }
-                    let rankings = await this.loadRanking(ba);
-                    if (callback) {
-                        callback(' received ' + rankings.rankings.length + ' records<br><br>') ;
-                    }
-
-                    if (rankings.rankings && rankings.rankings.length > 0) {
-                        if (callback) {
-                            callback('Inserting rankings data into the database ... ') ;
-                        }
-                        await this.teamDB.processRankings(rankings.rankings) ;
-
-                        if (callback) {
-                            callback(' inserted ' + rankings.rankings.length + ' records<br><br>') ;
-                        }
-                    }
-
-                    if (callback) {
-                        callback('Requesting statistics data from statbotics ...')
-                    }
-
-                    let stats = await this.loadStatbotics(sb) ;
-
-                    if (callback) {
-                        callback(' received ' + stats.length + ' records of data.<br><br>')
-                    }
-
-                    if (stats && stats.length > 0) {
-                        if (callback) {
-                            callback('Inserting statistics data into the database ... ') ;
-                        }
-                        await this.teamDB.processStats(stats) ;
-                        if (callback) {
-                            callback(' inserted ' + stats.length + ' records<br><br>') ;
-                        }
-                    }
-                }
-                resolve(matches.length) ;
-            } 
-            catch(err) {
-                this.info_.frcev_ = undefined ;
-                this.info_.teams_ = undefined ;
-                reject(err) ;
-            }
-        }) ;
-        
-        return ret;
-    }
-
-    public loadStatbotics(sb: StatBotics) : Promise<any[]> {
-        let ret = new Promise<any[]>(async (resolve, reject) => {
-            if (this.info_.teams_) {
-                let teams = this.info_.teams_.map((v)=> { return v.team_number}) ;
-                try {
-                    let stats = await sb.getStats(teams) ;
-                    resolve(stats) ;
-                }
-                catch(err) {
-                    reject(err) ;
-                }
-            }
-        }) ;
-        return ret;
-    }
 
     public areTabletsValid() : boolean {
         let matchcnt = 0 ;
@@ -438,7 +357,7 @@ export class Project {
             this.info.matches_.push(match) ;
         }
         this.writeEventFile() ;
-        await this.matchDB.processBAData(this.info.matches_) ;
+        await this.matchDB.processBAData(this.info.matches_, false) ;
     }
 
     public setTabletData(data:any[]) {
@@ -455,46 +374,6 @@ export class Project {
         this.writeEventFile() ;
     }
 
-    public loadBAEvent(base: SCCentral, ba: BlueAlliance, sb: StatBotics, frcev: BAEvent) : Promise<void> {
-        let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
-            this.info_.frcev_ = frcev ;
-            base.sendToRenderer('set-status-text', 'Loading teams from the event') ;
-            try {
-                let teams = await ba.getTeams(frcev.key) ;
-                if (teams.length > 0) {
-                    await this.teamDB.processBAData(teams) ;
-                    this.info_.teams_ = teams ;
-                    let msg: string = teams.length + " teams loaded\n" ;
-                    msg += "Loading matches from the event" ;
-                    base.sendToRenderer('set-status-text', msg) ;
-                    await this.loadMatchData(base, ba, sb, frcev)
-                    msg = teams.length + " teams loaded\n" ;
-                    msg += this.info.matches_!.length + " matches loaded\n" ;
-                    let err = this.writeEventFile() ;
-                    if (err) {
-                        msg += "Error saving the event file - " + err.message + '\n' ;
-                    }
-                    else {
-                        msg += "Event file saved\n" ;
-                    }
-                    msg += "Event loaded sucessfully\n" ;
-                    base.sendToRenderer('set-status-text', msg) ;
-                    base.sendToRenderer('set-status-close-button-visible', true) ;
-                }
-                else {
-                    this.info_.frcev_ = undefined ;
-                    base.sendToRenderer('set-status-text', "Event has no teams assigned yet, cannot load event from Blue Alliance") ;
-                    base.sendToRenderer('set-status-close-button-visible', true) ;
-                }
-                resolve() ;
-            }
-            catch(err) {
-                reject(err) ;
-            }
-        }) ;
-
-        return ret;
-    }
 
     public hasTeamScoutingResults(team: number) : boolean {
         return this.info_.scouted_team_.includes(team) ;
@@ -548,18 +427,6 @@ export class Project {
         return ret ;
     }
 
-    private loadRanking(ba: BlueAlliance) : Promise<any> {
-        let ret = new Promise<any>((resolve, reject) => {
-            ba.getRankings(this.info_.frcev_?.key!)
-                .then((obj) => {
-                    resolve(obj) ;
-                })
-                .catch((err) => {
-                    reject(err) ;
-                }) ;
-        }) ;
-        return ret;
-    }
 
     private getTabletsForPurpose(purpose: string) : Tablet[] {
         let ret: Tablet[] = [] ;
@@ -688,4 +555,251 @@ export class Project {
 
         return ret;
     }
+
+    //#region loading data from external sources
+
+    public async loadMatchData(key: string, ba: BlueAlliance, results: boolean, callback?: (result: string) => void) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
+            try {
+                let type = results ? 'match results' : 'match schedule' ;
+                if (callback) {
+                    callback('Requesting ' + type + ' from \'The Blue Alliance\' ... ') ;
+                }
+                let matches = await ba.getMatches(key);
+                if (callback) {
+                    callback('received ' + matches.length + ' matches<br>') ;
+                }
+
+                if (matches.length === 0) {
+                    if (callback) {
+                        callback('No matches received, try again later<br>') ;
+                    }
+                }
+                else {
+                    this.info_.matches_ = matches ;
+                    if (callback) {
+                        callback('Inserting ' + type + ' into XeroScout2 database ... ');
+                    }
+                    await this.matchDB.processBAData(matches, results) ;
+                    if (callback) {
+                        callback('inserted ' + matches.length + ' matches<br>') ;
+                    }
+                }
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret ;
+    }
+
+    public loadOprDprData(key: string, ba: BlueAlliance, callback?: (result: string) => void) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
+            try {
+                if (callback) {
+                    callback('Requesting match schedule from \'The Blue Alliance\' ... ') ;
+                }
+                let opr = await ba.getOPR(key) ;
+
+                if (Object.keys(opr.oprs).length === 0) {
+                    if (callback) {
+                        callback('No OPR data received, try again later<br>') ;
+                    }
+                }
+                else {
+                    if (callback) {
+                        callback('received OPR, DPR, and CCWMS data.<br>') ;
+                        callback('Inserting data into XeroScout2 database ... ');
+                    }
+                    await this.teamDB.processOPR(opr) ;
+                    if (callback) {
+                        callback('inserted OPR/DPR/CCWMS data into database.<br>') ;
+                    }
+                }
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret ;
+    }
+
+    public loadRankingData(key: string, ba: BlueAlliance, callback?: (result: string) => void) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
+            try {
+                if (callback) {
+                    callback('Requesting match schedule from \'The Blue Alliance\' ... ') ;
+                }
+                let rankings = await ba.getRankings(key) ;
+
+                if (rankings.rankings.length === 0) {
+                    if (callback) {
+                        callback('No rankings data received, try again later<br>') ;
+                    }
+                }
+                else {
+                    if (callback) {
+                        callback('received OPR, DPR, and CCWMS data.<br>') ;
+                        callback('Inserting data into XeroScout2 database ... ');
+                    }
+                    await this.teamDB.processRankings(rankings.rankings) ;
+                    if (callback) {
+                        callback('inserted OPR/DPR/CCWMS data into database.<br>') ;
+                    }
+                }
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret ;
+    }
+
+    public loadStatboticsEventData(key: string, sb: StatBotics, callback?: (result: string) => void) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
+            try {
+                let teams = this.info_!.teams_!.map((v)=> { return v.team_number}) ;
+
+                if (callback) {
+                    callback('Requesting EPA data for the event from \'Statbotics\' ... ') ;
+                }
+                let stats = await sb.getStatsEvent(key, teams) ;
+
+                if (callback) {
+                    callback('received stats data.<br>') ;
+                    callback('Inserting data into team database ... ')
+                }
+                this.teamDB.processStatsEvent(stats) ;
+                
+                if (callback) {
+                    callback('data inserted.<br>') ;
+                }
+
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret ;
+    }
+    
+    public loadStatboticsYearData(sb: StatBotics, callback?: (result: string) => void) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
+            try {
+                let teams = this.info_!.teams_!.map((v)=> { return v.team_number}) ;
+
+                if (callback) {
+                    callback('Requesting EPA data for the year from \'Statbotics\' ... ') ;
+                }
+                let stats = await sb.getStatsYear(teams) ;
+
+                if (callback) {
+                    callback('received stats data.<br>') ;
+                    callback('Inserting data into team database ... ')
+                }
+                await this.teamDB.processStatsYear(stats) ;
+                
+                if (callback) {
+                    callback('data inserted.<br>') ;
+                }
+
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret ;
+    }
+
+    private loadTeams(key: string, ba: BlueAlliance, callback?: (result: string) => void) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
+            try {
+                if (callback) {
+                    callback('Requesting teams from \'The Blue Alliance\' ... ') ;
+                }
+                let teams = await ba.getTeams(key) ;
+
+                if (callback) {
+                    callback('received ' + teams.length + ' teams.<br>') ;
+                }
+
+                if (teams.length === 0) {
+                    if (callback) {
+                        callback('No teams data received, try again later<br>') ;
+                    }
+                }
+                else {
+                    this.info_.teams_ = teams ;
+                    if (callback) {
+                        callback('Inserting teams into XeroScout2 database ... ');
+                    }
+                    await this.teamDB.processBAData(teams) ;
+                    if (callback) {
+                        callback('inserted teams data into database.<br>') ;
+                    }
+                }
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret ;        
+    }
+
+    public loadBAEvent(ba: BlueAlliance, sb: StatBotics, frcev: BAEvent, callback?: (result: string) => void) : Promise<void> {
+        let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
+            this.info_.frcev_ = frcev ;
+            try {
+                await this.loadTeams(frcev.key, ba, callback) ;
+                if (this.info_.teams_) {
+                    await this.loadMatchData(frcev.key, ba, false, callback) ;
+                }
+                this.writeEventFile() ;
+                if (callback) {
+                    callback('Event data file saved.<br>');
+                    callback('Event loaded sucessfully.<br>');
+                }
+
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret;
+    }
+
+    
+    public loadExternalData(ba: BlueAlliance, sb: StatBotics, frcev: BAEvent, callback?: (result: string) => void) : Promise<number> {
+        let ret: Promise<number> = new Promise<number>(async (resolve, reject) => {
+            try {
+                await this.loadMatchData(frcev.key, ba, true, callback) ;
+                await this.loadOprDprData(frcev.key, ba, callback) ;
+                await this.loadRankingData(frcev.key, ba, callback) ;
+                await this.loadStatboticsEventData(frcev.key, sb, callback) ;
+                await this.loadStatboticsYearData(sb, callback) ;
+                resolve(0) ;
+            } 
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+        
+        return ret;
+    }
+
+    //#endregion
 }

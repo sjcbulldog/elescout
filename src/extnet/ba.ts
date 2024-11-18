@@ -1,5 +1,5 @@
 import { ClientRequest, IncomingMessage, net } from 'electron';
-import { BAEvent, BAMatch, BARankings, BATeam } from './badata';
+import { BAEvent, BAMatch, BAOprData, BARankings, BATeam } from './badata';
 import { NetBase } from './netbase';
 
 export class BlueAlliance extends NetBase {
@@ -27,7 +27,7 @@ export class BlueAlliance extends NetBase {
         let ret: Promise<boolean> = new Promise<boolean>((resolve, reject) => {
             this.request('/status')
                 .then((obj) => {
-                    if (obj.current_season && this.year_ != -1) {
+                    if (obj.current_season && this.year_ == -1) {
                         this.year_ = obj.current_season ;
                     }
 
@@ -64,9 +64,23 @@ export class BlueAlliance extends NetBase {
         return ret;
     }
 
-    public async getRankings(evkey: string) : Promise<BARankings[]> {
-        let ret: Promise<BARankings[]> = new Promise<BARankings[]>((resolve, reject) => {
+    public async getRankings(evkey: string) : Promise<BARankings> {
+        let ret: Promise<BARankings> = new Promise<BARankings>((resolve, reject) => {
             let query = "/event/" + evkey + "/rankings" ;
+            this.request(query)
+                .then((rankings) => {
+                    resolve(rankings) ;
+                })
+                .catch((err) => {
+                    reject(err) ;
+                }) ;
+            }) ;
+        return ret ;
+    }
+
+    public async getOPR(evkey: string) : Promise<BAOprData> {
+        let ret: Promise<BAOprData> = new Promise<BAOprData>((resolve, reject) => {
+            let query = "/event/" + evkey + "/oprs" ;
             this.request(query)
                 .then((rankings) => {
                     resolve(rankings) ;

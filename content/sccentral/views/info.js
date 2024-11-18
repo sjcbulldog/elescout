@@ -54,7 +54,7 @@ class InfoView extends XeroView {
 
         let evname = document.createElement('td')
         evname.className = "info-table-cell";
-        evname.innerHTML = info.uuid_ ? info.uuid_ : 'Not Set Yet' ;
+        evname.innerHTML = info.uuid_ ? info.uuid_ : 'NONE' ;
 
         row.append(evname);
         return row;

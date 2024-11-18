@@ -15,9 +15,9 @@ class FormView extends XeroView {
             this.top_.innerText = obj.errormsg ;
         }
         else {
+            this.reset() ;
             formViewJsonToForm(this.top_, obj.formjson, this.type_) ;
         }
-        console.log(args) ;
     }
 }
 
@@ -28,13 +28,13 @@ class PreviewFormView extends FormView {
 }
 
 class MatchFormView extends FormView {
-    constructor(div) {
+    constructor(div, viewtype) {
         super(div, viewtype, 'match') ;
     }
 }
 
 class TeamFormView extends FormView {
-    constructor(div) {
+    constructor(div, viewtype) {
         super(div, viewtype, 'team') ;
     }
 }

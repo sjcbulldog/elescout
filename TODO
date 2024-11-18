@@ -1,18 +1,16 @@
-Base
-----
-
 Central
 -------
-    Compute team data from match data
-    Recent files
-
-    Generate OPR
-    Generate DPR
-    Import StatBiotics data
+    Play with failures during blue alliance and statbotics access to insure error messages are provided
 
 Scout
 -------
+    Revisit visual apperance of scouting pages
 
 Coach
 -----
     Think about what this should do ...
+
+
+Help
+----
+    Create help on wiki

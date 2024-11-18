@@ -64,40 +64,46 @@ export interface BATeam
   rookie_year: number
 }
 
+export interface BAOprData{
+  oprs: any,
+  dprs: any,
+  ccwms: any
+}
+
+export interface BARankingData {
+  matches_played: number,
+  qual_average: number,
+  extra_stats: [
+    number
+  ],
+  sort_orders: [
+    number
+  ],
+  record: {
+    losses: number,
+    wins: number,
+    ties: number
+  },
+  rank: number,
+  dq: number,
+  team_key: string
+}
+
+export interface BARankingExtraStatInfo {
+  precision: number,
+  name: string
+}
+
+export interface BARankingSortOrderInfo {
+  precision: number,
+  name: string
+}
+
 export interface BARankings
 {
-  rankings: [
-    {
-      matches_played: number,
-      qual_average: number,
-      extra_stats: [
-        number
-      ],
-      sort_orders: [
-        number
-      ],
-      record: {
-        losses: number,
-        wins: number,
-        ties: number
-      },
-      rank: number,
-      dq: number,
-      team_key: string
-    }
-  ],
-  extra_stats_info: [
-    {
-      precision: number,
-      name: string
-    }
-  ],
-  sort_order_info: [
-    {
-      precision: number,
-      name: string
-    }
-  ]
+  rankings: BARankingData[],
+  extra_stats_info: BARankingExtraStatInfo[],
+  sort_order_info: BARankingSortOrderInfo[]
 }
 
 export interface BAVideo {

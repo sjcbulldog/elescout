@@ -1,7 +1,7 @@
-import { SCBase } from './scbase';
+import { SCBase, XeroAppType, XeroVersion } from './scbase';
 import { BlueAlliance } from '../extnet/ba';
 import { Project } from '../project/project';
-import { BrowserWindow, dialog, Menu, MenuItem } from 'electron' ;
+import { BrowserWindow, dialog, Menu, MenuItem, shell } from 'electron' ;
 import { TCPSyncServer } from '../sync/tcpserver';
 import { Packet } from '../sync/packet';
 import { PacketType } from '../sync/packettypes';
@@ -10,9 +10,12 @@ import { BAEvent, BAMatch, BATeam } from '../extnet/badata';
 import { TeamDataModel } from '../model/teammodel';
 import Papa from 'papaparse';
 import * as fs from 'fs' ;
+import * as path from 'path' ;
 import { StatBotics } from '../extnet/statbotics';
 
 export class SCCentral extends SCBase {
+    private static readonly attribution: string = 'Icons from Flaticon.com (https://www.flaticon.com/)' ;
+    private static readonly recentFilesSetting: string = 'recent-files' ;
 
     private static readonly matchStatusFields: string[] = [
         'comp_level',
@@ -48,6 +51,7 @@ export class SCCentral extends SCBase {
     private static readonly viewMatchDB: string = "view-match-db" ;
     private static readonly viewPreviewForm: string = "view-preview-form" ;
     private static readonly viewHelp: string = "view-help" ;
+    private static readonly viewAbout: string = "view-about" ;
 
     private project_? : Project = undefined ;
     private ba_? : BlueAlliance = undefined ;
@@ -92,6 +96,10 @@ export class SCCentral extends SCBase {
             });
     }
 
+    public get applicationType() : XeroAppType { 
+        return XeroAppType.Central ;
+    }
+
     public basePage() : string  {
         return 'content/sccentral/central.html'
     }
@@ -114,6 +122,7 @@ export class SCCentral extends SCBase {
 
     public createMenu() : Menu | null {
         let ret: Menu | null = new Menu() ;
+        let index = 0 ;
 
         let filemenu: MenuItem = new MenuItem( {
             type: 'submenu',
@@ -127,7 +136,7 @@ export class SCCentral extends SCBase {
             id: 'create-event',
             click: () => { this.executeCommand(SCCentral.createNewEvent)}
         }) ;
-        filemenu.submenu!.insert(0, createitem) ;
+        filemenu.submenu!.insert(index++, createitem) ;
         this.menuitems_.set('file/create', createitem) ;
 
         let openitem: MenuItem = new MenuItem( {
@@ -136,10 +145,48 @@ export class SCCentral extends SCBase {
             id: 'open-event',
             click: () => { this.executeCommand(SCCentral.openExistingEvent)}            
         }) ;
-        filemenu.submenu!.insert(1, openitem) ;
+        filemenu.submenu!.insert(index++, openitem) ;
         this.menuitems_.set('file/open', openitem) ;
 
-        filemenu.submenu!.insert(2, new MenuItem({type: 'separator'}));
+        if (this.hasSetting(SCCentral.recentFilesSetting)) {
+
+            let recent: MenuItem = new MenuItem( {
+                type: 'submenu',
+                label: 'Recent',
+                submenu: new Menu(),
+                click: () => { this.executeCommand(SCCentral.openExistingEvent)}            
+            }) ;
+            filemenu.submenu!.insert(index++, recent) ;
+
+            let recents = this.getSetting(SCCentral.recentFilesSetting) ;
+
+            for(let one of recents) {
+                let item: MenuItem = new MenuItem( {
+                    type: 'normal',
+                    label: one,
+                    click: () => {             
+                        let evpath = path.join(one, 'event.json') ;    
+                        Project.openEvent(this.logger_, evpath, this.year_!)
+                        .then((p) => {
+                            this.project_ = p ;
+                            this.updateMenuState(true) ;
+                            if (this.project_.info.locked_) {
+                                this.startSyncServer() ;
+                            }
+                            this.setView('info') ;
+                            this.sendNavData() ;
+                        })
+                        .catch((err) => {
+                            let errobj : Error = err as Error ;
+                            dialog.showErrorBox('Open Project Error', errobj.message) ;
+                        }) ;
+                    },   
+                }) ;
+                recent.submenu!.append(item);
+            }
+        }
+
+        filemenu.submenu!.insert(index++, new MenuItem({type: 'separator'}));
 
         let closeitem: MenuItem = new MenuItem( {
             type: 'normal',
@@ -148,7 +195,7 @@ export class SCCentral extends SCBase {
             enabled: false,
             click: () => { this.executeCommand(SCCentral.closeEvent)}            
         }) ;
-        filemenu.submenu!.append(closeitem) ;
+        filemenu.submenu!.insert(index++, closeitem) ;
         this.menuitems_.set('file/close', closeitem) ;
 
         ret.append(filemenu) ;
@@ -161,9 +208,9 @@ export class SCCentral extends SCBase {
 
         let downloadMatchData: MenuItem = new MenuItem( {
             type: 'normal',
-            label: 'Import Data',
+            label: 'Import Data From Blue Alliance/Statbotics',
             enabled: false,
-            click: () => { this.downloadMatchData();}
+            click: () => { this.importBlueAllianceStatboticsData();}
         }) ;
         loadmenu.submenu?.append(downloadMatchData) ;
         this.menuitems_.set('data/loadmatchdata', downloadMatchData) ;
@@ -195,6 +242,30 @@ export class SCCentral extends SCBase {
             role: 'viewMenu'
         }) ;
         ret.append(viewmenu) ;
+
+        let helpmenu: MenuItem = new MenuItem( {
+            type: 'submenu',
+            label: 'Help',
+            submenu: new Menu()            
+        }) ;
+
+        let helpitem: MenuItem = new MenuItem( {
+            type: 'normal',
+            label: 'Help',
+            id: 'help-help',
+            click: () => { this.executeCommand(SCCentral.viewHelp)}
+        }) ;
+        helpmenu.submenu!.append(helpitem) ;
+
+        let aboutitem: MenuItem = new MenuItem( {
+            type: 'normal',
+            label: 'About',
+            id: 'help-about',
+            click: () => { this.executeCommand(SCCentral.viewAbout)}
+        }) ;
+        helpmenu.submenu!.append(aboutitem) ;
+
+        ret.append(helpmenu) ;
 
         return ret;
     }
@@ -585,7 +656,11 @@ export class SCCentral extends SCBase {
                 })
                 .catch((err) => {
                     let errobj : Error = err as Error ;
-                    dialog.showErrorBox('Load Blue Alliance Event', errobj.message) ;    
+                    dialog.showMessageBoxSync(this.win_, 
+                        {
+                            title: 'Load Blue Alliance Event',
+                            message: errobj.message
+                        }) ;   
                     this.setView('info') ; 
                 }) ;
 
@@ -596,7 +671,7 @@ export class SCCentral extends SCBase {
         }
     }
 
-    public loadBaEventData(args: any[]) : void {
+    public async loadBaEventData(args: any[]) : Promise<void> {
         if (!this.isBAAvailable()) {
             dialog.showErrorBox('Load Blue Alliance Event', 'The Blue Alliance site is not available.') ;
             return ;
@@ -605,25 +680,29 @@ export class SCCentral extends SCBase {
         let fev: BAEvent | undefined = this.getEventFromKey(args[0]) ;        
         if (fev) {
             this.sendToRenderer('set-status-title', 'Loading event \'' + fev.name + '\'') ;
-            this.project_!.loadBAEvent(this, this.ba_!, this.statbotics_!, fev)
-                .then(() => {
-                    this.sendNavData() ;
-                    this.setView('info') ;
-                })
-                .catch((err) => {
-                    this.sendToRenderer('set-status-visible', true) ;
-                    this.sendToRenderer('set-status-title', 'Error Importing Match Data') ;
-                    this.sendToRenderer('set-status-html',  'Error importing data - ' + err.message) ;
-                    this.sendToRenderer('set-status-close-button-visible', true) ;
-                    this.setView('info') ;
-                }) ;
+            this.msg_ = '' ;
+
+            try {
+                await this.project_!.loadBAEvent(this.ba_!, this.statbotics_!, fev, (text) => { this.appendStatusText(text);});
+                this.sendToRenderer('set-status-close-button-visible', true) ;
+                this.sendNavData() ;
+                this.setView('info') ;
+            }
+            catch(err) {
+                let errobj = err as Error ;
+                this.sendToRenderer('set-status-visible', true) ;
+                this.sendToRenderer('set-status-title', 'Error Importing Match Data') ;
+                this.sendToRenderer('set-status-html',  'Error importing data - ' + errobj.message) ;
+                this.sendToRenderer('set-status-close-button-visible', true) ;
+                this.setView('info') ;
+            }
         }
         else {
             dialog.showErrorBox('Load Blue Alliance Event', 'Event with key \'' + args[0] + '\' was not found.<br>No event was loaded') ;
         }
     }
 
-    private downloadMatchData() {
+    private importBlueAllianceStatboticsData() {
         if (!this.project_) {
             let html = 'Must create or open a project to import data.' ;
             this.sendToRenderer('set-status-visible', true) ;
@@ -646,13 +725,17 @@ export class SCCentral extends SCBase {
         if (fev) {
             this.sendToRenderer('set-status-visible', true) ;            
             this.sendToRenderer('set-status-title', 'Loading match data for event \'' + fev.name + '\'') ;
-            this.msg_ = "Loading match results ... " ;
+            this.msg_ = '' ;
             this.sendToRenderer('set-status-html',  'Requesting match data from the Blue Alliance ...') ;
-            this.project_!.loadMatchData(this, this.ba_!, this.statbotics_!, fev, (text) => { this.appendStatusText(text);})
-                .then((count) => {
+            this.project_!.loadExternalData(this.ba_!, this.statbotics_!, fev, (text) => { this.appendStatusText(text);})
+                .then(() => {
                     this.appendStatusText('All data loaded') ;
                     this.sendToRenderer('set-status-close-button-visible', true) ;                    
-                }) ;
+                })
+                .catch((err) => {
+                    this.appendStatusText('<br><br>Error loading data - ' + err.message) ;
+                    this.sendToRenderer('set-status-close-button-visible', true) ;  
+                });
         }
         else {
             let html = 'The event is not a blue alliance event' ;
@@ -710,6 +793,10 @@ export class SCCentral extends SCBase {
 
     public executeCommand(cmd: string) : void {
         if (cmd === SCCentral.viewHelp) {
+            shell.openExternal('https://www.xerosw.org/doku.php?id=software:xeroscout2');
+        }
+        else if (cmd === SCCentral.viewAbout) {
+            this.showAbout() ;
         }
         else if (cmd === SCCentral.viewPreviewForm) {
             this.previewForm() ;
@@ -1023,7 +1110,12 @@ export class SCCentral extends SCBase {
                 })
                 .catch((err) => {
                     let errobj : Error = err as Error ;
-                    dialog.showErrorBox('Load Blue Alliance Event', errobj.message) ;                    
+                    dialog.showMessageBoxSync(this.win_, 
+                        {
+                            title: 'Load Blue Alliance Event',
+                            message: errobj.message
+                        }) ;   
+                    this.setView('info') ;                  
                 }) ;
         }
     }
@@ -1040,6 +1132,7 @@ export class SCCentral extends SCBase {
             if (!pathname.canceled) {
                 Project.createEvent(this.logger_, pathname.filePaths[0], year)
                     .then((p) => {
+                        this.addRecent(p.location) ;
                         this.project_ = p ;
                         this.updateMenuState(true) ;
                         this.setView('info') ;
@@ -1053,6 +1146,21 @@ export class SCCentral extends SCBase {
         .catch((err) => {
             dialog.showErrorBox('Create Event Error', err.message) ;
         }) ;
+    }
+
+    private addRecent(path: string) {
+        let recents: string[] = [] ;
+
+        if (this.hasSetting(SCCentral.recentFilesSetting)) {
+            recents = this.getSetting(SCCentral.recentFilesSetting) ;
+        }
+
+        recents.unshift(path) ;
+        if (recents.length > 5) {
+            recents.splice(5);
+        }
+
+        this.setSetting(SCCentral.recentFilesSetting, recents) ;
     }
 
     private showError(filename: string, err: string) {
@@ -1311,6 +1419,26 @@ export class SCCentral extends SCBase {
         }
     }
 
+    private versionToString(v: XeroVersion) {
+        return v.major + '.' + v.minor + '.' + v.patch ;
+    }
+
+    private showAbout() {
+        let msg = '' ;
+        msg += "Welcome to XeroScout Generation 2, an electron based scouting system.\n\n" ;
+        msg += "Versions:\n"
+        msg += '     XeroScout 2: ' + this.versionToString(this.getVersion('application')) + '\n' ;
+        msg += '     Electron: ' + this.versionToString(this.getVersion('electron')) + '\n' ;
+        msg += '     Node: ' + this.versionToString(this.getVersion('node')) + '\n' ;
+        msg += '\n\n' + SCCentral.attribution ;
+        let options = {
+            // type: 'info',
+            title: 'XeroScout 2',
+            message: msg
+        } ;
+        dialog.showMessageBoxSync(this.win_, options) ;
+    }
+
     private openEvent(year: number) {
         var path = dialog.showOpenDialog({
             title: 'Event descriptor file',
@@ -1330,6 +1458,7 @@ export class SCCentral extends SCBase {
             if (!pathname.canceled) {
                 Project.openEvent(this.logger_, pathname.filePaths[0], year)
                     .then((p) => {
+                        this.addRecent(p.location) ;
                         this.project_ = p ;
                         this.updateMenuState(true) ;
                         if (this.project_.info.locked_) {

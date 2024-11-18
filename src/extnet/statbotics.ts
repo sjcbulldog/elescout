@@ -12,7 +12,27 @@ export class StatBotics extends NetBase {
         this.year_ = year ;
     }
 
-    public getStats(teams: number[]) : Promise<any[]> {
+    public getStatsEvent(key: string, teams: number[]) : Promise<any> {
+        let ret = new Promise<any[]>((resolve, reject) => {
+            let promises: Promise<any>[] = [] ;
+
+            for(let team of teams) {
+                let req = this.request('/team_event/' + team + '/' + key) ;
+                promises.push(req) ;
+            }
+
+            Promise.all(promises)
+                .then((results) => {
+                    resolve(results) ;
+                })
+                .catch((err) => {
+                    reject(err);
+                })
+        }) ;
+        return ret;
+    }
+
+    public getStatsYear(teams: number[]) : Promise<any[]> {
         let ret = new Promise<any[]>((resolve, reject) => {
             let promises: Promise<any>[] = [] ;
 

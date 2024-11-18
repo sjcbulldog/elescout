@@ -105,28 +105,33 @@ export class TeamDataModel extends DataModel {
         return dr ;
     }
 
-    // t.epa.norm, t.epa.unitless, t.epa.ranks.district.rank
-    // t.epa.ranks.country.rank, t.epa.ranks.state.rank
-    // 
-    private convertStatsToRecord(t: any) {
+    private convertStatsYearToRecord(t: any) {
         let dr = new DataRecord() ;
-        // dr.addfield('rank', ranking.rank);
         dr.addfield('team_number', t.team) ;
-        dr.addfield('st_epanorm', t.epa.norm) ;
-        dr.addfield('st_epaunitless', t.epa.unitless);
-        dr.addfield('st_district_rank', t.epa.ranks.district.rank) ;
-        dr.addfield('st_country_rank', t.epa.ranks.country.rank) ;
-        dr.addfield('st_state_rank', t.epa.ranks.state.rank) ;
+        dr.addfield('st_year_epanorm', t.epa.norm) ;
+        dr.addfield('st_year_epaunitless', t.epa.unitless);
+        dr.addfield('st_year_district_rank', t.epa.ranks.district.rank) ;
+        dr.addfield('st_year_country_rank', t.epa.ranks.country.rank) ;
+        dr.addfield('st_year_state_rank', t.epa.ranks.state.rank) ;
         
         return dr ;
     }
 
-    public processStats(stats: any[]) : Promise<void> {
+    private convertStatsEventToRecord(t: any) {
+        let dr = new DataRecord() ;
+        dr.addfield('team_number', t.team) ;
+        dr.addfield('st_event_epanorm', t.epa.norm) ;
+        dr.addfield('st_event_epaunitless', t.epa.unitless);
+        
+        return dr ;
+    }
+
+    public processStatsYear(stats: any[]) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
             let records : DataRecord[] = [];
 
             for(let t of stats) {
-                records.push(this.convertStatsToRecord(t)) ;
+                records.push(this.convertStatsYearToRecord(t)) ;
             }
 
             try {
@@ -138,6 +143,65 @@ export class TeamDataModel extends DataModel {
             }
         }) ;
         return ret ;
+    }
+
+    public processStatsEvent(stats: any[]) : Promise<void> {
+        let ret = new Promise<void>(async (resolve, reject) => {
+            let records : DataRecord[] = [];
+
+            for(let t of stats) {
+                records.push(this.convertStatsEventToRecord(t)) ;
+            }
+
+            try {
+                await this.addColsAndData(TeamDataModel.TeamTableName, ['team_number'], records) ;
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+        return ret ;
+    }
+
+    private keyToTeamNumber(key: string) {
+        let ret: number = -1 ;
+        let m1 = /^frc[0-9]+$/ ;
+        let m2 = /^[0-9]+$/ ;
+
+        if (m1.test(key)) {
+            ret = +key.substring(3) ;
+        }
+        else if (m2.test(key)) {
+            ret = +key ;
+        }
+
+        return ret ;
+    }
+
+    public processOPR(opr: any) : Promise<void> {
+        let ret = new Promise<void>(async (resolve, reject) => {
+            let records : DataRecord[] = [];
+
+            for(let key of Object.keys(opr.oprs)) {
+                let dr = new DataRecord() ;
+                dr.addfield('team_number', this.keyToTeamNumber(key)) ;
+                dr.addfield('ba_opr', opr.oprs[key] as number) ;
+                dr.addfield('ba_dpr', opr.dprs[key] as number) ;
+                dr.addfield('ba_ccwms', opr.ccwms[key] as number) ;
+                records.push(dr) ;
+            }
+
+            try {
+                await this.addColsAndData(TeamDataModel.TeamTableName, ['team_number'], records) ;
+                resolve() ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret;
     }
 
     public processRankings(rankings: any[]) : Promise<void> {

@@ -47,8 +47,7 @@ function createWindow() : void {
     }
 
     if (!scappbase) {
-        console.log(process.argv) ;
-        console.log("No App Created") ;
+        console.log("No App Created, args: " + process.argv) ;
         app.exit(1) ;
     }
   
@@ -64,29 +63,29 @@ function createWindow() : void {
 }
 
 app.on("ready", () => {
-    ipcMain.on('get-nav-data', getTreeData);
-    ipcMain.on('get-info-data', getInfoData) ;
-    ipcMain.on('set-event-name', (event, ...args) => { setEventName(...args)}) ;
-    ipcMain.on('get-event-data', getSelectEventData) ;
-    ipcMain.on('get-tablet-data', getTabletData) ;
-    ipcMain.on('set-tablet-data', (event, ...args) => { setTabletData(...args)}) ;
-    ipcMain.on('get-team-data', getTeamData) ;
-    ipcMain.on('get-match-db', getMatchDB);
-    ipcMain.on('get-team-db', getTeamDB) ;
-    ipcMain.on('get-team-form', getTeamForm);
-    ipcMain.on('get-match-form', getMatchForm);
-    ipcMain.on('get-match-data', getMatchData);
-    ipcMain.on('get-preview-form', getPreviewForm);
-    ipcMain.on('get-team-status', getTeamStatus) ;
-    ipcMain.on('get-match-status', getMatchStatus) ;
-    ipcMain.on('set-team-data', (event, ...args) => { setTeamData(...args)}) ;
-    ipcMain.on('set-match-data', (event, ...args) => { setMatchData(...args)}) ;
-    ipcMain.on('load-ba-event-data', (event, ...args) => { loadBaEventData(...args)}) ;
-    ipcMain.on('execute-command', (event, ...args) => { executeCommand(...args)}) ;
-    ipcMain.on('set-tablet-name-purpose', (event, ...args) => { setTabletNamePurpose(...args)}) ;
-    ipcMain.on('provide-result', (event, ...args) => { provideResult(...args)}) ;
-    ipcMain.on('send-match-col-config', (event, ...args) => { sendMatchColConfig(...args)}) ;
-    ipcMain.on('send-team-col-config', (event, ...args) => { sendTeamColConfig(...args)}) ;
+    ipcMain.on('get-nav-data', (event, ...args) => { getTreeData('get-nav-data', ...args)});
+    ipcMain.on('get-info-data', (event, ...args) => { getInfoData('get-info-data', ...args)}) ;
+    ipcMain.on('set-event-name', (event, ...args) => { setEventName('set-event-name', ...args)}) ;
+    ipcMain.on('get-event-data', (event, ...args) => { getSelectEventData('get-event-data', ...args)}) ;
+    ipcMain.on('get-tablet-data', (event, ...args) => { getTabletData('get-tablet-data', ...args)}) ;
+    ipcMain.on('set-tablet-data', (event, ...args) => { setTabletData('set-tablet-data', ...args)}) ;
+    ipcMain.on('get-team-data', (event, ...args) => { getTeamData('get-team-data', ...args)}) ;
+    ipcMain.on('get-match-db', (event, ...args) => { getMatchDB('get-match-db', ...args)});
+    ipcMain.on('get-team-db', (event, ...args) => { getTeamDB('get-team-db', ...args)}) ;
+    ipcMain.on('get-team-form', (event, ...args) => { getTeamForm('get-team-form', ...args)});
+    ipcMain.on('get-match-form', (event, ...args) => { getMatchForm('get-match-form', ...args)});
+    ipcMain.on('get-match-data', (event, ...args) => { getMatchData('get-match-data', ...args)});
+    ipcMain.on('get-preview-form', (event, ...args) => { getPreviewForm('get-preview-form', ...args)});
+    ipcMain.on('get-team-status', (event, ...args) => { getTeamStatus('get-team-status', ...args)}) ;
+    ipcMain.on('get-match-status', (event, ...args) => { getMatchStatus('get-match-status', ...args)}) ;
+    ipcMain.on('set-team-data', (event, ...args) => { setTeamData('set-team-data', ...args)}) ;
+    ipcMain.on('set-match-data', (event, ...args) => { setMatchData('set-match-data', ...args)}) ;
+    ipcMain.on('load-ba-event-data', (event, ...args) => { loadBaEventData('load-ba-event-data', ...args)}) ;
+    ipcMain.on('execute-command', (event, ...args) => { executeCommand('execute-command', ...args)}) ;
+    ipcMain.on('set-tablet-name-purpose', (event, ...args) => { setTabletNamePurpose('set-table-name-purpose', ...args)}) ;
+    ipcMain.on('provide-result', (event, ...args) => { provideResult('provide-result', ...args)}) ;
+    ipcMain.on('send-match-col-config', (event, ...args) => { sendMatchColConfig('send-match-col-config', ...args)}) ;
+    ipcMain.on('send-team-col-config', (event, ...args) => { sendTeamColConfig('send-team-col-config', ...args)}) ;
     createWindow() ;
 }) ;
 

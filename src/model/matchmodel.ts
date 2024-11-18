@@ -102,7 +102,7 @@ export class MatchDataModel extends DataModel {
         }
     }
 
-    private convertToRecord(obj: BAMatch, tkey: string, alliance: string) : DataRecord {
+    private convertToRecord(obj: BAMatch, tkey: string, alliance: string, results: boolean) : DataRecord {
         let dr = new DataRecord() ;
 
         dr.addfield('key', obj.key) ;
@@ -117,26 +117,28 @@ export class MatchDataModel extends DataModel {
         dr.addfield('b2', obj.alliances.blue.team_keys[1]) ;
         dr.addfield('b3', obj.alliances.blue.team_keys[2]) ;
 
-        if (obj.alliances.red.score) {
-            dr.addfield('ba_redscore', obj.alliances.red.score) ;
-        }
+        if (results) {
+            if (obj.alliances.red.score) {
+                dr.addfield('ba_redscore', obj.alliances.red.score) ;
+            }
 
-        if (obj.alliances.blue.score) {
-            dr.addfield('ba_bluescore', obj.alliances.blue.score) ;
-        }
+            if (obj.alliances.blue.score) {
+                dr.addfield('ba_bluescore', obj.alliances.blue.score) ;
+            }
 
-        if (obj.winning_alliance) {
-            dr.addfield('ba_winning_alliance', obj.winning_alliance) ;
-        }
+            if (obj.winning_alliance) {
+                dr.addfield('ba_winning_alliance', obj.winning_alliance) ;
+            }
 
-        if (obj.score_breakdown) {
-            this.getScoreBreakdown(obj.score_breakdown, dr, alliance) ;
+            if (obj.score_breakdown) {
+                this.getScoreBreakdown(obj.score_breakdown, dr, alliance) ;
+            }
         }
 
         return dr ;
     }
 
-    public processBAData(data: BAMatch[]) : Promise<void> {
+    public processBAData(data: BAMatch[], results: boolean) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
             let dr: DataRecord ;
             let records: DataRecord[] = [] ;
@@ -147,22 +149,22 @@ export class MatchDataModel extends DataModel {
                 // of each of the alliances.
                 //
 
-                dr = this.convertToRecord(one, one.alliances.red.team_keys[0], 'red') ;
+                dr = this.convertToRecord(one, one.alliances.red.team_keys[0], 'red', results) ;
                 records.push(dr) ;
 
-                dr = this.convertToRecord(one, one.alliances.red.team_keys[1], 'red') ;
+                dr = this.convertToRecord(one, one.alliances.red.team_keys[1], 'red', results) ;
                 records.push(dr) ;
 
-                dr = this.convertToRecord(one, one.alliances.red.team_keys[2], 'red') ;
+                dr = this.convertToRecord(one, one.alliances.red.team_keys[2], 'red', results) ;
                 records.push(dr) ;
 
-                dr = this.convertToRecord(one, one.alliances.blue.team_keys[0], 'blue') ;
+                dr = this.convertToRecord(one, one.alliances.blue.team_keys[0], 'blue', results) ;
                 records.push(dr) ;
 
-                dr = this.convertToRecord(one, one.alliances.blue.team_keys[1], 'blue') ;
+                dr = this.convertToRecord(one, one.alliances.blue.team_keys[1], 'blue', results) ;
                 records.push(dr) ;
 
-                dr = this.convertToRecord(one, one.alliances.blue.team_keys[2], 'blue') ;
+                dr = this.convertToRecord(one, one.alliances.blue.team_keys[2], 'blue', results) ;
                 records.push(dr) ;
             }
 

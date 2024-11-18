@@ -96,7 +96,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function updateView(args) {
-  console.log("update-main-window-view", args);
   let view = args[0];
   if (view === undefined) {
     updateMainWindow("error");

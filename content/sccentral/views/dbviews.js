@@ -25,7 +25,6 @@ class DBView extends TabulatorView {
     hideHiddenColumns() {
         if (this.colcfg_) {
             let colobjs = this.table_.getColumns() ;
-            console.log(colobjs) ;
             let index = 0 ;
             for(let col of this.table_.getColumns()) {
                 let cfg = this.colcfg_[index++];
@@ -73,7 +72,7 @@ class DBView extends TabulatorView {
     }
 
     colConfig(args) {
-        if (args) {
+        if (args && args[0]) {
             this.colcfg_ = args[0].columns ;
             this.frozenColumnCount_ = this.colcfg_.frozenColumnCount ;
         }
@@ -179,6 +178,7 @@ class TeamDBView extends DBView {
             let coldesc = {
                 field: col,
                 title: col,
+                sorter: (col === 'team_number' ? 'number' : 'alphanum'),
                 headerMenu: this.headerMenu.bind(this),
                 headerVertical: false,
             } ;

@@ -28,11 +28,9 @@ class CallbackMgr {
     }
 
     dispatchCallback(name, arg) {
-        console.log('CallbackMgr.dispatchCallback \'' + name + '\'') ;
         if (this.callbacks_.has(name)) {
             let cblist = this.callbacks_.get(name);
             for (let cb of cblist) {
-                console.log('    ->', cb) ;
                 cb(arg);
             }
         }
