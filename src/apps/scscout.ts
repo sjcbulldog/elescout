@@ -136,14 +136,22 @@ export class SCScout extends SCBase {
             ret = 1 ;
         }
         else {
-            if (a.matchnumber < b.matchnumber) {
+            if (a.matchno < b.matchno) {
                 ret = -1 ;
             }
-            else if (a.matchnumber > b.matchnumber) {
+            else if (a.matchno > b.matchno) {
                 ret = 1 ;
             }
             else {
-                ret = 0 ;
+                if (a.setno < b.setno) {
+                    ret = -1 ;
+                }
+                else if (a.setno > b.setno) {
+                    ret = 1 ;
+                }
+                else {
+                    ret = 0 ;
+                }
             }
         }
         return ret ;

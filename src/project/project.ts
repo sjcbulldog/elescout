@@ -194,18 +194,31 @@ export class Project {
         return this.location_ ;
     }
 
-    public lockEvent() : void {
-        if (this.info_.matches_ && this.info_.teams_ && this.info_.teamform_ && this.info_.matchform_ && this.areTabletsValid()) {
-            if (this.generateTabletSchedule()) {
-                this.info_.locked_ = true ;
-                this.info_.uuid_ = uuid.v4() ;
-                this.writeEventFile() ;
+    public async lockEvent() : Promise<void> {
+        let ret = new Promise<void>(async (resolve, reject) => {
+            if (this.info_.matches_ && this.info_.teams_ && this.info_.teamform_ && this.info_.matchform_ && this.areTabletsValid()) {
+                try {
+                    await this.teamDB.processBAData(this.info_.teams_) ;
+                    await this.matchDB.processBAData(this.info_.matches_, false) ;
+                }
+                catch(err) {
+                    reject(err) ;
+                }
+
+                if (this.generateTabletSchedule()) {
+                    this.info_.locked_ = true ;
+                    this.info_.uuid_ = uuid.v4() ;
+                    this.writeEventFile() ;
+                }
+                else {
+                    this.info_.teamassignments_ = undefined ;
+                    this.info_.matchassignements_ = undefined ;
+                }
+                resolve() ;
             }
-            else {
-                this.info_.teamassignments_ = undefined ;
-                this.info_.matchassignements_ = undefined ;
-            }
-        }
+        }) ;
+
+        return ret;
     }
 
     public setTeamForm(form: string) {
@@ -287,7 +300,6 @@ export class Project {
         return ret ;
     }
 
-
     public areTabletsValid() : boolean {
         let matchcnt = 0 ;
         let teamcnt = 0 ;
@@ -338,7 +350,6 @@ export class Project {
             this.info_.teams_.push(team) ;
         }
         this.writeEventFile() ;
-        this.teamDB.processBAData(this.info_.teams_!) ;
     }
 
     //
@@ -383,7 +394,6 @@ export class Project {
             this.info.matches_.push(match) ;
         }
         this.writeEventFile() ;
-        await this.matchDB.processBAData(this.info.matches_, false) ;
     }
 
     public setTabletData(data:any[]) {
@@ -603,12 +613,14 @@ export class Project {
                 }
                 else {
                     this.info_.matches_ = matches ;
-                    if (callback) {
-                        callback('Inserting ' + type + ' into XeroScout2 database ... ');
-                    }
-                    await this.matchDB.processBAData(matches, results) ;
-                    if (callback) {
-                        callback('inserted ' + matches.length + ' matches<br>') ;
+                    if (results) {
+                        if (callback) {
+                            callback('Inserting ' + type + ' into XeroScout2 database ... ');
+                        }
+                        await this.matchDB.processBAData(matches, results) ;
+                        if (callback) {
+                            callback('inserted ' + matches.length + ' matches<br>') ;
+                        }
                     }
                 }
                 resolve() ;
@@ -790,13 +802,6 @@ export class Project {
                 }
                 else {
                     this.info_.teams_ = teams ;
-                    if (callback) {
-                        callback('Inserting teams into XeroScout2 database ... ');
-                    }
-                    await this.teamDB.processBAData(teams) ;
-                    if (callback) {
-                        callback('inserted teams data into database.<br>') ;
-                    }
                 }
                 resolve() ;
             }
