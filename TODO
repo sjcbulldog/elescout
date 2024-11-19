@@ -1,10 +1,14 @@
 Central
 -------
-    Play with failures during blue alliance and statbotics access to insure error messages are provided
+    Check Edit Teams, add teams save them, edit again, and then save again.  Check database.
+    Enter teams and matches into the database when the event is locked
 
 Scout
 -------
     Revisit visual apperance of scouting pages
+    Use settings instead of the lastevent file
+    Fix display order of matches on left side, should be comp_level + set number + match number
+    Sort matches on left side like every where else
 
 Coach
 -----

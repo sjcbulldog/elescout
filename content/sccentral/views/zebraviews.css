@@ -1,0 +1,18 @@
+
+#zebra_match_layout {
+    background-color: aqua;
+    display:flex; 
+    flex-direction: col;
+}
+
+#zebra_match_selector_div {
+    background-color: chartreuse;
+}
+
+#zebra_match_selector {
+    background-color: chocolate;
+}
+
+#zebra_match_canvas {
+    background-color: blueviolet;
+}

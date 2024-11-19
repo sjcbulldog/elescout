@@ -129,6 +129,10 @@ export abstract class SCBase {
         return settings.hasSync(name) ;
     }
 
+    public unsetSettings(name: string)  {
+        settings.unset(name) ;
+    }
+
     public get isDevelop() : boolean {
         //
         // So, if the path to the executable contains both cygwin64 and my home directory, then

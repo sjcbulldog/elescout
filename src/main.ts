@@ -12,7 +12,10 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          getMatchDB,
          getTeamDB,
          sendMatchColConfig,
-         sendTeamColConfig} from "./ipchandlers" ;
+         sendTeamColConfig,
+         getTeamGraphData,
+         getZebraMatchList,
+         getZebraMatchData} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -86,6 +89,9 @@ app.on("ready", () => {
     ipcMain.on('provide-result', (event, ...args) => { provideResult('provide-result', ...args)}) ;
     ipcMain.on('send-match-col-config', (event, ...args) => { sendMatchColConfig('send-match-col-config', ...args)}) ;
     ipcMain.on('send-team-col-config', (event, ...args) => { sendTeamColConfig('send-team-col-config', ...args)}) ;
+    ipcMain.on('get-team-graph-data', (event, ...args) => { getTeamGraphData('get-team-graph-data', ...args)}) ;
+    ipcMain.on('get-zebra-match-list', (event, ...args) => { getZebraMatchList('get-zebra-match-list', ...args)}) ;
+    ipcMain.on('get-zebra-match-data', (event, ...args) => { getZebraMatchData('get-zebra-match-data', ...args)}) ;
     createWindow() ;
 }) ;
 

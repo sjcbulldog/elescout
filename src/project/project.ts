@@ -46,8 +46,10 @@ export class ProjectInfo {
     public matchdb_?: sqlite3.Database ;                // The database containing match information
     public scouted_team_: number[] = [] ;               // The list of teams that have scouting data
     public scouted_match_: string[] = [] ;              // The list of matches that have scouring data
-    public matchdb_col_config_? : ProjColConfig ; // List of hidden columns in match data
-    public teamdb_col_config_? : ProjColConfig ;  // List of hidden columns in team data
+    public matchdb_col_config_? : ProjColConfig ;       // List of hidden columns in match data
+    public teamdb_col_config_? : ProjColConfig ;        // List of hidden columns in team data
+    public zebra_tag_data_?: any ;                      // Zebra tag data
+    public team_graph_data? : any ;                     // Team graph data
 
     constructor() {
         this.locked_ = false ;
@@ -129,6 +131,21 @@ export class Project {
     public setTeamColConfig(data: any) {
         this.info.teamdb_col_config_ = data ;
         this.writeEventFile() ;
+    }
+
+    public findMatchByKey(key: string) : BAMatch | undefined {
+        let ret: BAMatch | undefined ;
+
+        if (this.info_.matches_) {
+            for(let one of this.info_.matches_) {
+                if (one.key === key) {
+                    ret = one ;
+                    break ;
+                }
+            }
+        }
+
+        return ret;
     }
 
     public async processResults(obj: any) {
@@ -626,6 +643,30 @@ export class Project {
         }) ;
 
         return ret ;
+    }
+
+    public loadZebraTagData(ba: BlueAlliance, callback?: (result: string) => void) : Promise<[number, number]> {
+        let ret: Promise<[number,number]> = new Promise<[number,number]>(async (resolve, reject) => {
+            try {
+                let matches = this.info_!.matches_!.map((v)=> { return v.key}) ;
+                let zebra = await ba.getZebraTagData(matches) ;
+                this.info_.zebra_tag_data_ = zebra ;
+                this.writeEventFile() ;
+
+                let count = 0 ;
+                for(let data of zebra) {
+                    if (data !== null) {
+                        count++ ;
+                    }
+                }
+                resolve([count, zebra.length - count]);
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        });
+
+        return ret;
     }
 
     public loadRankingData(key: string, ba: BlueAlliance, callback?: (result: string) => void) : Promise<void> {

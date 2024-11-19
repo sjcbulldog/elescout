@@ -105,6 +105,14 @@ export async function sendTeamColConfig(cmd: string, ...args: any[]) {
     } 
 }
 
+export async function getTeamGraphData(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendTeamGraphData(args[0]) ;
+    } 
+}
+
 export async function setTabletNamePurpose(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Scouter) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
@@ -204,5 +212,21 @@ export async function getMatchStatus(cmd: string, ...args: any[]) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
         central.sendMatchStatus() ;
+    } 
+}
+
+export async function getZebraMatchList(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.getZebraMatchList() ;
+    } 
+}
+
+export async function getZebraMatchData(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.getZebraMatchData(args[0]) ;
     } 
 }

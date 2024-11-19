@@ -45,6 +45,27 @@ export class BlueAlliance extends NetBase {
         return ret;
     }
 
+    public async getZebraTagData(matches: string[]) : Promise<any> {
+        let ret: Promise<BAEvent[]> = new Promise<BAEvent[]>((resolve, reject) => {
+            let promises: Promise<any>[] = [];
+            for(let key of matches) {
+                let query = "/match/" + key + "/zebra_motionworks" ;
+                let req = this.request(query) ;
+                promises.push(req) ;
+            }
+
+            Promise.all(promises)
+                .then((result) => {
+                    resolve(result) ;
+                })
+                .catch((err) => {
+                    reject(err) ;
+                })
+        }) ;
+
+        return ret;
+    }
+
     public async getEvents(year ?:number) : Promise<BAEvent[]> {
         if (!year) {
             year = this.year_ ;

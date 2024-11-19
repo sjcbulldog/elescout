@@ -52,6 +52,9 @@ export class SCCentral extends SCBase {
     private static readonly viewPreviewForm: string = "view-preview-form" ;
     private static readonly viewHelp: string = "view-help" ;
     private static readonly viewAbout: string = "view-about" ;
+    private static readonly viewZebraMatch: string = 'view-zebra-match' ;
+    private static readonly viewZebraTeam: string = 'view-zebra-team' ;
+    private static readonly viewTeamGraph: string = 'view-team-graph' ;
 
     private project_? : Project = undefined ;
     private ba_? : BlueAlliance = undefined ;
@@ -215,6 +218,15 @@ export class SCCentral extends SCBase {
         loadmenu.submenu?.append(downloadMatchData) ;
         this.menuitems_.set('data/loadmatchdata', downloadMatchData) ;
 
+        let downloadZebraData: MenuItem = new MenuItem( {
+            type: 'normal',
+            label: 'Import Zebra Tag Data',
+            enabled: false,
+            click: () => { this.importZebraTagData();}
+        }) ;
+        loadmenu.submenu?.append(downloadZebraData) ;
+        this.menuitems_.set('data/zebra', downloadZebraData) ;
+
         loadmenu.submenu?.append(new MenuItem({type: 'separator'}));
 
         let exportTeamData: MenuItem = new MenuItem( {
@@ -280,7 +292,7 @@ export class SCCentral extends SCBase {
     }
 
     private updateMenuState(hasEvent: boolean) {
-        let items : string[] = ['data/exportmatch', 'data/exportteam', 'data/loadmatchdata', 'file/close'] ;
+        let items : string[] = ['data/exportmatch', 'data/exportteam', 'data/loadmatchdata', 'data/zebra', 'file/close'] ;
         for(let item of items) {
             this.enableMenuItem(item, hasEvent) ;
         }
@@ -548,6 +560,12 @@ export class SCCentral extends SCBase {
         this.project_!.setTeamColConfig(data) ;
     }
 
+    public sendTeamGraphData(data: any[]) {
+        if (this.project_) {
+            this.sendToRenderer('send-team-graph-data', this.project_.info.team_graph_data) ;
+        }
+    }
+
     public setTeamData(data: any[]) {
         if (this.project_) {
             this.project_.setTeamData(data) ;
@@ -702,6 +720,51 @@ export class SCCentral extends SCBase {
         }
     }
 
+    private importZebraTagData() {
+        if (!this.project_) {
+            let html = 'Must create or open a project to import data.' ;
+            this.sendToRenderer('set-status-visible', true) ;
+            this.sendToRenderer('set-status-title', 'Error Importing Match Data') ;
+            this.sendToRenderer('set-status-html',  html) ;
+            this.sendToRenderer('set-status-close-button-visible', true) ;
+            return ;            
+        }
+
+        if (!this.isBAAvailable()) {
+            let html = 'The Blue Alliance site is not available.' ;
+            this.sendToRenderer('set-status-visible', true) ;
+            this.sendToRenderer('set-status-title', 'Error Importing Match Data') ;
+            this.sendToRenderer('set-status-html',  html) ;
+            this.sendToRenderer('set-status-close-button-visible', true) ;
+            return ;
+        }
+
+        let fev: BAEvent | undefined = this.project_?.info.frcev_ ;
+        if (fev) {
+            this.sendToRenderer('set-status-visible', true) ;            
+            this.sendToRenderer('set-status-title', 'Loading zebra tag data for event \'' + fev.name + '\'') ;
+            this.msg_ = '' ;
+            this.sendToRenderer('set-status-html',  'Requesting zebra tag data from the Blue Alliance ...') ;
+            this.project_!.loadZebraTagData(this.ba_!, (text) => { this.appendStatusText(text);})
+                .then(([yes, no]) => {
+                    this.appendStatusText('Zebra tag data loaded for ' + yes + ' events, missing data for ' + no + ' events.') ;
+                    this.sendToRenderer('set-status-close-button-visible', true) ; 
+                    this.sendNavData() ;                   
+                })
+                .catch((err) => {
+                    this.appendStatusText('<br><br>Error loading data - ' + err.message) ;
+                    this.sendToRenderer('set-status-close-button-visible', true) ;  
+                });
+        }
+        else {
+            let html = 'The event is not a blue alliance event' ;
+            this.sendToRenderer('set-status-visible', true) ;
+            this.sendToRenderer('set-status-title', 'Load Zebra Tag Data') ;
+            this.sendToRenderer('set-status-html',  html) ;
+            this.sendToRenderer('set-status-close-button-visible', true) ;
+        }
+    }        
+
     private importBlueAllianceStatboticsData() {
         if (!this.project_) {
             let html = 'Must create or open a project to import data.' ;
@@ -786,6 +849,14 @@ export class SCCentral extends SCBase {
             treedata.push({ type: 'item', command: SCCentral.viewMatchForm, 'title' : 'Form'}) ;
             treedata.push({ type: 'item', command: SCCentral.viewMatchStatus, 'title' : 'Status'}) ;
             treedata.push({ type: 'item', command: SCCentral.viewMatchDB, 'title' : 'Data'}) ;
+
+            treedata.push({ type: 'separator', title: 'Analysis'}) ;
+
+            if (this.project_.info.zebra_tag_data_) {
+                treedata.push({ type: 'item', command: SCCentral.viewTeamGraph, 'title' : 'Team Graph'}) ;
+                treedata.push({ type: 'item', command: SCCentral.viewZebraMatch, 'title' : 'Zebra Match'}) ;
+                treedata.push({ type: 'item', command: SCCentral.viewZebraTeam, 'title' : 'Zebra Team'}) ;
+            }
         }
 
         this.sendToRenderer('send-nav-data', treedata);
@@ -873,6 +944,15 @@ export class SCCentral extends SCBase {
         }
         else if (cmd === SCCentral.viewTeamDB) {
             this.setView('teamdb') ;
+        }
+        else if (cmd === SCCentral.viewTeamGraph) {
+            this.setView('teamgraph');
+        }
+        else if (cmd === SCCentral.viewZebraMatch) {
+            this.setView('zebramatchview');
+        }
+        else if (cmd === SCCentral.viewZebraTeam) {
+            this.setView('zebrateamview');
         }
     }
 
@@ -1153,6 +1233,11 @@ export class SCCentral extends SCBase {
 
         if (this.hasSetting(SCCentral.recentFilesSetting)) {
             recents = this.getSetting(SCCentral.recentFilesSetting) ;
+        }
+
+        let index = recents.indexOf(path) ;
+        if (index !== -1) {
+            recents = recents.splice(index, 1) ;
         }
 
         recents.unshift(path) ;
@@ -1615,5 +1700,40 @@ export class SCCentral extends SCBase {
                 }
             });
         }
+    }
+
+    public getZebraMatchList() {
+        if (this.project_?.info.zebra_tag_data_) {
+            let mlist = [] ;
+            for(let one of this.project_.info.zebra_tag_data_) {
+                if (one !== null) {
+                    let match = this.project_.findMatchByKey(one.key) ;
+                    if (match) {
+                        let seldata = {
+                            key: one.key,
+                            comp_level: match.comp_level,
+                            set_number: match.set_number,
+                            match_number: match.match_number,
+                            red: [
+                                this.keyToTeamNumber(one.alliances.red[0].team_key),
+                                this.keyToTeamNumber(one.alliances.red[1].team_key),
+                                this.keyToTeamNumber(one.alliances.red[2].team_key)
+                            ],
+                            blue: [
+                                this.keyToTeamNumber(one.alliances.blue[0].team_key),
+                                this.keyToTeamNumber(one.alliances.blue[1].team_key),
+                                this.keyToTeamNumber(one.alliances.blue[2].team_key)
+                            ]
+                        }
+                        mlist.push(seldata) ;
+                    }
+                }
+            }
+            this.sendToRenderer('send-zebra-match-list', mlist) ;
+        }
+    }
+
+    public getZebraMatchData(key: string) {
+
     }
 }

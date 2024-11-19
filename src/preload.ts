@@ -9,13 +9,17 @@ export type scoutingAPI = {
   getCentralTreeContents: () => Promise<Object>
 }
 
+//
 // Expose our functions in the `api` namespace of the renderer `Window`.
 //
-// If I want to call `readFile` from the renderer process, I can do it by
-// calling the function `window.api.readFile()`.
 contextBridge.exposeInMainWorld( 'scoutingAPI', {
+  //
+  // These go from the render process to the main process
+  //
   send: (channel: string, data: any) => {
       let validChannels = [
+        'get-zebra-match-list',
+        'get-zebra-match-data',
         'get-nav-data', 
         'get-info-data',
         'set-event-name',
@@ -38,14 +42,21 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-team-status',
         'get-match-status',
         'set-tablet-name-purpose',
-        'provide-result'
+        'provide-result',
+        'get-team-graph-data',
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.send(channel, data);
       }
   },
+
+  //
+  // These go from the main process to the renderer process
+  //
   receive: (channel: string, func:any) => {
       let validChannels = [
+        'send-zebra-match-list',
+        'send-zebra-match-data',
         'update-main-window-view',
         'event-name',
         'send-nav-data', 
@@ -72,6 +83,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'set-status-bar-message',
         'send-result-values',
         'request-result',
+        'send-team-graph-data',
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.on(channel, (event, ...args) => func(...args));

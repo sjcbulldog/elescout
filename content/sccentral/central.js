@@ -14,7 +14,9 @@ const viewMap = new Map([
   ['teamstatus', TeamStatusView],
   ['matchstatus', MatchStatusView],
   ['teamdb', TeamDBView],
-  ['matchdb', MatchDBView]
+  ['matchdb', MatchDBView],
+  ['teamgraph', TeamGraphView],
+  ['zebramatchview', ZebraMatchView],
 ]) ;
 
 async function updateMainWindow(mtype) {
