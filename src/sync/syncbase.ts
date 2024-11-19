@@ -16,6 +16,10 @@ export class SyncBase extends EventEmitter {
         this.logger_ = logger ;
     }
 
+    protected resetBuffers() {
+        this.buffer_ = undefined ;
+    }
+
     //
     // Convert a byte array to a packet and fire a packet event.  Return the
     // bytes remaining in the buffer.
@@ -36,9 +40,9 @@ export class SyncBase extends EventEmitter {
         }
 
         if (this.buffer_.length >= SyncBase.minPacketSize) {
-            let ptype = (data[0] << 0) | (data[1] << 8) | (data[2] << 16) | (data[3] << 24) ;
-            let len = (data[4] << 0) | (data[5] << 8) | (data[6] << 16) | (data[7] << 24) ;
-            let comptype = (data[8] << 0) | (data[9] << 8) ;
+            let ptype = (this.buffer_[0] << 0) | (this.buffer_[1] << 8) | (this.buffer_[2] << 16) | (this.buffer_[3] << 24) ;
+            let len = (this.buffer_[4] << 0) | (this.buffer_[5] << 8) | (this.buffer_[6] << 16) | (this.buffer_[7] << 24) ;
+            let comptype = (this.buffer_[8] << 0) | (this.buffer_[9] << 8) ;
 
             if (comptype === PacketCompressionNone) {
                 //
@@ -50,22 +54,32 @@ export class SyncBase extends EventEmitter {
                 this.emit('error', err) ;
             }
 
-            if (data.length >= len + 10 + 2) {
-                let csum = (data[len + 10] << 0) + (data[len+11] << 8) ;
-                if (this.computeSum16(data, 10, len) != csum) {
+            if (this.buffer_.length >= len + 10 + 2) {
+                let csum = (this.buffer_[len + 10] << 0) + (this.buffer_[len+11] << 8) ;
+                if (this.computeSum16(this.buffer_, 10, len) != csum) {
                     let err: Error = new Error('invalid packet checksum') ;
                     this.emit('error', err) ;
                 }
                 else {
-                    let p = new Packet(ptype, data.slice(10, 10 + len)) ;
+                    let p = new Packet(ptype, this.buffer_.slice(10, 10 + len)) ;
                     this.logPacket('received', p) ;
                     this.emit('packet', p) ;
-                    ret = data.slice(12 + len) ;
+                    if (this.buffer_) {
+                        //
+                        // We do this because the goodbye packet will shutdown this connection
+                        // which resets the buffer to undefined
+                        //
+                        if (len + 12 === this.buffer_.length) {
+                            this.buffer_ = undefined ;
+                        }
+                        else {
+                            ret = this.buffer_.slice(12 + len) ;
+                            this.buffer_ = ret ;
+                        }
+                    }
                 }
             }
         }
-
-        this.buffer_ = ret ;
     }
 
     //

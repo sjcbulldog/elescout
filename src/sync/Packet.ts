@@ -17,6 +17,8 @@ export class Packet {
     }
 
     public payloadAsString() : string {
-        return this.data_.toString() ;
+        const decoder = new TextDecoder();
+        const str = decoder.decode(this.data_);
+        return str;
     }
 }

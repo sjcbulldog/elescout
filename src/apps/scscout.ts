@@ -30,7 +30,7 @@ export class SCScoutInfo {
 }
 
 export class SCScout extends SCBase {
-    private static readonly last_event_file = "lastevent" ;
+    private static readonly last_event_setting = "lastevent" ;
 
     private static readonly syncEvent: string = "sync-event" ;
     private static readonly resetTablet: string = "reset-tablet" ;
@@ -188,18 +188,7 @@ export class SCScout extends SCBase {
             }
         }
         else if (cmd === SCScout.resetTablet) {
-            let lastfile: string = path.join(this.appdir_, SCScout.last_event_file) ;
-            if (fs.existsSync(lastfile)) {
-                fs.rmSync(lastfile) ;
-            }
-            
-            if (this.info_.uuid_) {
-                let datafile: string = path.join(this.appdir_, this.uuidToFileName(this.info_.uuid_)) ;
-                if (fs.existsSync(datafile)) {
-                    fs.rmSync(datafile) ;
-                }
-            }
-
+            this.unsetSettings(SCScout.last_event_setting) ;
             this.info_.purpose_ = undefined ;
             this.info_.tablet_ = undefined ;
             this.info_.results_ = [];
@@ -500,6 +489,9 @@ export class SCScout extends SCBase {
         } ;
 
         let jsonstr = JSON.stringify(obj) ;
+        let buffer = Buffer.from(jsonstr) ;
+        let jsonstr2 = buffer.toString() ;
+        console.log(jsonstr2);
         this.conn_?.send(new Packet(PacketType.ProvideResults, Buffer.from(jsonstr))) ;
     }
 
@@ -593,17 +585,10 @@ export class SCScout extends SCBase {
     }
 
     private checkLastEvent() {
-        let lastfile: string = path.join(this.appdir_, SCScout.last_event_file) ;
-        if (fs.existsSync(lastfile)) {
-            const rawData = fs.readFileSync(lastfile, 'utf-8');
-            if (rawData.trim().length !== 0) {
-                let obj = JSON.parse(rawData) ;
-                if (obj && obj.lastevent) {
-                    let fname: string = this.uuidToFileName(obj.lastevent) ;
-                    let fullpath: string = path.join(this.appdir_, fname) ;
-                    this.readEventFile(fullpath) ;
-                }
-            }
+        if (this.hasSetting(SCScout.last_event_setting)) {
+            let fname = this.getSetting(SCScout.last_event_setting) ;
+            let fullpath: string = path.join(this.appdir_, fname) ;
+            this.readEventFile(fullpath) ;
         }
     }
 
@@ -617,38 +602,20 @@ export class SCScout extends SCBase {
     }
 
     private writeEventFile() : Error | undefined {
-        let ret: Error | undefined = undefined ;
-        let lastfile: string = path.join(this.appdir_, SCScout.last_event_file) ;
+        let ret : Error | undefined ;
 
-        let obj = {
-            lastevent: this.info_.uuid_,
-            tablet: this.info_.tablet_,
-            purpose: this.info_.purpose_
-        } ;
-        const lastFileJson = JSON.stringify(obj) ;
-        fs.writeFile(lastfile, lastFileJson, (err) => {
+        let filename = this.uuidToFileName(this.info_.uuid_!) ;
+        this.setSetting(SCScout.last_event_setting, filename) ;
+
+        const jsonString = JSON.stringify(this.info_);
+        let projfile = path.join(this.appdir_, filename) ;
+        fs.writeFile(projfile, jsonString, (err) => {
             if (err) {
-                fs.rmSync(lastfile) ;   
+                this.unsetSettings(SCScout.last_event_setting) ;
+                fs.rmSync(projfile) ;   
                 ret = err ;
             }
         });
-
-        if (!ret) {
-
-            const jsonString = JSON.stringify(this.info_);
-
-            // Write the string to a file
-            let filename = this.uuidToFileName(this.info_.uuid_!) ;
-            let projfile = path.join(this.appdir_, filename) ;
-            fs.writeFile(projfile, jsonString, (err) => {
-                if (err) {
-                    fs.rmSync(lastfile) ;
-                    fs.rmSync(projfile) ;   
-                    ret = err ;
-                }
-            });
-        }
-        
         return ret;
     } 
 

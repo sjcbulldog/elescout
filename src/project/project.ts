@@ -3,19 +3,17 @@
 //
 import * as fs from 'fs' ;
 import * as path from 'path' ;
+import * as sqlite3 from 'sqlite3' ;
+import * as uuid from 'uuid' ;
 import { Tablet } from './tablet';
 import { BlueAlliance } from '../extnet/ba';
 import { TeamTablet } from './teamtablet';
 import { MatchTablet } from './matchtablet';
-import * as sqlite3 from 'sqlite3' ;
-import * as uuid from 'uuid' ;
-import { SCCentral } from '../apps/sccentral';
+
 import { TeamDataModel } from '../model/teammodel';
 import { MatchDataModel } from '../model/matchmodel';
 import winston from 'winston';
 import { BAEvent, BAMatch, BATeam } from '../extnet/badata';
-import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
-import { OPRCalculator } from '../math/OPRCalculator';
 import { StatBotics } from '../extnet/statbotics';
 
 export interface ProjectOneColCfg {
@@ -148,6 +146,16 @@ export class Project {
         return ret;
     }
 
+    public isTabletTeam(tablet: string) {
+        for(let assign of this.info_.teamassignments_!) {
+            if (assign.tablet === tablet) {
+                return true ;
+            }
+        }
+
+        return false ;
+    }
+
     public async processResults(obj: any) {
         if (obj.purpose) {
             if (obj.purpose === 'match') {
@@ -167,6 +175,7 @@ export class Project {
                 }
             }
         }
+        this.writeEventFile() ;
     }
 
     public get teamDB() : TeamDataModel {

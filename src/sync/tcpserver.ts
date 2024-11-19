@@ -13,9 +13,10 @@ export class TCPSyncServer extends SyncServer {
         super(logger) ;
     }
 
-    public shutdown() : void {
+    public shutdownClient() : void {
         this.socket_?.destroy() ;
         this.socket_ = undefined ;
+        this.resetBuffers() ;
     }
 
     public async send(p: Packet) : Promise<void> {

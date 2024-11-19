@@ -171,6 +171,7 @@ export class SCCentral extends SCBase {
                         let evpath = path.join(one, 'event.json') ;    
                         Project.openEvent(this.logger_, evpath, this.year_!)
                         .then((p) => {
+                            this.addRecent(p.location) ;
                             this.project_ = p ;
                             this.updateMenuState(true) ;
                             if (this.project_.info.locked_) {
@@ -1237,7 +1238,7 @@ export class SCCentral extends SCBase {
 
         let index = recents.indexOf(path) ;
         if (index !== -1) {
-            recents = recents.splice(index, 1) ;
+            recents.splice(index, 1) ;
         }
 
         recents.unshift(path) ;
@@ -1650,6 +1651,13 @@ export class SCCentral extends SCBase {
                 let obj = JSON.parse(p.payloadAsString()) ;
                 this.project_!.processResults(obj) ;
                 resp = new Packet(PacketType.ReceivedResults) ;
+                         
+                if (this.project_!.isTabletTeam(p.payloadAsString())) {
+                    this.setView('teamstatus') ;
+                }
+                else {
+                    this.setView('matchstatus') ;
+                }
             }
             catch(err) {
                 resp = new Packet(PacketType.Error, Buffer.from('internal error #5 - invalid results json received by central host', 'utf-8')) ;
@@ -1665,6 +1673,8 @@ export class SCCentral extends SCBase {
                 message: msg,
                 type: 'info',
             }) ;
+
+
         }
         else {
             resp = new Packet(PacketType.Error, Buffer.from('internal error #4 - invalid packet type received')) ;
@@ -1691,14 +1701,22 @@ export class SCCentral extends SCBase {
                     this.tcpsyncserver_!.send(reply)
                         .then(() => {
                             if (reply.type_ === PacketType.Error) {
-                                this.tcpsyncserver_!.shutdown() ;
+                                this.tcpsyncserver_!.shutdownClient() ;
                             }
                         })
                 }
                 else {
-                    this.tcpsyncserver_?.shutdown() ;
+                    this.tcpsyncserver_?.shutdownClient() ;
                 }
             });
+
+            this.tcpsyncserver_.on('error', (err) => {
+                this.tcpsyncserver_?.shutdownClient() ;
+                dialog.showMessageBox(this.win_, {
+                    message: 'Error syncing client - ' + err.message,
+                    title: 'Client Sync Error'
+                }) ;
+            }) ;
         }
     }
 
