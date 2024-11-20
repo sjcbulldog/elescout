@@ -25,3 +25,11 @@
     font-weight: bolder;
     cursor: pointer;
 }
+
+#select-event-search-box {
+    border-style: solid;
+    border-color: black;
+    border-width: 2px;
+    font-size: medium;
+    width: 100%;
+}

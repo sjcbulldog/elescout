@@ -24,7 +24,7 @@ function updateNavProcess(args) {
             }
             else if (item.type === "separator") {
                 navitem.className = "navlistseparator" ;
-                navitem.textContent = "---- " + item.title + " ----";
+                navitem.textContent = item.title ;
             }
             nav.append(navitem);
         }

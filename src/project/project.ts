@@ -209,8 +209,14 @@ export class Project {
         if (this.info_.matchform_ && this.info_.matches_) {
             let matches:string[] = [] ;
             for(let match of this.info_.matches_) {
-                let one = match.comp_level + '-' + match.set_number + '-' + match.match_number ;
-                matches.push(one) ;
+                for(let i = 0 ; i < 3 ; i++) {
+                    let blue = 'sm-'+ match.comp_level + '-' + match.set_number + '-' + 
+                              match.match_number + '-' + match.alliances.blue.team_keys[i] ;
+                    matches.push(blue) ;
+                    let red = 'sm-'+match.comp_level + '-' + match.set_number + '-' + 
+                              match.match_number + '-' + match.alliances.red.team_keys[i] ;
+                    matches.push(red) ;
+                }
             }
 
             let gendata: DataGenerator = new DataGenerator(this.info_.matchform_);

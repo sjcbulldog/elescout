@@ -54,6 +54,57 @@ export abstract class DataModel {
         this.logger_ = logger ;
     }
 
+    public getData(table: string, field: string, fvalues: any[], data: string[]) : Promise<any[]> {
+        let ret = new Promise<any[]>(async (resolve, reject) => {
+            let query = 'SELECT ' ;
+            query += this.createCommaList(data) ;
+            query += ' FROM ' + table + ' ' ;
+            query += ' WHERE ' ;
+            let first = true ;
+
+            for(let v of fvalues) {
+                if (!first) {
+                    query += ' OR ' ;
+                }
+
+                let val ;
+                if (typeof v === 'string') {
+                    val = '"' + v.toString() + '"' ; 
+                }
+                else {
+                    val = v.toString() ;
+                }
+                query += field + '=' + val ;
+                first = false ;
+            }
+            query += ';' ;
+
+            try {
+                let result = await this.all(query) ;
+                resolve(result) ;
+            }
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+
+        return ret ;
+    }
+
+    private createCommaList(values: string[]) {
+        let ret = '' ;
+        let first = true ;
+        for(let one of values) {
+            if (!first) {
+                ret += ', ' ;
+            }
+            first = false ;
+            ret += one ;
+        }
+
+        return ret;
+    }
+
     public exportToCSV(filename: string, table: string) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
             try {

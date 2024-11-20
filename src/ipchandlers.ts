@@ -238,3 +238,27 @@ export async function getZebraMatchData(cmd: string, ...args: any[]) {
         central.getZebraMatchData(args[0]) ;
     } 
 }
+
+export async function getTeamList(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.getTeamList(args[0]) ;
+    } 
+}
+
+export async function getTeamFieldList(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.getTeamFieldList(args[0]) ;
+    } 
+}
+
+export async function getMatchFieldList(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.getMatchFieldList(args[0]) ;
+    } 
+}

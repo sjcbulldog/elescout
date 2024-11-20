@@ -31,11 +31,28 @@ class SelectEventView extends TabulatorView {
         window.scoutingAPI.send("load-ba-event-data", key);
     }
 
+    updateFilter() {
+        this.table_.setFilter('name', 'like', this.search_input_.value) ;
+    }
+
     formCallback(args) {
         this.reset() ;
 
+        this.view_div_ = document.createElement('div') ;
+        this.top_.append(this.view_div_) ;
+
+        this.search_div_ = document.createElement('div') ;
+        this.view_div_.append(this.search_div_);
+
         this.table_div_ = document.createElement('div');
-        this.top_.append(this.table_div_) ;
+        this.view_div_.append(this.table_div_) ;
+
+        this.search_input_ = document.createElement('input') ;
+        this.search_input_.id='select-event-search-box' ;
+        this.search_input_.type = 'text' ;
+        this.search_input_.placeholder = 'Enter text to search' ;
+        this.search_input_.addEventListener("keyup", this.updateFilter.bind(this));
+        this.search_div_.append(this.search_input_) ;
 
         let cols = [] ;
         cols.push({
