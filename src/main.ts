@@ -15,7 +15,8 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          sendTeamColConfig,
          getTeamGraphData,
          getZebraMatchList,
-         getZebraMatchData} from "./ipchandlers" ;
+         getZebraMatchData,
+         generateRandomData} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -68,6 +69,7 @@ function createWindow() : void {
 app.on("ready", () => {
     ipcMain.on('get-nav-data', (event, ...args) => { getTreeData('get-nav-data', ...args)});
     ipcMain.on('get-info-data', (event, ...args) => { getInfoData('get-info-data', ...args)}) ;
+    ipcMain.on('generate-random-data', (event, ...args) => { generateRandomData('generate-random-data', ...args)}) ;
     ipcMain.on('set-event-name', (event, ...args) => { setEventName('set-event-name', ...args)}) ;
     ipcMain.on('get-event-data', (event, ...args) => { getSelectEventData('get-event-data', ...args)}) ;
     ipcMain.on('get-tablet-data', (event, ...args) => { getTabletData('get-tablet-data', ...args)}) ;

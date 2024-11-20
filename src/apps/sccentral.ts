@@ -1751,6 +1751,26 @@ export class SCCentral extends SCBase {
         }
     }
 
+    public generateRandomData() {
+        if (this.project_) {
+            this.project_!.generateRandomData() ;
+            dialog.showMessageBox(this.win_, 
+                {
+                    title: "Generated Random Form Data",
+                    message: 'Generated Random Form Data'
+                }
+            ) ;
+        }
+        else {
+            dialog.showMessageBox(this.win_, 
+                {
+                    title: "Random Data Error",
+                    message: 'You can only generate data for an opened project'
+                }
+            ) ;
+        }
+    }
+
     public getZebraMatchData(key: string) {
 
     }

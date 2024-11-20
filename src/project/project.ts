@@ -15,6 +15,7 @@ import { MatchDataModel } from '../model/matchmodel';
 import winston from 'winston';
 import { BAEvent, BAMatch, BATeam } from '../extnet/badata';
 import { StatBotics } from '../extnet/statbotics';
+import { DataGenerator } from './datagen';
 
 export interface ProjectOneColCfg {
     name: string,
@@ -192,6 +193,32 @@ export class Project {
 
     public get location() : string {
         return this.location_ ;
+    }
+
+    public generateRandomData() {
+        if (this.info_.teamform_ && this.info_.teams_) {
+            let teams = this.info_!.teams_!.map((v)=> { return 'st-' + v.team_number}) ;
+
+            let gendata: DataGenerator = new DataGenerator(this.info_.teamform_);
+            let results = gendata.generateData(teams) ;
+            if (results) {
+                this.teamDB.processScoutingResults(results) ;
+            }
+        }
+
+        if (this.info_.matchform_ && this.info_.matches_) {
+            let matches:string[] = [] ;
+            for(let match of this.info_.matches_) {
+                let one = match.comp_level + '-' + match.set_number + '-' + match.match_number ;
+                matches.push(one) ;
+            }
+
+            let gendata: DataGenerator = new DataGenerator(this.info_.matchform_);
+            let results = gendata.generateData(matches) ;
+            if (results) {
+                this.matchDB.processScoutingResults(results) ;
+            }
+        }
     }
 
     public async lockEvent() : Promise<void> {

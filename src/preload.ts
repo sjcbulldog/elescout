@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-zebra-match-data',
         'get-nav-data', 
         'get-info-data',
+        'generate-random-data',
         'set-event-name',
         'get-event-data',
         'get-tablet-data',
