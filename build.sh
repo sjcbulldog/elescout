@@ -10,8 +10,6 @@ labelstep() {
     echo '##############################################################'
 }
 
-labelstep 'Aligning version numbers'
-
 labelstep 'Removing old artifacts' 
 rm -rf out dist
 
