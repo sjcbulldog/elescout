@@ -1,6 +1,6 @@
 import { SCBase, XeroAppType, XeroVersion } from "./scbase";
 import { BlueAlliance } from "../extnet/ba";
-import { Project } from "../project/project";
+import { NamedGraphDataRequest, Project } from "../project/project";
 import { BrowserWindow, dialog, Menu, MenuItem, shell } from "electron";
 import { TCPSyncServer } from "../sync/tcpserver";
 import { Packet } from "../sync/packet";
@@ -657,7 +657,7 @@ export class SCCentral extends SCBase {
     this.project_!.setTeamColConfig(data);
   }
 
-  private async createTeamDataset(teams: number[], data: string): Promise<any> {
+  private async createTeamDataset(teams: number[], data: string, yaxis: string): Promise<any> {
     let ret = new Promise<any>(async (resolve, reject) => {
       try {
         let values = await this.project_!.teamDB.getData(
@@ -677,6 +677,7 @@ export class SCCentral extends SCBase {
         let dset = {
           label: data,
           data: dvals,
+          yAxisID: yaxis,
           borderWidth: 2,
         };
         resolve(dset);
@@ -687,7 +688,7 @@ export class SCCentral extends SCBase {
     return ret;
   }
 
-  private createMatchDataset(teams: number[], data: string): any {
+  private createMatchDataset(teams: number[], data: string, yaxis: string): any {
     let ret = new Promise<any>(async (resolve, reject) => {
       let tdata = [];
       for (let team of teams) {
@@ -708,7 +709,7 @@ export class SCCentral extends SCBase {
       let dset = {
         label: data,
         data: tdata,
-        borderWidth: 2,
+        yAxisID: yaxis,
       };
       resolve(dset);
     });
@@ -2154,9 +2155,11 @@ export class SCCentral extends SCBase {
     }
   }
 
-  public getZebraMatchData(key: string) {}
+  public getZebraMatchData(key: string) {
+  
+  }
 
-  public getTeamList(key: string) {
+  public getTeamList() {
     let ret: number[] = [];
     for(let team of this.project_?.info.teams_!) {
         ret.push(team.team_number);
@@ -2166,16 +2169,50 @@ export class SCCentral extends SCBase {
     this.sendToRenderer('send-team-list', ret) ;
   }
 
-  public async getTeamFieldList(key: string) {
+  public async getTeamFieldList() {
+    let balist = ['ba_opr', 'ba_dpr'] ;
+
     let cols = await this.project_?.teamDB.getColumnNames(TeamDataModel.TeamTableName) ;
+    let formcols = this.project_!.getFormFields(this.project_?.info.teamform_!) ;
+
+    if (!cols) {
+      cols = [] ;
+    }
+
+    for(let col of formcols) {
+      if (!cols!.includes(col)) {
+        cols.push(col) ;
+      }
+    }
+
+    for(let one of balist) {
+      if (!cols.includes(one)) {
+        cols.push(one) ;
+      }
+    }
+
     this.sendToRenderer('send-team-field-list', cols) ;
   }
 
-  public async getMatchFieldList(key: string) {
+  public async getMatchFieldList() {
     let cols = await this.project_?.matchDB.getColumnNames(MatchDataModel.MatchTableName) ;
+    let formcols = this.project_!.getFormFields(this.project_?.info.matchform_!) ;
+
+    if (!cols) {
+      cols = [] ;
+    }
+
+    for(let col of formcols) {
+      if (!cols!.includes(col)) {
+        cols.push(col) ;
+      }
+    }
     this.sendToRenderer('send-match-field-list', cols) ;
   }
 
+  public async saveTeamGraphSetup(desc: NamedGraphDataRequest) {
+    this.project_!.storeGraph(desc) ;
+  }
 
   //
   // request is of the form of an object
@@ -2220,14 +2257,28 @@ export class SCCentral extends SCBase {
       }
 
       for (let tdset of request.data.leftteam) {
-        let ds = await this.createTeamDataset(request.teams, tdset);
+        let ds = await this.createTeamDataset(request.teams, tdset, 'y');
         if (ds) {
           datasets.push(ds);
         }
       }
 
       for (let tdset of request.data.leftmatch) {
-        let ds = await this.createMatchDataset(request.teams, tdset);
+        let ds = await this.createMatchDataset(request.teams, tdset, 'y');
+        if (ds) {
+          datasets.push(ds);
+        }
+      }
+
+      for (let tdset of request.data.rightteam) {
+        let ds = await this.createTeamDataset(request.teams, tdset, 'y2');
+        if (ds) {
+          datasets.push(ds);
+        }
+      }
+
+      for (let tdset of request.data.rightmatch) {
+        let ds = await this.createMatchDataset(request.teams, tdset, 'y2');
         if (ds) {
           datasets.push(ds);
         }
@@ -2237,7 +2288,46 @@ export class SCCentral extends SCBase {
         labels: labels,
         datasets: datasets,
       };
-      this.sendToRenderer("send-team-graph-data", grdata);
+      this.sendToRenderer('send-team-graph-data', grdata);
     }
+  }
+
+  private getTeamNumbersFromKeys(keys: string[]) : number[] {
+    let ret: number[] = [] ;
+
+    for(let key of keys) {
+      ret.push(+key.substring(3)) ;
+    }
+
+    return ret;
+  }
+
+  public getMatchList() {
+    let data = [] ;
+
+    for(let match of this.project_!.info.matches_!) {
+      let one = {
+        comp_level: match.comp_level,
+        set_number: match.set_number,
+        match_number: match.match_number,
+        red: this.getTeamNumbersFromKeys(match.alliances.red.team_keys),
+        blue: this.getTeamNumbersFromKeys(match.alliances.blue.team_keys),
+      }
+
+      data.push(one) ;
+    }
+    
+    data.sort((a, b) => { return this.sortCompFun(a, b) ;}) ;
+
+    this.sendToRenderer('send-match-list', data) ;
+  }
+
+  public getStoredGraphList() {
+    this.sendToRenderer('send-stored-graph-list', this.project_!.info.team_graph_data_) ;
+  }
+
+  public deleteStoredGraph(name: string) {
+    this.project_!.deleteStoredGraph(name) ;
+    this.sendToRenderer('send-stored-graph-list', this.project_!.info.team_graph_data_) ;
   }
 }

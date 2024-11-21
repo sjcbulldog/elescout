@@ -1,4 +1,4 @@
-import { BrowserWindow, Menu, MenuItem } from "electron";
+import { BrowserWindow, dialog, Menu, MenuItem } from "electron";
 import { SCBase, XeroAppType } from "./scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
@@ -6,6 +6,8 @@ import { Packet } from "../sync/packet";
 import * as path from 'path' ;
 import * as fs from 'fs' ;
 import { PacketType } from "../sync/packettypes";
+import { MatchTablet } from "../project/matchtablet";
+import { TeamTablet } from "../project/teamtablet";
 
 export class MatchInfo {
     public type_? : string ;
@@ -20,8 +22,8 @@ export class SCScoutInfo {
     public evname_? : string ;
     public teamform_? : any ;
     public matchform_? : any ;
-    public teamlist_? : any[] ;
-    public matchlist_? : any[] ;
+    public teamlist_? : TeamTablet[] ;
+    public matchlist_? : MatchTablet[] ;
     public results_ : any[] ;
 
     constructor() {
@@ -37,7 +39,7 @@ export class SCScout extends SCBase {
 
     private info_ : SCScoutInfo = new SCScoutInfo() ;
 
-    private tcpHost_: string = "127.0.0.1" ;
+    private tcpHost_: string = "192.168.1.1" ;
     private tablets_?: any[] ;
     private conn_?: SyncClient ;
     private current_scout_? : string ;
@@ -107,56 +109,6 @@ export class SCScout extends SCBase {
         return ret ;
     }
 
-    private mapMatchType(mtype: string) : number {
-        let ret: number = -1 ;
-
-        if (mtype === 'f') {
-            ret = 3 ;
-        }
-        else if (mtype === 'sf') {
-            ret = 2 ;
-        }
-        else {
-            ret = 1 ;
-        }
-
-        return ret;
-    }
-
-    private sortCompFun(a: any, b: any) : number {
-        let ret: number = 0 ;
-
-        let atype = this.mapMatchType(a.type) ;
-        let btype = this.mapMatchType(b.type) ;
-
-        if (atype < btype) {
-            ret = -1 ;
-        }
-        else if (atype > btype) {
-            ret = 1 ;
-        }
-        else {
-            if (a.matchno < b.matchno) {
-                ret = -1 ;
-            }
-            else if (a.matchno > b.matchno) {
-                ret = 1 ;
-            }
-            else {
-                if (a.setno < b.setno) {
-                    ret = -1 ;
-                }
-                else if (a.setno > b.setno) {
-                    ret = 1 ;
-                }
-                else {
-                    ret = 0 ;
-                }
-            }
-        }
-        return ret ;
-    }
-
     private populateNavMatches() : any[] {
         let ret : any[] = [] ;
 
@@ -169,18 +121,16 @@ export class SCScout extends SCBase {
         ofinterest.sort((a, b) => { return this.sortCompFun(a, b) ;}) ;
 
         for(let t of ofinterest) {
-            if (t.tablet === this.info_.tablet_) {
-                let numstr: string = t.teamkey ;
-                if (numstr.startsWith('frc')) {
-                    numstr = numstr.substring(3);
-                }
-                let mtype:string = t.type ;
-                
-                let cmd: string = 'sm-' + t.type + '-' + t.setno + '-' + t.matchno + '-' + t.teamkey ;
-                let title: string ;
-                title = mtype.toUpperCase() + '-' + t.matchno + ' - ' + t.setno + '-' + numstr ;
-                ret.push({type: 'item', command: cmd, title: title}) ;
-            }        
+            let numstr: string = t.teamkey ;
+            if (numstr.startsWith('frc')) {
+                numstr = numstr.substring(3);
+            }
+            let mtype:string = t.comp_level ;
+            
+            let cmd: string = 'sm-' + t.comp_level + '-' + t.set_number + '-' + t.match_number + '-' + t.teamkey ;
+            let title: string ;
+            title = mtype.toUpperCase() + '-' + t.match_number + ' - ' + t.set_number + '-' + numstr ;
+            ret.push({type: 'item', command: cmd, title: title}) ;
         }
         return ret ;
     }
@@ -196,19 +146,7 @@ export class SCScout extends SCBase {
             }
         }
         else if (cmd === SCScout.resetTablet) {
-            this.unsetSettings(SCScout.last_event_setting) ;
-            this.info_.purpose_ = undefined ;
-            this.info_.tablet_ = undefined ;
-            this.info_.results_ = [];
-            this.info_.uuid_ = undefined ;
-            this.info_.evname_ = undefined ;
-            this.info_.teamform_ = undefined ;
-            this.info_.matchform_ = undefined ;
-            this.info_.teamlist_ = undefined ;
-            this.info_.matchlist_ = undefined ;
-
-            this.sendNavData() ;
-            this.setView('empty') ;
+            this.resetTabletCmd() ;
         }
         else if (cmd.startsWith('st-')) {
             this.scoutTeam(cmd) ;
@@ -216,6 +154,22 @@ export class SCScout extends SCBase {
         else if (cmd.startsWith('sm-')) {
             this.scoutMatch(cmd) ;
         }
+    }
+
+    private resetTabletCmd() {
+        this.unsetSettings(SCScout.last_event_setting) ;
+        this.info_.purpose_ = undefined ;
+        this.info_.tablet_ = undefined ;
+        this.info_.results_ = [];
+        this.info_.uuid_ = undefined ;
+        this.info_.evname_ = undefined ;
+        this.info_.teamform_ = undefined ;
+        this.info_.matchform_ = undefined ;
+        this.info_.teamlist_ = undefined ;
+        this.info_.matchlist_ = undefined ;
+
+        this.sendNavData() ;
+        this.setView('empty') ;
     }
 
     //
@@ -594,9 +548,19 @@ export class SCScout extends SCBase {
 
     private checkLastEvent() {
         if (this.hasSetting(SCScout.last_event_setting)) {
-            let fname = this.getSetting(SCScout.last_event_setting) ;
-            let fullpath: string = path.join(this.appdir_, fname) ;
-            this.readEventFile(fullpath) ;
+            try {
+                let fname = this.getSetting(SCScout.last_event_setting) ;
+                let fullpath: string = path.join(this.appdir_, fname) ;
+                this. readEventFile(fullpath) ;
+            }
+            catch(err) {
+                let errobj: Error = err as Error ;
+                dialog.showMessageBoxSync(this.win_, {
+                    title: 'Error starting scout computer',
+                    message: 'Error reading default event - this tablet has been reset.\nError: ' + errobj.message
+                }) ;
+                this.resetTabletCmd() ;
+            }
         }
     }
 

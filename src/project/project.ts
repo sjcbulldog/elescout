@@ -16,6 +16,7 @@ import winston from 'winston';
 import { BAEvent, BAMatch, BATeam } from '../extnet/badata';
 import { StatBotics } from '../extnet/statbotics';
 import { DataGenerator } from './datagen';
+import { deleteStoredGraph } from '../ipchandlers';
 
 export interface ProjectOneColCfg {
     name: string,
@@ -28,6 +29,17 @@ export interface ProjColConfig
     columns: ProjectOneColCfg[],
     frozenColumnCount: number,
 } ;
+
+export interface NamedGraphDataRequest {
+    name: string;
+    teams: number[];
+    data: {
+      leftteam: string[];
+      leftmatch: string[];
+      rightteam: string[];
+      rightmatch: string[];
+    };
+  }
 
 export class ProjectInfo {
     public frcev_? : BAEvent ;                          // Information defining the blue alliance event, null for non-BA events
@@ -48,10 +60,11 @@ export class ProjectInfo {
     public matchdb_col_config_? : ProjColConfig ;       // List of hidden columns in match data
     public teamdb_col_config_? : ProjColConfig ;        // List of hidden columns in team data
     public zebra_tag_data_?: any ;                      // Zebra tag data
-    public team_graph_data? : any ;                     // Team graph data
+    public team_graph_data_: NamedGraphDataRequest[] ;  // Stored graphs defined by the user
 
     constructor() {
         this.locked_ = false ;
+        this.team_graph_data_ = [] ;
     }
 
     public getName() : string | undefined {
@@ -443,6 +456,23 @@ export class Project {
         this.writeEventFile() ;
     }
 
+    public getFormFields(form: string) : string[] {
+        let ret: string[] = [] ;
+        let jsonstr = fs.readFileSync(form).toString();
+        try {
+          let jsonobj = JSON.parse(jsonstr);
+          for(let sect of jsonobj.sections) {
+            for(let item of sect.items) {
+                ret.push(item.tag) ;                
+            }
+          }
+
+        } catch (err) {
+        }        
+
+        return ret ;
+    }
+
 
     public hasTeamScoutingResults(team: number) : boolean {
         return this.info_.scouted_team_.includes(team) ;
@@ -457,7 +487,7 @@ export class Project {
         let ret: string = "" ;
         if (this.info.matchassignements_) {
             for(let t of this.info.matchassignements_) {
-                if (t.type === type && t.setno === set && t.matchno === match && t.teamkey === teamkey) {
+                if (t.comp_level === type && t.set_number === set && t.match_number === match && t.teamkey === teamkey) {
                     ret = t.tablet ;
                     break ;
                 }
@@ -481,12 +511,12 @@ export class Project {
         return ret ;
     }
 
-    public findTabletForMatch(type:string, setno: number, matchno: number, team: string) : string {
+    public findTabletForMatch(type:string, set_number: number, match_number: number, team: string) : string {
         let ret: string = '????';
 
         if (this.info_.matchassignements_) {
             for(let t of this.info_.matchassignements_) {
-                if (t.type === type && t.setno === setno && t.matchno === matchno && t.teamkey === team) {
+                if (t.comp_level === type && t.set_number === set_number && t.match_number === match_number && t.teamkey === team) {
                     ret = t.tablet ;
                     break ;
                 }
@@ -623,6 +653,47 @@ export class Project {
         }
 
         return ret;
+    }
+
+    public deleteStoredGraph(name: string) {
+        let index = -1 ;
+
+        let i = 0 ;
+        for(let gr of this.info_.team_graph_data_) {
+            if (gr.name === name) {
+                index = i ;
+                break ;
+            }
+
+            i++ ;
+        }
+
+        if (index !== -1) {
+            this.info_.team_graph_data_.splice(index, 1) ;
+        }
+
+        this.writeEventFile() ;
+    }
+
+    public storeGraph(desc: NamedGraphDataRequest) {
+        let index = -1 ;
+
+        let i = 0 ;
+        for(let gr of this.info_.team_graph_data_) {
+            if (gr.name === desc.name) {
+                index = i ;
+                break ;
+            }
+
+            i++ ;
+        }
+
+        if (index !== -1) {
+            this.info_.team_graph_data_.splice(index, 1) ;
+        }
+
+        this.info_.team_graph_data_.push(desc) ;
+        this.writeEventFile() ;
     }
 
     //#region loading data from external sources
@@ -870,7 +941,6 @@ export class Project {
         return ret;
     }
 
-    
     public loadExternalData(ba: BlueAlliance, sb: StatBotics, frcev: BAEvent, callback?: (result: string) => void) : Promise<number> {
         let ret: Promise<number> = new Promise<number>(async (resolve, reject) => {
             try {

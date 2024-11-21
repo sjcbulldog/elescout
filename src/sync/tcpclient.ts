@@ -40,7 +40,7 @@ export class TCPClient extends SyncClient {
                 this.emit('close') ;
             }) ;
 
-            this.socket_.connect(TCPClient.portNumber) ;
+            this.socket_.connect(TCPClient.portNumber, this.host_) ;
 
             resolve() ;
         }) ;

@@ -19,7 +19,11 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          generateRandomData,
          getTeamList,
          getTeamFieldList,
-         getMatchFieldList} from "./ipchandlers" ;
+         getMatchFieldList,
+         saveTeamGraphSetup,
+         getMatchList,
+         getStoredGraphList,
+         deleteStoredGraph} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -97,10 +101,13 @@ app.on("ready", () => {
     ipcMain.on('get-team-graph-data', (event, ...args) => { getTeamGraphData('get-team-graph-data', ...args)}) ;
     ipcMain.on('get-zebra-match-list', (event, ...args) => { getZebraMatchList('get-zebra-match-list', ...args)}) ;
     ipcMain.on('get-zebra-match-data', (event, ...args) => { getZebraMatchData('get-zebra-match-data', ...args)}) ;
-
     ipcMain.on('get-team-list', (event, ...args) => { getTeamList('get-team-list', ...args)}) ;
     ipcMain.on('get-team-field-list', (event, ...args) => { getTeamFieldList('get-team-field-list', ...args)}) ;
     ipcMain.on('get-match-field-list', (event, ...args) => { getMatchFieldList('get-match-field-list', ...args)}) ;
+    ipcMain.on('save-team-graph-setup', (event, ...args) => { saveTeamGraphSetup('save-team-graph-setup', ...args)}) ;
+    ipcMain.on('get-match-list', (event, ...args) => { getMatchList('get-match-list', ...args)}) ;
+    ipcMain.on('get-stored-graph-list', (event, ...args) => { getStoredGraphList('get-stored-graph-list', ...args)}) ;
+    ipcMain.on('delete-stored-graph', (event, ...args) => { deleteStoredGraph('delete-stored-graph', ...args)}) ;
     createWindow() ;
 }) ;
 

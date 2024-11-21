@@ -118,6 +118,12 @@ export class BlueAlliance extends NetBase {
             let query = "/event/" + evkey + "/matches" ;
             this.request(query)
                 .then((obj) => {
+                    let str = process.env.XEROSCOUTDEBUG ;
+                    if (str && str?.indexOf('noresults') != -1) {
+                        for(let one of obj) {
+                            one.score_breakdown = undefined ;
+                        }
+                    }
                     resolve(obj) ;
                 })
                 .catch((err) => {

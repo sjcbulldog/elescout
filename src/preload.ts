@@ -48,6 +48,10 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-team-list',
         'get-team-field-list',
         'get-match-field-list',
+        'save-team-graph-setup',
+        'get-match-list',
+        'get-stored-graph-list',
+        'delete-stored-graph'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.send(channel, data);
@@ -90,7 +94,9 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-team-graph-data',
         'send-team-list',
         'send-team-field-list',
-        'send-match-field-list'
+        'send-match-field-list',
+        'send-match-list',
+        'send-stored-graph-list'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.on(channel, (event, ...args) => func(...args));

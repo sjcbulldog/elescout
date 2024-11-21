@@ -181,7 +181,7 @@ export class MatchDataModel extends DataModel {
     }
 
 
-    // sm-qm-1-1-8 is sm- TYPE - SETNO - MATCHNO
+    // sm-qm-1-1-8 is sm- TYPE - set_number - match_number
     private parseMatchString(str: string) : any | undefined {
         let ret ;
 
@@ -190,7 +190,7 @@ export class MatchDataModel extends DataModel {
         if (match) {
             ret = {
                 type: match[1],
-                setno: +match[2],
+                set_number: +match[2],
                 match: +match[3],
                 teamkey: match[4]
             } ;
@@ -206,7 +206,7 @@ export class MatchDataModel extends DataModel {
         let item = this.parseMatchString(match as string) ;
 
         dr.addfield('comp_level', item.type) ;
-        dr.addfield('set_number', item.setno) ;
+        dr.addfield('set_number', item.set_number) ;
         dr.addfield('match_number', item.match) ;
         dr.addfield('team_key', item.teamkey) ;
 

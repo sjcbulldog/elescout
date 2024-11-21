@@ -1,15 +1,15 @@
 
 export class MatchTablet {
-    public type: string ;
-    public matchno: number ;
-    public setno: number ;
+    public comp_level: string ;
+    public match_number: number ;
+    public set_number: number ;
     public teamkey: string ;
     public tablet: string ;
 
     constructor(type: string, number: number, set: number, teamkey: string, tablet: string) {
-        this.type = type ;
-        this.matchno = number ;
-        this.setno = set ;
+        this.comp_level = type ;
+        this.match_number = number ;
+        this.set_number = set ;
         this.teamkey = teamkey ;
         this.tablet = tablet ;
     }

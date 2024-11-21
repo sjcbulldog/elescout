@@ -1,6 +1,29 @@
 #graph-team-select-div {
+  display: flex;
+  flex-direction: column;
+  border-color: black;
+  border-width: 2px;
+  border-style: solid;
+}
+
+#graph-team-select-one-div {
     display: flex;
     flex-direction: row;
+    margin-bottom: 4px;
+}
+
+#graph-team-select-two-div {
+  display: flex;
+  flex-direction: row;
+}
+
+#graph-delete-button {
+  margin-right: 32px ;
+}
+
+.graph-label {
+  margin-left: 8px;
+  margin-right: 8px ;
 }
 
 .team-graph-details {
