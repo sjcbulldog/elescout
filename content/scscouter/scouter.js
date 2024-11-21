@@ -93,6 +93,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   updateNav();
   updateView(["empty"]);
+
+  updateTabletTitle('Waiting ...')
 });
 
 function updateView(args) {
@@ -105,5 +107,10 @@ function updateView(args) {
   }
 }
 
+function updateTabletTitle(title) {
+  document.title = 'Xero Scout - ' + title ;
+}
+
 window.scoutingAPI.receive("update-main-window-view", (args) => updateView(args));
 window.scoutingAPI.receive("event-name", (args) => updateEventName(args));
+window.scoutingAPI.receive("tablet-title", (args) => updateTabletTitle(args));

@@ -96,7 +96,8 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-team-field-list',
         'send-match-field-list',
         'send-match-list',
-        'send-stored-graph-list'
+        'send-stored-graph-list',
+        'tablet-title'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.on(channel, (event, ...args) => func(...args));

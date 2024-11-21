@@ -2,3 +2,10 @@
     width: 100%;
     height: 100%;
 }
+
+.form-div-title {
+    width: 100%;
+    font-weight: bolder;
+    font-size: 48px;
+    text-align: center;
+}

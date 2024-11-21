@@ -142,7 +142,12 @@ export class SCScout extends SCBase {
                 this.sendToRenderer('request-result') ;
             }
             else {
-                this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
+                if (this.isDevelop) {
+                    this.syncClient(new TCPClient(this.logger_, '127.0.0.1')) ;
+                }
+                else {
+                    this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
+                }
             }
         }
         else if (cmd === SCScout.resetTablet) {
@@ -167,6 +172,8 @@ export class SCScout extends SCBase {
         this.info_.matchform_ = undefined ;
         this.info_.teamlist_ = undefined ;
         this.info_.matchlist_ = undefined ;
+
+        this.sendToRenderer('tablet-title', 'NOT ASSIGNED') ;
 
         this.sendNavData() ;
         this.setView('empty') ;
@@ -229,7 +236,12 @@ export class SCScout extends SCBase {
 
         if (this.want_sync_) {
             this.want_sync_ = false ;
-            this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
+            if (this.isDevelop) {
+                this.syncClient(new TCPClient(this.logger_, '127.0.0.1')) ;
+            }
+            else {
+                this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
+            }
         }
         else {        
             if (this.next_scout_?.startsWith('st-')) {
@@ -244,11 +256,18 @@ export class SCScout extends SCBase {
     public sendTeamForm() {
         let ret = {
             formjson: null,
+            title: "",
             errormsg: "",
         } ;
 
         if (this.info_.teamform_) {
             ret.formjson = this.info_.teamform_ ;
+            if (this.current_scout_) {
+                ret.title = this.current_scout_ ;
+            }
+            else {
+                ret.title = 'UNKNOWN' ;
+            }
             this.sendToRenderer('send-team-form', ret) ;
         }
 
@@ -262,11 +281,18 @@ export class SCScout extends SCBase {
     public sendMatchForm() {
         let ret = {
             formjson: null,
+            title: "",
             errormsg: "",
         } ;
 
         if (this.info_.matchform_) {
             ret.formjson = this.info_.matchform_ ;
+            if (this.current_scout_) {
+                ret.title = this.current_scout_ ;
+            }
+            else {
+                ret.title = 'UNKNOWN' ;
+            }
             this.sendToRenderer('send-match-form', ret) ;
         }
 
@@ -489,6 +515,7 @@ export class SCScout extends SCBase {
     private setViewString() {
         if (this.info_.uuid_) {
             this.sendToRenderer('event-name', this.info_.evname_, this.info_.uuid_) ;
+            this.sendToRenderer('tablet-title', this.info_.tablet_) ;
         }
         else {
             this.setView('empty') ;
@@ -542,6 +569,8 @@ export class SCScout extends SCBase {
         this.info_.tablet_ = name ;
         this.info_.purpose_ = purpose ;
 
+        this.sendToRenderer('tablet-title', this.info_.tablet_) ;
+
         this.writeEventFile() ;
         this.getMissingData() ;
     }
@@ -551,7 +580,7 @@ export class SCScout extends SCBase {
             try {
                 let fname = this.getSetting(SCScout.last_event_setting) ;
                 let fullpath: string = path.join(this.appdir_, fname) ;
-                this. readEventFile(fullpath) ;
+                this.readEventFile(fullpath) ;
             }
             catch(err) {
                 let errobj: Error = err as Error ;
@@ -569,6 +598,7 @@ export class SCScout extends SCBase {
 
         const rawData = fs.readFileSync(fullpath, 'utf-8');
         this.info_ = JSON.parse(rawData) as SCScoutInfo ;
+
         
         return ret ;
     }
