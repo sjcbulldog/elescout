@@ -1,59 +1,14 @@
 let currentView = undefined ;
 
-let adown = false ;
-let sdown = false ;
-let ddown = false ;
-let fdown = false ;
-
-document.addEventListener('keyup', function(event) {
-  if (event.key == 'a') {
-    adown = false ;
-  }
-  else if (event.key == 's') {
-    sdown = false ;
-  }
-  else if (event.key == 'd') {
-    ddown = false ;
-  }
-  else if (event.key == 'f') {
-    fdown = false ;
-  }
-});
-
-document.addEventListener('keydown', function(event) {
-  if (event.key == 'a') {
-    adown = true ;
-  }
-  else if (event.key == 's') {
-    sdown = true ;
-  }
-  else if (event.key == 'd') {
-    ddown = true ;
-  }
-  else if (event.key == 'f') {
-    fdown = true ;
-  }
-
-  if (adown && sdown && ddown && fdown) {
-    window.scoutingAPI.send("generate-random-data");
-    adown = false ;
-    sdown = false ;
-    ddown = false ;
-    fdown = false ;
-  }
-});
-
 const viewMap = new Map([
   ['empty', EmptyView],
   ['error', ErrorView],
-  ['preview', PreviewFormView],
   ['info', InfoView],
   ['select-event', SelectEventView],
   ['assign-tablets', AssignTablets],
   ['edit-teams', EditTeamsView],
   ['edit-matches', EditMatchesView],
-  ['teamform', TeamFormView],
-  ['matchform', MatchFormView],
+  ['formview', FormView],
   ['teamstatus', TeamStatusView],
   ['matchstatus', MatchStatusView],
   ['teamdb', TeamDBView],
@@ -62,9 +17,9 @@ const viewMap = new Map([
   ['zebramatchview', ZebraMatchView],
 ]) ;
 
-async function updateMainWindow(mtype) {
+async function updateMainWindow(mtype, args) {
   shutdownExistingView() ;
-  setNewMainView(mtype) ;
+  setNewMainView(mtype, args) ;
 }
 
 function shutdownExistingView() {
@@ -75,12 +30,12 @@ function shutdownExistingView() {
   currentView = undefined ;
 }
 
-function setNewMainView(mtype) {
+function setNewMainView(mtype, args) {
   let top = document.getElementById('rightcontent') ;
 
   if (viewMap.has(mtype)) {
     let viewtype = viewMap.get(mtype) ;
-    currentView = new viewtype(top, mtype) ;
+    currentView = new viewtype(top, mtype, args) ;
   }
   else {
     currentView = new TextView(top, 'Invalid View Requested - ' + mtype);
@@ -94,11 +49,8 @@ function updateView(args) {
   if (view === undefined) {
     updateMainWindow("error") ;
   }
-  else if (args[0] === 'empty' && args.length > 1) {
-    emptyView(args[1]) ;
-  }
   else {
-    updateMainWindow(view) ;
+    updateMainWindow(view, args) ;
   }
 }
 

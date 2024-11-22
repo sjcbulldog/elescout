@@ -162,7 +162,7 @@ export abstract class SCBase {
     return XeroAppType.None;
   }
 
-  public sendToRenderer(ev: string, ...args: any[]) {
+  public sendToRenderer(ev: string, ...args: any) {
     this.logger_.silly({
       message: "main -> renderer",
       args: {
@@ -174,8 +174,9 @@ export abstract class SCBase {
     this.win_.webContents.send(ev, args);
   }
 
-  protected setView(view: string) {
-    this.sendToRenderer("update-main-window-view", view);
+  protected setView(view: string, ...args: any[]) {
+    args.unshift(view) ;
+    this.sendToRenderer("update-main-window-view", ...args);
   }
 
   private createUniqueFilename(

@@ -5,8 +5,8 @@ import { SCScout } from "./apps/scscout";
 import { SCCentral } from "./apps/sccentral";
 import { SCCoach } from "./apps/sccoach";
 import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
-         setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamForm, getMatchForm, 
-         getTeamStatus, getMatchStatus, setTabletNamePurpose, getPreviewForm, 
+         setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, 
+         getTeamStatus, getMatchStatus, setTabletNamePurpose, 
          provideResult,
          setEventName,
          getMatchDB,
@@ -23,7 +23,8 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          saveTeamGraphSetup,
          getMatchList,
          getStoredGraphList,
-         deleteStoredGraph} from "./ipchandlers" ;
+         deleteStoredGraph,
+         getForm} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -85,10 +86,8 @@ app.on("ready", () => {
     ipcMain.on('get-team-data', (event, ...args) => { getTeamData('get-team-data', ...args)}) ;
     ipcMain.on('get-match-db', (event, ...args) => { getMatchDB('get-match-db', ...args)});
     ipcMain.on('get-team-db', (event, ...args) => { getTeamDB('get-team-db', ...args)}) ;
-    ipcMain.on('get-team-form', (event, ...args) => { getTeamForm('get-team-form', ...args)});
-    ipcMain.on('get-match-form', (event, ...args) => { getMatchForm('get-match-form', ...args)});
+    ipcMain.on('get-form', (event, ...args) => { getForm('get-form', ...args)});
     ipcMain.on('get-match-data', (event, ...args) => { getMatchData('get-match-data', ...args)});
-    ipcMain.on('get-preview-form', (event, ...args) => { getPreviewForm('get-preview-form', ...args)});
     ipcMain.on('get-team-status', (event, ...args) => { getTeamStatus('get-team-status', ...args)}) ;
     ipcMain.on('get-match-status', (event, ...args) => { getMatchStatus('get-match-status', ...args)}) ;
     ipcMain.on('set-team-data', (event, ...args) => { setTeamData('set-team-data', ...args)}) ;

@@ -12,6 +12,7 @@ import Papa from "papaparse";
 import * as fs from "fs";
 import * as path from "path";
 import { StatBotics } from "../extnet/statbotics";
+import { FormInfo } from "../comms/formifc";
 
 interface GraphDataRequest {
   teams: number[];
@@ -358,46 +359,62 @@ export class SCCentral extends SCBase {
     });
   }
 
-  public sendTeamForm() {
-    let ret = {
-      formjson: null,
-      errormsg: "",
-    };
+  public sendForm(arg: string) {
+    let ret : FormInfo = {
+      message: undefined,
+      form: undefined,
+    } ;
 
-    if (this.project_?.info.teamform_) {
-      let jsonstr = fs.readFileSync(this.project_.info.teamform_).toString();
+    let filename: string ;
+    let title: string ;
+    let good: boolean = true ;
+
+    if (arg === 'preview') {
+      filename = this.previewfile_! ;
+      title = 'Preview Form' ;
+    }
+    else if (arg === 'team') {
+      if (this.project_!.info.teamform_) {
+        filename = this.project_!.info.teamform_! ;
+        title = 'Team Form' ;
+      }
+      else {
+        good = false ;
+        ret.message = 'No team form has been defined yet.' ;
+      }
+    }
+    else if (arg === 'match') {
+      if (this.project_!.info.matchform_) {
+        filename = this.project_!.info.matchform_! ;
+        title = 'Match Form' ;
+      }
+      else {
+        good = false ;
+        ret.message = 'No match form has been defined yet.' ;
+      }
+    }
+    else {
+      good = false;
+      ret.message = 'Internal equest for invalid form type' ;
+    }
+
+    if (good) {
+      let jsonstr = fs.readFileSync(filename!).toString();
       try {
         let jsonobj = JSON.parse(jsonstr);
-        ret.formjson = jsonobj;
+        ret.form = {
+          json: jsonobj,
+          type: arg,
+          title: title!,
+        }
       } catch (err) {
         let errobj = err as Error;
-        ret.errormsg = errobj.message;
+        ret.message = errobj.message;
       }
     } else {
-      ret.errormsg = "No team form has been set";
+      ret.message = "No team form has been set";
     }
-    this.sendToRenderer("send-team-form", ret);
-  }
-
-  public sendPreviewForm() {
-    let ret = {
-      formjson: null,
-      errormsg: "",
-    };
-
-    if (this.previewfile_) {
-      let jsonstr = fs.readFileSync(this.previewfile_).toString();
-      try {
-        let jsonobj = JSON.parse(jsonstr);
-        ret.formjson = jsonobj;
-      } catch (err) {
-        let errobj = err as Error;
-        ret.errormsg = errobj.message;
-      }
-    } else {
-      ret.errormsg = "No preview form has been set";
-    }
-    this.sendToRenderer("send-preview-form", ret);
+    this.sendToRenderer("send-form", ret);
   }
 
   public async sendMatchStatus() {
@@ -561,28 +578,6 @@ export class SCCentral extends SCBase {
     this.sendToRenderer("send-team-status", ret);
   }
 
-  public sendMatchForm() {
-    let ret = {
-      formjson: null,
-      errormsg: "",
-    };
-
-    if (this.project_?.info.matchform_) {
-      let jsonstr = fs
-        .readFileSync(this.project_.info.matchform_)
-        .toLocaleString();
-      try {
-        let jsonobj = JSON.parse(jsonstr);
-        ret.formjson = jsonobj;
-      } catch (err) {
-        let errobj = err as Error;
-        ret.errormsg = errobj.message;
-      }
-    } else {
-      ret.errormsg = "No match form has been set";
-    }
-    this.sendToRenderer("send-match-form", ret);
-  }
 
   private keyToTeamNumber(key: string) {
     let ret: number = -1;
@@ -754,10 +749,7 @@ export class SCCentral extends SCBase {
                 cols: cols,
                 data: data,
               };
-              this.sendToRenderer(
-                "send-match-col-config",
-                this.project_!.info.matchdb_col_config_
-              );
+              this.sendToRenderer("send-match-col-config",this.project_!.info.matchdb_col_config_);
               this.sendToRenderer("send-match-db", dataobj);
             })
             .catch((err) => {});
@@ -863,10 +855,7 @@ export class SCCentral extends SCBase {
 
     let fev: BAEvent | undefined = this.getEventFromKey(args[0]);
     if (fev) {
-      this.sendToRenderer(
-        "set-status-title",
-        "Loading event '" + fev.name + "'"
-      );
+      this.sendToRenderer("set-status-title","Loading event '" + fev.name + "'");
       this.msg_ = "";
 
       try {
@@ -1160,9 +1149,9 @@ export class SCCentral extends SCBase {
     } else if (cmd === SCCentral.importMatches) {
       this.importMatches();
     } else if (cmd === SCCentral.viewTeamForm) {
-      this.setView("teamform");
+      this.setView('formview', 'team');
     } else if (cmd === SCCentral.viewMatchForm) {
-      this.setView("matchform");
+      this.setView('formview', 'match');
     } else if (cmd === SCCentral.viewTeamStatus) {
       if (!this.project_?.info.teamassignments_) {
         this.sendToRenderer(
@@ -1215,9 +1204,9 @@ export class SCCentral extends SCBase {
 
     path.then((pathname) => {
       if (!pathname.canceled) {
-        if (this.validateForm(pathname.filePaths[0], "*")) {
+        if (this.validateForm(pathname.filePaths[0], '*')) {
           this.previewfile_ = pathname.filePaths[0];
-          this.setView("preview");
+          this.setView('formview', 'preview');
         }
       }
     });

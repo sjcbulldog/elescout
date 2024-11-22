@@ -170,39 +170,17 @@ export async function setMatchData(cmd: string, ...args: any[]) {
     } 
 }
 
-export async function getTeamForm(cmd: string, ...args: any[]) {
+export async function getForm(cmd: string, ...args: any[]) {
     if (scappbase) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         if (scappbase.applicationType === XeroAppType.Central) {
             scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
             let central : SCCentral = scappbase as SCCentral ;
-            central.sendTeamForm() ;
+            central.sendForm(args[0]) ;
         } 
         else if (scappbase.applicationType === XeroAppType.Scouter) {
             let scout: SCScout = scappbase as SCScout ;
-            scout.sendTeamForm() ;
-        }
-    }
-}
-
-export async function getPreviewForm(cmd: string, ...args: any[]) {
-    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
-        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
-        let central : SCCentral = scappbase as SCCentral ;
-        central.sendPreviewForm() ;
-    } 
-}
-
-export async function getMatchForm(cmd: string, ...args: any[]) {
-    if (scappbase) {
-        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
-        if (scappbase.applicationType === XeroAppType.Central) {
-            let central : SCCentral = scappbase as SCCentral ;
-            central.sendMatchForm() ;
-        } 
-        else if (scappbase.applicationType === XeroAppType.Scouter) {
-            let scout: SCScout = scappbase as SCScout ;
-            scout.sendMatchForm() ;
+            scout.sendForm(args[0]) ;
         }
     }
 }

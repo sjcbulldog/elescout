@@ -8,6 +8,7 @@ import * as fs from 'fs' ;
 import { PacketType } from "../sync/packettypes";
 import { MatchTablet } from "../project/matchtablet";
 import { TeamTablet } from "../project/teamtablet";
+import { FormInfo } from "../comms/formifc";
 
 export class MatchInfo {
     public type_? : string ;
@@ -139,9 +140,11 @@ export class SCScout extends SCBase {
         if (cmd === SCScout.syncEvent) {
             if (this.current_scout_) {
                 this.want_sync_ = true ;
-                this.sendToRenderer('request-result') ;
+                this.sendToRenderer('request-results') ;
             }
             else {
+                this.setViewString() ;
+                this.current_scout_ = undefined ;
                 if (this.isDevelop) {
                     this.syncClient(new TCPClient(this.logger_, '127.0.0.1')) ;
                 }
@@ -179,24 +182,6 @@ export class SCScout extends SCBase {
         this.setView('empty') ;
     }
 
-    //
-    // Steps for the sequences below.
-    //
-    // executeCommand() is called with a command that starts with either
-    //    'st-' : scout team
-    //    'sm-' : scout match
-    //
-    // This causes scoutTeam() or scoutMatch() to be called.  If there is a previous
-    // form being displayed, these methods request the results from the current form to
-    // be returned.  These results are returned via the provideResults() method.  These
-    // results are then stored so the are stored in the info_ field and this is saved to
-    // the output file.  The method provideResults() then calls back into scoutTeam() or
-    // scoutMatch() with the force flag set to true, so that we forms the team or match
-    // view.
-    //
-    // The 'team-form' or 'match-form' request to the renderer view then causes the sendTeamForm()
-    // or sendMatchForm() method to get called.
-    //
     private scoutTeam(team: string, force: boolean = false) {
         if (this.current_scout_ && !force) {
             //
@@ -204,12 +189,12 @@ export class SCScout extends SCBase {
             // team and store the result in the info for the team
             //
             this.next_scout_ = team ;
-            this.sendToRenderer('request-result') ;
+            this.sendToRenderer('request-results') ;
         }
         else {
             this.sendToRenderer('send-nav-highlight', team) ;
             this.current_scout_ = team;
-            this.setView('team-form') ;
+            this.setView('formview', 'team') ;
         }
     }
 
@@ -220,12 +205,12 @@ export class SCScout extends SCBase {
             // match and store the result in the info for the match
             //
             this.next_scout_ = match ;
-            this.sendToRenderer('request-result') ;
+            this.sendToRenderer('request-results') ;
         }
         else {
             this.sendToRenderer('send-nav-highlight', match) ;
             this.current_scout_ = match ;
-            this.setView('match-form') ;
+            this.setView('formview', 'match') ;
         }
     }
 
@@ -236,6 +221,8 @@ export class SCScout extends SCBase {
 
         if (this.want_sync_) {
             this.want_sync_ = false ;
+            this.setViewString() ;
+            this.current_scout_ = undefined ;
             if (this.isDevelop) {
                 this.syncClient(new TCPClient(this.logger_, '127.0.0.1')) ;
             }
@@ -253,28 +240,34 @@ export class SCScout extends SCBase {
         }
     }
 
-    public sendTeamForm() {
-        let ret = {
-            formjson: null,
-            title: "",
-            errormsg: "",
-        } ;
-
-        if (this.info_.teamform_) {
-            ret.formjson = this.info_.teamform_ ;
-            if (this.current_scout_) {
-                ret.title = this.current_scout_ ;
-            }
-            else {
-                ret.title = 'UNKNOWN' ;
-            }
-            this.sendToRenderer('send-team-form', ret) ;
+    public sendForm(type: string) {
+        let ret : FormInfo = {
+            message: undefined,
+            form: undefined
         }
 
+        if (type === 'team') {
+            ret.form = {
+                json: this.info_.teamform_,
+                title: this.current_scout_!,
+                type: 'team'
+            } ;
+        }
+        else if (type === 'match') {
+            ret.form = {
+                json: this.info_.matchform_,
+                title: this.current_scout_!,
+                type: 'match'
+            }
+        }
+        else {
+            ret.message = 'Invalid form type requested' ;
+        }
+
+        this.sendToRenderer('send-form', ret) ;
         let data: any = this.getResults(this.current_scout_!) ;
-        this.logger_.silly('sendTeamForm/send-result-values: ' + this.current_scout_, data) ;
         if (data) {
-            this.sendToRenderer('send-result-values', data) ;
+            this.sendToRenderer('send-initial-values', data) ;
         }
     }
 

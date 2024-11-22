@@ -1,4 +1,4 @@
-#select_tablet_main {
+#select-tablet-main {
     padding: 20px 10px;
     border: 2px solid black;
     border-radius: 10px;    
@@ -13,19 +13,25 @@
     transform: translate(-50%, -50%);
 }
 
-#select_tablet_table {
+#select-tablet-table {
     width: 600px ;
 }
 
-.select_tablet_header_row {
-    font-weight: bolder;
+.select-tablet-cell {
+    font-size: 24px;
+    text-align: center;
 }
 
-.select_tablet_row {
+.select-tablet-header-row {
+    font-weight: bolder;
+    font-size: 36px;
+}
+
+.select-tablet-row {
     cursor: pointer;
 }
 
-.select_tablet_instructions {
+.select-tablet-instruction {
     text-align: center;
     font-size: 18px;
     font-weight: bold;

@@ -2,11 +2,12 @@ let currentView = undefined ;
 
 const viewMap = new Map([
   ['empty', EmptyView],
-  ['event-view', EventView]
+  ['event-view', EventView],
+  ['formview', FormView],
+  ['select-tablet', SelectTablet]
 ]) ;
 
 async function updateMainWindow(mtype, args) {
-  console.log('updateMainWindow - ' + mtype) ;
   shutdownExistingView() ;
   setNewMainView(mtype, args) ;
 }
