@@ -514,7 +514,7 @@ export class SCScout extends SCBase {
 
     private setViewString() {
         if (this.info_.uuid_) {
-            this.sendToRenderer('event-name', this.info_.evname_, this.info_.uuid_) ;
+            this.sendToRenderer('update-main-window-view', 'event-view', this.info_.evname_, this.info_.uuid_) ;
             this.sendToRenderer('tablet-title', this.info_.tablet_) ;
         }
         else {

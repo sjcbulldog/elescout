@@ -1,30 +1,45 @@
+let currentView = undefined ;
 
+const viewMap = new Map([
+  ['empty', EmptyView],
+  ['event-view', EventView]
+]) ;
 
-async function updateEventName(args) {
-  let str = args[0] + "<br>" + args[1] ;
-  emptyView(str) ;
+async function updateMainWindow(mtype, args) {
+  console.log('updateMainWindow - ' + mtype) ;
+  shutdownExistingView() ;
+  setNewMainView(mtype, args) ;
 }
 
-async function updateMainWindow(mtype) {
-  mainwintype = mtype;
+function shutdownExistingView() {
+  if (currentView) {
+    currentView.close() ;
+  }
 
-  if (mainwintype === "empty") {
-    emptyView("No Event Loaded");
-  }
-  else if (mainwintype === "error") {
-    emptyView("Internal Error Occurred");
-  }
-  else if (mainwintype === "select-tablet") {
-    selectTabletView();
-  }
-  else if (mainwintype === 'team-form') {
-    teamFormView();
-  }
-  else if (mainwintype === 'match-form') {
-    matchFormView();
+  currentView = undefined ;
+}
+
+function setNewMainView(mtype, args) {
+  let top = document.getElementById('rightcontent') ;
+
+  if (viewMap.has(mtype)) {
+    let viewtype = viewMap.get(mtype) ;
+    currentView = new viewtype(top, mtype, args) ;
   }
   else {
-    emptyView(mainwintype) ;
+    currentView = new TextView(top, 'Invalid View Requested - ' + mtype);
+  }
+
+  currentView.render() ;
+}
+
+function updateView(args) {
+  let view = args[0] ;
+  if (view === undefined) {
+    updateMainWindow("error") ;
+  }
+  else {
+    updateMainWindow(view, args) ;
   }
 }
 
@@ -92,9 +107,8 @@ document.addEventListener('DOMContentLoaded', function () {
   resizer.addEventListener('mousedown', mouseDownHandler);
 
   updateNav();
-  updateView(["empty"]);
-
   updateTabletTitle('Waiting ...')
+  updateMainWindow("empty");
 });
 
 function updateView(args) {
@@ -103,7 +117,7 @@ function updateView(args) {
     updateMainWindow("error");
   }
   else {
-    updateMainWindow(view);
+    updateMainWindow(view, args);
   }
 }
 
@@ -112,5 +126,4 @@ function updateTabletTitle(title) {
 }
 
 window.scoutingAPI.receive("update-main-window-view", (args) => updateView(args));
-window.scoutingAPI.receive("event-name", (args) => updateEventName(args));
 window.scoutingAPI.receive("tablet-title", (args) => updateTabletTitle(args));
