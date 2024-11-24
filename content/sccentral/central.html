@@ -4,9 +4,9 @@
   <title>XeroScout Central</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-Content-Security-Policy"
-    content="default-src 'self'; script-src 'self'; script-src 'self' ; connect-src ws: http: file: blob:">
+    content="default-src 'self'; script-src 'self'; img-src 'self' ; script-src 'self' ; connect-src ws: http: file: blob:">
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self'; connect-src ws: http: file: blob:">
+    content="default-src 'self'; script-src 'self'; img-src scheme-source data: ; connect-src ws: http: file: blob:">
 
 
   <link href="../external/tabulator/tabulator_site.css" rel="stylesheet">
@@ -20,6 +20,9 @@
   <script type="text/javascript" src="../common/views.js"></script>
   <script type="text/javascript" src="../common/textviews.js"></script>
   <script type="text/javascript" src="../common/formviews.js"></script>
+  <script type="text/javascript" src="../common/basesection.js"></script>
+  <script type="text/javascript" src="../common/imagesection.js"></script>
+  <script type="text/javascript" src="../common/controlsection.js"></script>
   <script type="text/javascript" src="views/statusviews.js"></script>
   <script type="text/javascript" src="views/dbviews.js"></script>
   <script type="text/javascript" src="views/info.js"></script>

@@ -243,7 +243,9 @@ export class SCScout extends SCBase {
     public sendForm(type: string) {
         let ret : FormInfo = {
             message: undefined,
-            form: undefined
+            form: undefined,
+            reversed: true,
+            color: 'blue'
         }
 
         if (type === 'team') {

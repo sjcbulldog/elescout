@@ -12,6 +12,7 @@ import * as fs from "fs";
 import * as winston from "winston";
 import * as crypto from "crypto";
 import settings from "electron-settings";
+import { FormDetailInfo, FormImage, FormInfo } from "../comms/formifc";
 
 export enum XeroAppType {
   None,
@@ -32,12 +33,14 @@ export abstract class SCBase {
   protected typestr_: string;
   protected win_: BrowserWindow;
   protected appdir_: string;
+  protected content_dir_: string ;
   public logger_: winston.Logger;
 
   protected constructor(win: BrowserWindow, type: string) {
     this.typestr_ = type;
     this.win_ = win;
     this.appdir_ = path.join(os.homedir(), SCBase.appdirName);
+    this.content_dir_ = path.join(process.cwd(), 'content') ;
 
     if (!fs.existsSync(this.appdir_)) {
       fs.mkdirSync(this.appdir_);
@@ -237,5 +240,83 @@ export abstract class SCBase {
       }
     }
     return ret;
+  }
+
+  private searchForImage(jsonname: string) : string | undefined {
+    if (process.env.XEROIMAGEPATH) {
+      let impath = process.env.XEROIMAGEPATH ;
+      let elems = impath.split(';') ;
+      for(let elem of elems) {
+        let trypath = path.join(elem, jsonname) ;
+        if (fs.existsSync(trypath)) {
+          return trypath ;
+        }
+      }
+    }
+
+    let trypath = path.join(this.content_dir_, 'fields', jsonname) + '.json' ;
+    if (fs.existsSync(trypath)) {
+      return trypath ;
+    }
+
+    return undefined ;
+  }
+
+  private getImageFromJson(form: FormInfo, name: string, jsonfile: string) : boolean {
+    let ret = true ;
+
+    try {
+      let str = fs.readFileSync(jsonfile) ;
+      let desc = JSON.parse(str.toString()) ;
+      let datafile = path.join(path.dirname(jsonfile), desc['field-image']) ;
+
+      if (!fs.existsSync(datafile)) {
+        form.form = undefined ;
+        form.message = 'Image file \'' + datafile + '\' specified by the JSON file \'' + jsonfile + '\' does not exist' ;
+        ret = false;
+      }
+
+      let data: string  = fs.readFileSync(datafile).toString('base64');
+
+      let imgdesc : FormImage = {
+        name: name,
+        data: data,
+        topleft : { x: desc['field-corners']['top-left'][0], y: desc['field-corners']['top-left'][1] },
+        bottomright: { x: desc['field-corners']['bottom-right'][0], y: desc['field-corners']['bottom-right'][1] },
+        fieldsize: { width: desc['field-size'][0], height: desc['field-size'][1] },
+        units: desc['field-unit']
+      }
+
+      if (!form.form!.images) {
+        form.form!.images = [] ;
+      }
+      form.form?.images.push(imgdesc) ;
+
+    }
+    catch(err) {
+      let errobj = err as Error ;
+      form.form = undefined ;
+      form.message = 'Error reading image JSON file \'' + jsonfile + '\'- ' + errobj.message ;
+      ret = false;
+    }
+
+    return ret ;
+  }
+
+  protected getImages(form: FormInfo) {
+    for(let section of form.form?.json.sections) {
+      if (section.image) {
+        let imgjson = this.searchForImage(section.image) ;
+        if (!imgjson) {
+          form.message = 'Cannot find image \'' + section.image + '\' required by the scouting form' ;
+          form.form = undefined ;
+        }
+        else {
+          if (!this.getImageFromJson(form, section.image, imgjson)) {
+            return ;
+          }
+        }
+      }
+    }
   }
 }

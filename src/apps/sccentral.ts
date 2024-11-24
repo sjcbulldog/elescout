@@ -78,9 +78,17 @@ export class SCCentral extends SCBase {
   private menuitems_: Map<string, MenuItem> = new Map<string, MenuItem>();
   private year_?: number;
   private msg_?: string;
+  private color_ : string ;
+  private reversed_ : boolean ;
+  private redMenuItem_ : MenuItem | undefined ;
+  private blueMenuItem_ : MenuItem | undefined ;
+  private reverseImage_: MenuItem | undefined ;
 
   constructor(win: BrowserWindow, args: string[]) {
     super(win, "server");
+
+    this.color_ = 'blue' ;
+    this.reversed_ = false ;
 
     for (let arg of args) {
       if (arg.startsWith("--year:")) {
@@ -133,6 +141,26 @@ export class SCCentral extends SCBase {
     }
 
     return ret;
+  }
+
+  private colorMenuItem(color: string) {
+    this.color_ = color ;
+    if (this.project_) {
+      this.setView('info') ;
+    }
+    else {
+      this.setView('empty') ;
+    }
+  }
+
+  private reverseImage() {
+    this.reversed_ = this.reverseImage_!.checked ;
+    if (this.project_) {
+      this.setView('info') ;
+    }
+    else {
+      this.setView('empty') ;
+    }
   }
 
   public createMenu(): Menu | null {
@@ -222,6 +250,35 @@ export class SCCentral extends SCBase {
     this.menuitems_.set("file/close", closeitem);
 
     ret.append(filemenu);
+
+    let optionmenu: MenuItem = new MenuItem({
+      type: 'submenu',
+      label: 'Options',
+      submenu: new Menu()
+    }) ;
+
+    this.blueMenuItem_ = new MenuItem({
+      type: 'radio',
+      label: 'Blue',
+      click: this.colorMenuItem.bind(this, 'blue')
+    }) ;
+    optionmenu.submenu!.append(this.blueMenuItem_) ;
+
+    this.redMenuItem_ = new MenuItem({
+      type: 'radio',
+      label: 'Red',
+      click: this.colorMenuItem.bind(this, 'red')
+    }) ;
+    optionmenu.submenu!.append(this.redMenuItem_) ;
+
+    this.reverseImage_ = new MenuItem({
+      type: 'checkbox',
+      label: 'Reverse',
+      checked: false,
+      click: this.reverseImage.bind(this)
+    }) ;
+    optionmenu.submenu!.append(this.reverseImage_) ;
+    ret.append(optionmenu);
 
     let loadmenu: MenuItem = new MenuItem({
       type: "submenu",
@@ -363,6 +420,8 @@ export class SCCentral extends SCBase {
     let ret : FormInfo = {
       message: undefined,
       form: undefined,
+      reversed: undefined,
+      color: undefined
     } ;
 
     let filename: string ;
@@ -406,7 +465,12 @@ export class SCCentral extends SCBase {
           json: jsonobj,
           type: arg,
           title: title!,
-        }
+        } ;
+
+        ret.color = this.color_ ;
+        ret.reversed = this.reversed_ ;
+
+        this.getImages(ret) ;
       } catch (err) {
         let errobj = err as Error;
         ret.message = errobj.message;
@@ -640,7 +704,7 @@ export class SCCentral extends SCBase {
   public setTabletData(data: any[]) {
     if (this.project_) {
       this.project_.setTabletData(data);
-      this.sendToRenderer("update-main-window-view", "info");
+      this.setView('info') ;
     }
   }
 
@@ -714,7 +778,7 @@ export class SCCentral extends SCBase {
   public setTeamData(data: any[]) {
     if (this.project_) {
       this.project_.setTeamData(data);
-      this.sendToRenderer("update-main-window-view", "info");
+      this.setView('info');
     }
   }
 
@@ -733,7 +797,7 @@ export class SCCentral extends SCBase {
   public setMatchData(data: any[]) {
     if (this.project_) {
       this.project_.setMatchData(data);
-      this.sendToRenderer("update-main-window-view", "info");
+      this.setView('info') ;
     }
   }
 
