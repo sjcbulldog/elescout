@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   ipcRenderer,
   Menu,
@@ -155,6 +156,11 @@ export abstract class SCBase {
     // primarily puts the log files in the home directory of the source instead of buried down
     // in the users home directory
     //
+
+    if (process.env.XERODEVELOP) {
+      return true ;
+    }
+    
     return (
       process.argv[0].indexOf("cygwin64") != -1 &&
       process.argv[0].indexOf("butch") != -1
@@ -253,6 +259,8 @@ export abstract class SCBase {
         }
       }
     }
+
+
 
     let trypath = path.join(this.content_dir_, 'fields', jsonname) + '.json' ;
     if (fs.existsSync(trypath)) {

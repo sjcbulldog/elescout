@@ -3,11 +3,8 @@ import { contextBridge, ipcRenderer,  } from 'electron';
 // Create a type that should contain all the data we need to expose in the
 // renderer process using `contextBridge`.
 
-export type scoutingAPI = {
-  // Declare a `readFile` function that will return a promise. This promise
-  // will contain the data of the file read from the main process.
-  getCentralTreeContents: () => Promise<Object>
-}
+// export type scoutingAPI = {
+// }
 
 //
 // Expose our functions in the `api` namespace of the renderer `Window`.
@@ -73,6 +70,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-team-data',
         'send-match-data',
         'send-form',
+        'send-initial-values',
         'send-team-status',
         'send-match-status',
         'send-match-db',
@@ -85,7 +83,6 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'set-status-visible',
         'set-status-close-button-visible',
         'set-status-bar-message',
-        'send-initial-values',
         'request-results',
         'send-team-graph-data',
         'send-team-list',

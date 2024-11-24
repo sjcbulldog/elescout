@@ -4,6 +4,7 @@ class XeroBaseSection {
         this.name_ = name ;
         this.top_ = div ;
         this.isimage_ = isimage ;
+        this.tags_ = [] ;
     }
 
     getValues() {
@@ -11,7 +12,6 @@ class XeroBaseSection {
     }
 
     setValue(name, value) {
-    
     }
 
     static formViewNormalizeName(name) { 

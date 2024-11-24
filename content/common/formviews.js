@@ -189,6 +189,9 @@ class FormView extends XeroView {
         //
         for(let section of form.sections) {
             let secobj = this.formViewCreateSection(section, color, reversed) ;
+            for(let tag of secobj.tags_) {
+                this.nameToSectionMap_.set(tag, secobj) ;
+            }
             secobj.top_.className = 'form-section-contents' ;
             this.sections_.push(secobj) ;
             this.formtop_.append(secobj.top_) 
@@ -202,9 +205,13 @@ class FormView extends XeroView {
         // Initialize the form with existing form values
         //
         for(let one of arg[0]) {
-            if (nameToSectionMap_.has(one.tag)) {
-                this.nameToSectionMap_.get(one.tag).setValue(one.tag, one.value) ;
+            if (this.nameToSectionMap_.has(one.tag)) {
+                this.nameToSectionMap_.get(one.tag).setValue(one.tag, one.type, one.value) ;
             }
+        }
+
+        if (this.current_section_) {
+            this.formViewSelect(this.current_section_) ;
         }
     }
 }

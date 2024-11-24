@@ -54,7 +54,15 @@ class XeroImageSection extends XeroBaseSection {
         this.reverse_ = reversed ;
         this.color_ = color ;
 
+        for(let item of json.items) {
+            this.tags_.push(item.tag) ;
+        }
+
         this.canvas_.addEventListener('mousedown', this.mousePress.bind(this)) ;
+    }
+
+    getValues() {
+        return this.values_ ;
     }
 
     getValue(tag) {
@@ -231,12 +239,13 @@ class XeroImageSection extends XeroBaseSection {
         ctx.beginPath() ;
         ctx.moveTo(pos.x + gap, pos.y + size.height / 2.0) ;
         ctx.lineTo(pos.x + size.width - gap, pos.y + size.height / 2.0) ;
-        ctx.stroke() 
+        ctx.stroke() ;
 
         ctx.beginPath() ;
         ctx.moveTo(pos.x + size.width / 2.0, pos.y + gap) ;
-        ctx.moveTo(pos.x + size.width / 2.0, pos.y + size.height - gap) ;
-        ctx.stroke() 
+        ctx.lineTo(pos.x + size.width / 2.0, pos.y + size.height - gap) ;
+        ctx.stroke() ;
+
     }
 
     doDash(ctx, pos, size, color, width, gap) {
@@ -275,7 +284,7 @@ class XeroImageSection extends XeroBaseSection {
     drawUpDownControl(ctrl, color) {
         let value = this.getValue(ctrl.tag) ;
         if (!value) {
-            value = this.setValue(ctrl.tag, 'number', ctrl.minimum) ;
+            value = this.setValue(ctrl.tag, ctrl.type, ctrl.minimum) ;
         }
 
         value.minimum = ctrl.minimum ;

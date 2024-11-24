@@ -44,9 +44,11 @@ export class SCScout extends SCBase {
     private tablets_?: any[] ;
     private conn_?: SyncClient ;
     private current_scout_? : string ;
-    private current_list_entry_? : any[] ;
+    private alliance_? : string ;
     private next_scout_? : string ;
     private want_sync_ : boolean = false ;
+    private reversed_ : boolean = false ;
+    private reverseImage_: MenuItem | undefined ;
 
     public constructor(win: BrowserWindow, args: string[]) {
         super(win, 'scout') ;
@@ -194,6 +196,7 @@ export class SCScout extends SCBase {
         else {
             this.sendToRenderer('send-nav-highlight', team) ;
             this.current_scout_ = team;
+            this.next_scout_ = undefined ;
             this.setView('formview', 'team') ;
         }
     }
@@ -210,8 +213,32 @@ export class SCScout extends SCBase {
         else {
             this.sendToRenderer('send-nav-highlight', match) ;
             this.current_scout_ = match ;
-            this.setView('formview', 'match') ;
+            this.next_scout_ = undefined ;
+            this.alliance_ = this.getAllianceFromMatch(match) ;
+            if (!this.alliance_) {
+                dialog.showMessageBox(this.win_, {
+                    title: 'Internal Error', 
+                    message: 'Internal Error - no alliance from match'
+                }) ;
+            }
+            else {
+                this.setView('formview', 'match') ;
+            }
         }
+    }
+
+    private getAllianceFromMatch(match: string) : string | undefined {
+        let ret: string | undefined ;
+        
+        for(let m of this.info_.matchlist_!) {
+            let cmd: string = 'sm-' + m.comp_level + '-' + m.set_number + '-' + m.match_number + '-' + m.teamkey ;
+            if (cmd === match) {
+                ret = m.alliance ;
+                break ;
+            }
+        }
+
+        return ret;
     }
 
     public provideResults(res: any) {
@@ -244,15 +271,15 @@ export class SCScout extends SCBase {
         let ret : FormInfo = {
             message: undefined,
             form: undefined,
-            reversed: true,
-            color: 'blue'
+            reversed: this.reversed_,
+            color: this.alliance_,
         }
 
         if (type === 'team') {
             ret.form = {
                 json: this.info_.teamform_,
                 title: this.current_scout_!,
-                type: 'team'
+                type: 'team',
             } ;
         }
         else if (type === 'match') {
@@ -264,6 +291,10 @@ export class SCScout extends SCBase {
         }
         else {
             ret.message = 'Invalid form type requested' ;
+        }
+
+        if (ret.form !== undefined) {
+            this.getImages(ret) ;
         }
 
         this.sendToRenderer('send-form', ret) ;
@@ -517,6 +548,16 @@ export class SCScout extends SCBase {
         }
     }
 
+    private reverseImage() {
+        this.reversed_ = this.reverseImage_!.checked ;
+        if (this.info_.uuid_) {
+            this.setViewString() ;
+        }
+        else {
+            this.setView('empty') ;
+        }
+    }
+
     public createMenu() : Menu | null {
         let ret: Menu | null = new Menu() ;
 
@@ -543,6 +584,21 @@ export class SCScout extends SCBase {
         filemenu.submenu?.insert(2, resetitem) ;
 
         ret.append(filemenu) ;
+
+        let optionmenu: MenuItem = new MenuItem({
+            type: 'submenu',
+            label: 'Options',
+            submenu: new Menu()
+        }) ;
+    
+        this.reverseImage_ = new MenuItem({
+            type: 'checkbox',
+            label: 'Reverse',
+            checked: false,
+            click: this.reverseImage.bind(this)
+          }) ;
+        optionmenu.submenu!.append(this.reverseImage_) ;
+        ret.append(optionmenu);        
         
         let viewmenu: MenuItem = new MenuItem( {
             type: 'submenu',

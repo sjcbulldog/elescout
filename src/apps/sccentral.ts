@@ -1050,14 +1050,14 @@ export class SCCentral extends SCBase {
           this.appendStatusText(text);
         }
       )
-        .then(() => {
-          this.appendStatusText("All data loaded");
-          this.sendToRenderer("set-status-close-button-visible", true);
-        })
-        .catch((err) => {
-          this.appendStatusText("<br><br>Error loading data - " + err.message);
-          this.sendToRenderer("set-status-close-button-visible", true);
-        });
+      .then(() => {
+        this.appendStatusText("All data loaded");
+        this.sendToRenderer("set-status-close-button-visible", true);
+      })
+      .catch((err) => {
+        this.appendStatusText("<br><br>Error loading data - " + err.message);
+        this.sendToRenderer("set-status-close-button-visible", true);
+      });
     } else {
       let html = "The event is not a blue alliance event";
       this.sendToRenderer("set-status-visible", true);
@@ -1200,10 +1200,12 @@ export class SCCentral extends SCBase {
     } else if (cmd === SCCentral.viewInit) {
       this.setView("info");
     } else if (cmd === SCCentral.lockEvent) {
-      this.project_!.lockEvent();
-      this.startSyncServer();
-      this.setView("info");
-      this.sendNavData();
+      this.project_!.lockEvent()
+        .then(() => {
+          this.startSyncServer();
+          this.setView("info");
+          this.sendNavData();
+        }) ;
     } else if (cmd === SCCentral.editTeams) {
       this.setView("edit-teams");
     } else if (cmd === SCCentral.editMatches) {

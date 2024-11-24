@@ -15,25 +15,54 @@ class XeroControlSection extends XeroBaseSection {
     }
 
     formViewCreateText(item) {
+        let rows, cols ;
+
+        if (item.rows) {
+            rows = item.rows ;
+        }
+
+        if (item.cols) {
+            cols = item.cols;
+        }
+
         let div = document.createElement('div') ;
         let label = document.createElement('label') ;
         label.className = 'form-item-label' ;
         label.textContent = item.name ;
-    
-        let lin = document.createElement('input') ;
-        label.append(lin) ;
-        lin.className = 'form-item-text' ;
-        lin.setAttribute("type", "text");
-        if (item.maxlen) {
-            lin.maxLength = item.maxlen ;
+        
+        let lin ;
+
+        if (!rows) {
+            lin = document.createElement('input') ;
+            label.append(lin) ;
+            lin.className = 'form-item-text' ;
+            lin.setAttribute("type", "text");
+            if (item.maxlen) {
+                lin.maxLength = item.maxlen ;
+            }
+            if (cols) {
+                lin.size = cols ;
+            }
+            lin.xerotag = item.tag ;
+            lin.xerotype = 'text' ;
+            lin.xerovalue = '' ;
         }
-        lin.xerotag = item.tag ;
-        lin.xerotype = 'text' ;
-        lin.xerovalue = '' ;
+        else {
+            lin = document.createElement('textarea');
+            lin.rows = rows ;
+            lin.cols = cols ;
+            lin.className = 'form-item-text' ;
+            if (item.maxlen) {
+                lin.maxLength = item.maxlen ;
+            }
+            lin.xerotag = item.tag ;
+            lin.xerotype = 'text' ;
+            lin.xerovalue = '' ;
+        }
         lin.addEventListener('input', function() {
             lin.xerovalue = lin.value ;
         }) ;
-        label.for = lin ;
+        label.append(lin) ;
         div.append(label) ;
         return div ;
     }
@@ -159,6 +188,8 @@ class XeroControlSection extends XeroBaseSection {
         else if (item.type === 'updown') {
             div = this.formViewCreateUpdown(item) ;
         }
+        
+        this.tags_.push(item.tag) ;
         return div ;
     }
 

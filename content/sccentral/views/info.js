@@ -1,5 +1,5 @@
 class InfoView extends XeroView {
-    static minRequiredNumberTeams = 24;
+    static minRequiredNumberTeams = 18;
 
     constructor(div, viewtype) {
         super(div, viewtype);

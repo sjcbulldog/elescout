@@ -564,42 +564,42 @@ export class Project {
         this.info_.matchassignements_ = [] ;
 
         for(let m of this.info_.matches_) {
-            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.red.team_keys[0], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, 'red', m.alliances.red.team_keys[0], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.red.team_keys[1], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, 'red', m.alliances.red.team_keys[1], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }       
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.red.team_keys[2], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, 'red', m.alliances.red.team_keys[2], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.blue.team_keys[0], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, 'blue', m.alliances.blue.team_keys[0], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.blue.team_keys[1], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, 'blue', m.alliances.blue.team_keys[1], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
             }            
             this.info_.matchassignements_.push(ma) ;
 
-            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, m.alliances.blue.team_keys[2], matchtab[index].name) ;
+            ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, 'blue', m.alliances.blue.team_keys[2], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
                 index = 0 ;
