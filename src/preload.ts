@@ -50,6 +50,8 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-picklist-data',
         'get-picklist-columns',
         'get-picklist-col-data',
+        'get-preferences',
+        'update-preferences',
         'update-picklist-columns'
       ];
       if (validChannels.includes(channel)) {
@@ -98,6 +100,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-picklist-data',
         'send-picklist-columns',
         'send-picklist-col-data',
+        'send-preferences'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.on(channel, (event, ...args) => func(...args));

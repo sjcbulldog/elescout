@@ -260,8 +260,6 @@ export abstract class SCBase {
       }
     }
 
-
-
     let trypath = path.join(this.content_dir_, 'fields', jsonname) + '.json' ;
     if (fs.existsSync(trypath)) {
       return trypath ;

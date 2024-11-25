@@ -45,6 +45,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#MyAppSourceDir}\out\xeroscout2-win32-x64\*.*"; DestDir: "{app}"; Flags: ignoreversion 64bit recursesubdirs
 Source: "{#MyAppSourceDir}\content\fields\*.*"; DestDir: "{app}\content\fields"; Flags: ignoreversion 64bit recursesubdirs
+Source: "{#MyAppSourceDir}\content\images\*.*"; DestDir: "{app}\content\images"; Flags: ignoreversion 64bit recursesubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

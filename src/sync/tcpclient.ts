@@ -2,6 +2,7 @@ import winston from "winston";
 import { Packet } from "./packet";
 import { SyncClient } from "./syncclient";
 import * as net from 'net' ;
+import { dialog } from "electron";
 
 export class TCPClient extends SyncClient {
     private static readonly portNumber: number = 45455 ;

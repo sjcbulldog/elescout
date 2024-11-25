@@ -16,6 +16,14 @@ export class MatchInfo {
     public number_? : number ;
 } ;
 
+export class Preferences {
+    public ipaddr_ : string ;
+
+    constructor() {
+        this.ipaddr_ = '192.168.1.1' ;
+    }
+}
+
 export class SCScoutInfo {
     public tablet_? : string ;
     public purpose_? : string ;
@@ -34,26 +42,35 @@ export class SCScoutInfo {
 
 export class SCScout extends SCBase {
     private static readonly last_event_setting = "lastevent" ;
+    private static readonly SYNC_IPADDR = 'SYNC_IPADDR' ;
 
     private static readonly syncEvent: string = "sync-event" ;
     private static readonly resetTablet: string = "reset-tablet" ;
+    private static readonly preferences: string = 'preferences' ;
 
     private info_ : SCScoutInfo = new SCScoutInfo() ;
 
-    private tcpHost_: string = "192.168.1.1" ;
     private tablets_?: any[] ;
     private conn_?: SyncClient ;
     private current_scout_? : string ;
     private alliance_? : string ;
     private next_scout_? : string ;
-    private want_sync_ : boolean = false ;
+    private want_cmd_ : boolean = false ;
+    private next_cmd_? : string ;
     private reversed_ : boolean = false ;
     private reverseImage_: MenuItem | undefined ;
+    private sync_client_? : SyncClient ;
+    public preferences_ : Preferences ;
 
     public constructor(win: BrowserWindow, args: string[]) {
         super(win, 'scout') ;
 
         this.checkLastEvent() ;
+
+        this.preferences_ = new Preferences() ;
+        if (this.hasSetting(SCScout.SYNC_IPADDR)) {
+            this.preferences_.ipaddr_ = this.getSetting(SCScout.SYNC_IPADDR) ;
+        }
     }
 
     public get applicationType() : XeroAppType { 
@@ -138,25 +155,38 @@ export class SCScout extends SCBase {
         return ret ;
     }
 
+    public syncError(err: Error) {
+        dialog.showMessageBoxSync(this.win_, {
+            title: 'Synchronization Error',
+            message: 'Error synchronizing - ' + err.message,
+        }) ;
+        this.sync_client_ = undefined ;
+    }
+
+    public syncDone() {
+        this.sync_client_ = undefined ;
+    }
+
     public executeCommand(cmd: string) : void {   
-        if (cmd === SCScout.syncEvent) {
-            if (this.current_scout_) {
-                this.want_sync_ = true ;
-                this.sendToRenderer('request-results') ;
-            }
-            else {
-                this.setViewString() ;
-                this.current_scout_ = undefined ;
-                if (this.isDevelop) {
-                    this.syncClient(new TCPClient(this.logger_, '127.0.0.1')) ;
-                }
-                else {
-                    this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
-                }
-            }
+        if (this.current_scout_) {
+            this.want_cmd_ = true ;
+            this.next_cmd_ = cmd ;
+            this.sendToRenderer('request-results') ;
+        }
+        else if (cmd === SCScout.syncEvent) {
+            this.setViewString() ;
+            this.current_scout_ = undefined ;
+            this.sync_client_ = new TCPClient(this.logger_, this.preferences_.ipaddr_) ;
+            this.sync_client_.on('close', this.syncDone.bind(this)) ; 
+            this.sync_client_.on('error', this.syncError.bind(this)) ;
+
+            this.syncClient(this.sync_client_) ;
         }
         else if (cmd === SCScout.resetTablet) {
             this.resetTabletCmd() ;
+        }
+        else if (cmd === SCScout.preferences) {
+            this.setView('preferences');
         }
         else if (cmd.startsWith('st-')) {
             this.scoutTeam(cmd) ;
@@ -246,24 +276,9 @@ export class SCScout extends SCBase {
         this.writeEventFile() ;
         this.logger_.silly('provideResults:' + this.current_scout_, res) ;
 
-        if (this.want_sync_) {
-            this.want_sync_ = false ;
-            this.setViewString() ;
-            this.current_scout_ = undefined ;
-            if (this.isDevelop) {
-                this.syncClient(new TCPClient(this.logger_, '127.0.0.1')) ;
-            }
-            else {
-                this.syncClient(new TCPClient(this.logger_, this.tcpHost_)) ;
-            }
-        }
-        else {        
-            if (this.next_scout_?.startsWith('st-')) {
-                this.scoutTeam(this.next_scout_!, true) ;
-            }
-            else {
-                this.scoutMatch(this.next_scout_!, true) ;
-            }
+        if (this.want_cmd_) {
+            this.want_cmd_ = false ;
+            this.executeCommand(this.next_cmd_!) ;
         }
     }
 
@@ -574,14 +589,21 @@ export class SCScout extends SCBase {
         }) ;
         filemenu.submenu?.insert(0, synctcpitem) ;
 
-        filemenu.submenu?.insert(1, new MenuItem({type: 'separator'}));
-
         let resetitem: MenuItem = new MenuItem( {
             type: 'normal',
             label: 'Reset Tablet',
             click: () => { this.executeCommand(SCScout.resetTablet)}
         }) ;
-        filemenu.submenu?.insert(2, resetitem) ;
+        filemenu.submenu?.insert(1, resetitem) ;
+
+        filemenu.submenu?.insert(2, new MenuItem({type: 'separator'}));
+
+        let preferences: MenuItem = new MenuItem( {
+            type: 'normal',
+            label: 'Preferences',
+            click: () => { this.executeCommand(SCScout.preferences)}
+        }) ;
+        filemenu.submenu?.insert(3, preferences) ;        
 
         ret.append(filemenu) ;
 
@@ -672,4 +694,12 @@ export class SCScout extends SCBase {
         return ret;
     } 
 
+    public sendPreferences() {
+        this.sendToRenderer('send-preferences', this.preferences_) ;
+    }
+
+    public updatePreferences(prefs: Preferences) {
+        this.preferences_ = prefs;
+        this.setSetting(SCScout.SYNC_IPADDR, this.preferences_.ipaddr_);
+    }
 }

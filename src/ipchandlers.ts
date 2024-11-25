@@ -297,11 +297,26 @@ export async function getPicklistColData(cmd: string, ...args: any[]) {
     } 
 }
 
-
 export async function updatePicklistColumns(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
         central.updatePicklistColumns(args[0]) ;
+    } 
+}
+
+export async function getPreferences(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Scouter) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let scout : SCScout = scappbase as SCScout ;
+        scout.sendPreferences() ;
+    } 
+}
+
+export async function updatePreferences(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Scouter) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let scout : SCScout = scappbase as SCScout ;
+        scout.updatePreferences(args[0]) ;
     } 
 }

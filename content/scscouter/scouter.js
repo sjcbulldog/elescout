@@ -4,7 +4,8 @@ const viewMap = new Map([
   ['empty', EmptyView],
   ['event-view', EventView],
   ['formview', FormView],
-  ['select-tablet', SelectTablet]
+  ['select-tablet', SelectTablet],
+  ['preferences', PreferencesView]
 ]) ;
 
 async function updateMainWindow(mtype, args) {

@@ -28,7 +28,9 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          getPicklistData,
          updatePicklistColumns,
          getPicklistColumns,
-         getPicklistColData} from "./ipchandlers" ;
+         getPicklistColData,
+         getPreferences,
+         updatePreferences} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -36,8 +38,12 @@ export let scappbase : SCBase | undefined = undefined ;
 function createWindow() : void {
     const args = process.argv;
     let year = 2024 ;
+
+    let content = path.join(process.cwd(), 'content') ;
+    let icon = path.join(content, 'images', 'tardis.ico') ;
   
     const win = new BrowserWindow({
+      icon: icon,
       webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
@@ -116,6 +122,8 @@ app.on("ready", () => {
     ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('update-picklist-columns', ...args)}) ;
     ipcMain.on('get-picklist-columns', (event, ...args) => { getPicklistColumns('get-picklist-columns', ...args)}) ;
     ipcMain.on('get-picklist-col-data', (event, ...args) => { getPicklistColData('get-picklist-col-data', ...args)}) ;
+    ipcMain.on('get-preferences', (event, ...args) => { getPreferences('get-preferences', ...args)}) ;
+    ipcMain.on('update-preferences', (event, ...args) => { updatePreferences('update-preferences', ...args)}) ;
     createWindow() ;
 }) ;
 
