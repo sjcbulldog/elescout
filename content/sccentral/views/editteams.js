@@ -57,6 +57,13 @@ class EditTeamsView extends TabulatorView {
         }
     }
 
+    delAllTeam() {
+        var selectedRows = this.teamtable_.getRows();
+        for (let row of selectedRows) {
+            row.delete();
+        }
+    }
+
     createButtonBar() {
         let buttondiv = document.createElement('div');
         buttondiv.id = 'edit-teams-buttons';
@@ -70,6 +77,11 @@ class EditTeamsView extends TabulatorView {
         del.innerText = 'Delete Team';
         buttondiv.append(del);
         del.onclick = this.delTeam.bind(this) ;
+
+        let delall = document.createElement('button');
+        delall.innerText = 'Delete All Teams';
+        buttondiv.append(delall);
+        delall.onclick = this.delAllTeam.bind(this) ;        
 
         let impbut = document.createElement('button');
         impbut.innerText = 'Import Teams';

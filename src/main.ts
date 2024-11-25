@@ -24,7 +24,11 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          getMatchList,
          getStoredGraphList,
          deleteStoredGraph,
-         getForm} from "./ipchandlers" ;
+         getForm,
+         getPicklistData,
+         updatePicklistColumns,
+         getPicklistColumns,
+         getPicklistColData} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -108,6 +112,10 @@ app.on("ready", () => {
     ipcMain.on('get-match-list', (event, ...args) => { getMatchList('get-match-list', ...args)}) ;
     ipcMain.on('get-stored-graph-list', (event, ...args) => { getStoredGraphList('get-stored-graph-list', ...args)}) ;
     ipcMain.on('delete-stored-graph', (event, ...args) => { deleteStoredGraph('delete-stored-graph', ...args)}) ;
+    ipcMain.on('get-picklist-data', (event, ...args) => { getPicklistData('get-picklist-data', ...args)}) ;
+    ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('update-picklist-columns', ...args)}) ;
+    ipcMain.on('get-picklist-columns', (event, ...args) => { getPicklistColumns('get-picklist-columns', ...args)}) ;
+    ipcMain.on('get-picklist-col-data', (event, ...args) => { getPicklistColData('get-picklist-col-data', ...args)}) ;
     createWindow() ;
 }) ;
 

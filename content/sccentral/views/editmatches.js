@@ -166,6 +166,13 @@ class EditMatchesView extends TabulatorView {
         }
     }
 
+    delAllMatches() {
+        var selectedRows = this.matchtable_.getRows();
+        for (let row of selectedRows) {
+            row.delete();
+        }
+    }
+
     createButtonBar() {
         let buttondiv = document.createElement('div');
         buttondiv.id = 'edit-matches-buttons';
@@ -179,6 +186,11 @@ class EditMatchesView extends TabulatorView {
         del.innerText = 'Delete Match';
         buttondiv.append(del);
         del.onclick = this.delMatch.bind(this);
+
+        let delall = document.createElement('button');
+        delall.innerText = 'Delete All Matches';
+        buttondiv.append(delall);
+        delall.onclick = this.delAllMatches.bind(this);
 
         let impbut = document.createElement('button');
         impbut.innerText = 'Import Matches';

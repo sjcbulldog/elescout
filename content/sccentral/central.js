@@ -15,6 +15,7 @@ const viewMap = new Map([
   ['matchdb', MatchDBView],
   ['teamgraph', TeamGraphView],
   ['zebramatchview', ZebraMatchView],
+  ['picklist', PickListView],
 ]) ;
 
 async function updateMainWindow(mtype, args) {

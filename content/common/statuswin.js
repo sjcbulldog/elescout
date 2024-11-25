@@ -42,6 +42,7 @@ function statusShow() {
 
 function statusHide() {
     $('#status').hide() ;
+    statusShowCloseButton() ;
 }
 
 function statusSetText(text) {

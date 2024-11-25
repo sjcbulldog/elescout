@@ -264,10 +264,44 @@ export async function getStoredGraphList(cmd: string, ...args: any[]) {
         central.getStoredGraphList() ;
     } 
 }
+
 export async function deleteStoredGraph(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
         central.deleteStoredGraph(args[0]) ;
+    } 
+}
+
+export async function getPicklistData(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendPicklistData() ;
+    } 
+}
+
+export async function getPicklistColumns(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendPicklistColumns() ;
+    } 
+}
+
+export async function getPicklistColData(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendPicklistColData(args[0]) ;
+    } 
+}
+
+
+export async function updatePicklistColumns(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.updatePicklistColumns(args[0]) ;
     } 
 }

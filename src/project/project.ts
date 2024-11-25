@@ -61,6 +61,8 @@ export class ProjectInfo {
     public teamdb_col_config_? : ProjColConfig ;        // List of hidden columns in team data
     public zebra_tag_data_?: any ;                      // Zebra tag data
     public team_graph_data_: NamedGraphDataRequest[] ;  // Stored graphs defined by the user
+    public picklist_ : number[] = [] ;                  // Pick list, a list of team number
+    public picklist_columns_ : string[] = [] ;          // The additional data to display in the pick list
 
     constructor() {
         this.locked_ = false ;
@@ -610,6 +612,11 @@ export class Project {
         return true ;
     }
 
+    public setPicklistCols(cols: string[]) {
+        this.info.picklist_columns_ = cols ;
+        this.writeEventFile() ;
+    }
+
     private readEventFile() : Error | undefined {
         let ret : Error | undefined = undefined ;
 
@@ -620,6 +627,21 @@ export class Project {
         else {
             const rawData = fs.readFileSync(projfile, 'utf-8');
             this.info_ = JSON.parse(rawData) as ProjectInfo ;
+            if (!this.info_.picklist_) {
+                //
+                // The previous version did not include the picklist.  Rather than make a user re-create their project,
+                // we just add an empty picklist if it was not in the file read.
+                //
+                this.info_.picklist_ = [] ;
+            }
+
+            if (!this.info_.picklist_columns_) {
+                //
+                // The previous version did not include the picklist.  Rather than make a user re-create their project,
+                // we just add an empty picklist if it was not in the file read.
+                //
+                this.info_.picklist_columns_ = [] ;
+            }
         }
         
         return ret ;

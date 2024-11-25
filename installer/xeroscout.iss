@@ -4,7 +4,7 @@
 #define MyAppName "XeroCentral2"
 #define MyCoachName "XeroCoach2"
 #define MyScoutName "XeroScout2"
-#define MyAppVersion "2.0.6"
+#define MyAppVersion "2.0.7"
 #define MyAppPublisher "ErrorCodeXero"
 #define MyAppURL "https://www.xerosw.org/"
 #define MyAppExeName "xeroscout2.exe"
