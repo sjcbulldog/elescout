@@ -257,11 +257,16 @@ class XeroImageSection extends XeroBaseSection {
         ctx.stroke() ;
     }
 
-    doText(ctx, pos, size, str) {
+    doText(ctx, pos, size, str, font) {
         ctx.textBaseline = 'top' ;
         ctx.textAlign = 'center';
         ctx.textRendering = 'optimizeLegibility' ;
-        ctx.font = "64px serif";
+        if (font) {
+            ctx.font = font;
+        }
+        else {
+            ctx.font = "64px serif";
+        }
         ctx.fillText(str, pos.x + size.width / 2.0, pos.y) ;
     }
 
@@ -281,7 +286,45 @@ class XeroImageSection extends XeroBaseSection {
         }
     }
 
-    drawUpDownControl(ctrl, color) {
+    drawUpDownControlTwo(ctrl, color) {
+        let value = this.getValue(ctrl.tag) ;
+        if (!value) {
+            value = this.setValue(ctrl.tag, ctrl.type, ctrl.minimum) ;
+        }
+
+        value.minimum = ctrl.minimum ;
+        value.maximum = ctrl.maximum ;
+
+        let part = ctrl[color].size.height / 2.0 ;
+        let left = ctrl[color].position.x ;
+        let top = ctrl[color].position.y + ctrl[color].size.height / 2.0 ;
+
+        let pos1 = this.fieldToCanvasPt(new XeroPoint(left, top)) ;
+        let size = this.fieldToCanvasSize(new XeroSize(ctrl[color].size.width, part)) ;
+        this.doRect(this.ctx_, pos1, size, 'green', 2.0) ;
+        this.doCross(this.ctx_, pos1, size, 'green', 2.0, 10.0) ;
+        if (!this.containsMouseRegion(ctrl.tag, 1)) {
+            this.mouseClickRegisterRegion(pos1, size, ctrl.tag, 1, this.upDownPlusClicked.bind(this)) ;
+        }
+
+        let pos3 = this.fieldToCanvasPt(new XeroPoint(left, top - part)) ;
+        this.doRect(this.ctx_, pos3, size, 'red', 2.0) ;
+        this.doDash(this.ctx_, pos3, size, 'red', 2.0, 10.0) ;
+        if (!this.containsMouseRegion(ctrl.tag, 2)) {
+            this.mouseClickRegisterRegion(pos3, size, ctrl.tag, 2, this.upDownMinusClicked.bind(this)) ;
+        }
+
+        let tpos = new XeroPoint(ctrl[color].number.position.x, ctrl[color].number.position.y) ;
+        let tsize = new XeroSize(ctrl[color].number.size.width, ctrl[color].number.size.height) ;
+        let font = ctrl[color].number.font ;
+
+        tpos = this.fieldToCanvasPt(tpos) ;
+        tsize = this.fieldToCanvasSize(tsize) ;
+
+        this.doText(this.ctx_, tpos, tsize, value.value.toString(), font) ;
+    }
+
+    drawUpDownControlOne(ctrl, color) {
         let value = this.getValue(ctrl.tag) ;
         if (!value) {
             value = this.setValue(ctrl.tag, ctrl.type, ctrl.minimum) ;
@@ -313,7 +356,6 @@ class XeroImageSection extends XeroBaseSection {
         let size2 = this.fieldToCanvasSize(new XeroSize(ctrl[color].size.width, part - 2/12));
         this.doRect(this.ctx_, pos2, size2, 'black', 4.0) ;
         this.doText(this.ctx_, pos2, size2, value.value.toString()) ;
-
     }
 
     drawBooleanControl(ctrl, color) {
@@ -371,7 +413,12 @@ class XeroImageSection extends XeroBaseSection {
             this.drawBooleanControl(ctrl, color) ;
         }
         else if (ctrl.type === 'updown') {
-            this.drawUpDownControl(ctrl, color) ;
+            if (ctrl[color].number) {
+                this.drawUpDownControlTwo(ctrl, color) ;
+            }
+            else {
+                this.drawUpDownControlOne(ctrl, color) ;
+            }
         }
     }
 
