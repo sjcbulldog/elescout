@@ -1,18 +1,37 @@
+.zebra-top {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
 
-#zebra_match_layout {
-    background-color: aqua;
-    display:flex; 
+.zebra-controls {
+    width: 100%;
+    display: flex;
     flex-direction: col;
 }
 
-#zebra_match_selector_div {
-    background-color: chartreuse;
+.zebra-controls-div {
+    width: 100%;
+    display: flex;
+    flex-direction: row;    
 }
 
-#zebra_match_selector {
-    background-color: chocolate;
+.zebra-canvas {
+    flex-grow: 1;
 }
 
-#zebra_match_canvas {
-    background-color: blueviolet;
+.zebra-radio-label {
+    margin-left: 10px ;
+    margin-right: 10px ;
+}
+
+.zebra-selector-detail {
+    margin-left: 10px ;
+    margin-right: 10px ;
+    background-color: lightblue;
+}
+
+.zebra-range {
+    background-color: gray;
 }

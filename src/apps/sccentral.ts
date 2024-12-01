@@ -71,7 +71,7 @@ export class SCCentral extends SCBase {
 	private static readonly viewPreviewForm: string = "view-preview-form";
 	private static readonly viewHelp: string = "view-help";
 	private static readonly viewAbout: string = "view-about";
-	private static readonly viewZebraMatch: string = "view-zebra-match";
+	private static readonly viewZebraData: string = "view-zebra-data";
 	private static readonly viewZebraTeam: string = "view-zebra-team";
 	private static readonly viewTeamGraph: string = "view-team-graph";
 
@@ -1170,13 +1170,8 @@ export class SCCentral extends SCBase {
 			if (this.project_.info.zebra_tag_data_) {
 				treedata.push({
 					type: "item",
-					command: SCCentral.viewZebraMatch,
-					title: "Zebra Match",
-				});
-				treedata.push({
-					type: "item",
-					command: SCCentral.viewZebraTeam,
-					title: "Zebra Team",
+					command: SCCentral.viewZebraData,
+					title: "Zebra Data",
 				});
 			}
 		}
@@ -1224,6 +1219,13 @@ export class SCCentral extends SCBase {
 					this.sendNavData();
 					this.sendToRenderer('set-status-text', 'Locking event ... done') ;
 					this.sendToRenderer("set-status-close-button-visible", true);
+				})
+				.catch((err) => {
+					let errobj = err as Error ;
+					this.setView("info");
+					this.sendNavData();
+					this.sendToRenderer('set-status-text', 'Error: ' + errobj.message) ;
+					this.sendToRenderer("set-status-close-button-visible", true);					
 				}) ;
 		} else if (cmd === SCCentral.editTeams) {
 			this.setView("edit-teams");
@@ -1263,8 +1265,8 @@ export class SCCentral extends SCBase {
 			this.setView("teamdb");
 		} else if (cmd === SCCentral.viewTeamGraph) {
 			this.setView("teamgraph");
-		} else if (cmd === SCCentral.viewZebraMatch) {
-			this.setView("zebramatchview");
+		} else if (cmd === SCCentral.viewZebraData) {
+			this.setView("zebraview");
 		} else if (cmd === SCCentral.viewZebraTeam) {
 			this.setView("zebrateamview");
 		}
@@ -2183,37 +2185,6 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	public getZebraMatchList() {
-		if (this.project_?.info.zebra_tag_data_) {
-			let mlist = [];
-			for (let one of this.project_.info.zebra_tag_data_) {
-				if (one !== null) {
-					let match = this.project_.findMatchByKey(one.key);
-					if (match) {
-						let seldata = {
-							key: one.key,
-							comp_level: match.comp_level,
-							set_number: match.set_number,
-							match_number: match.match_number,
-							red: [
-								this.keyToTeamNumber(one.alliances.red[0].team_key),
-								this.keyToTeamNumber(one.alliances.red[1].team_key),
-								this.keyToTeamNumber(one.alliances.red[2].team_key),
-							],
-							blue: [
-								this.keyToTeamNumber(one.alliances.blue[0].team_key),
-								this.keyToTeamNumber(one.alliances.blue[1].team_key),
-								this.keyToTeamNumber(one.alliances.blue[2].team_key),
-							],
-						};
-						mlist.push(seldata);
-					}
-				}
-			}
-			this.sendToRenderer("send-zebra-match-list", mlist);
-		}
-	}
-
 	public generateRandomData() {
 		if (this.project_) {
 			this.project_!.generateRandomData();
@@ -2229,8 +2200,17 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	public getZebraMatchData(key: string) {
-	
+	public sendZebraData() {
+		let imname = this.searchForImage('field2024') ;
+		if (imname) {
+			let desc = this.getImageFromJson('field2024', imname) ;
+			let obj = {
+				images: [desc],
+				data: this.project_?.info.zebra_tag_data_
+			};
+
+			this.sendToRenderer('send-zebra-data', obj) ;
+		}
 	}
 
 	public getTeamList() {
@@ -2247,15 +2227,17 @@ export class SCCentral extends SCBase {
 		let balist = ['ba_opr', 'ba_dpr'] ;
 
 		let cols = await this.project_?.teamDB.getColumnNames(TeamDataModel.TeamTableName) ;
-		let formcols = this.project_!.getFormFields(this.project_?.info.teamform_!) ;
+		let formcols = this.project_!.getFormItemNames(this.project_?.info.teamform_!) ;
 
 		if (!cols) {
 			cols = [] ;
 		}
 
-		for(let col of formcols) {
-			if (!cols!.includes(col)) {
-				cols.push(col) ;
+		if (!(formcols instanceof Error)) {
+			for(let col of formcols) {
+				if (!cols!.includes(col.name)) {
+					cols.push(col.name) ;
+				}
 			}
 		}
 
@@ -2270,17 +2252,18 @@ export class SCCentral extends SCBase {
 
 	public async getMatchFieldList() {
 		let cols = await this.project_?.matchDB.getColumnNames(MatchDataModel.MatchTableName) ;
-		let formcols = this.project_!.getFormFields(this.project_?.info.matchform_!) ;
+		let formcols = this.project_!.getFormItemNames(this.project_?.info.matchform_!) ;
 
 		if (!cols) {
 			cols = [] ;
 		}
 
-		for(let col of formcols) {
-			if (!cols!.includes(col)) {
-				cols.push(col) ;
-			}
-		}
+		if (!(formcols instanceof Error)) {
+			for(let col of formcols) {
+				if (!cols!.includes(col.name)) {
+					cols.push(col.name) ;
+				}
+			}}
 		this.sendToRenderer('send-match-field-list', cols) ;
 	}
 
@@ -2323,11 +2306,17 @@ export class SCCentral extends SCBase {
 	//
 	public async sendTeamGraphData(request: GraphDataRequest) {
 		if (this.project_) {
-			let labels: string[] = [];
+			let labels: any[] = [];
 			let datasets: any[] = [];
 
 			for (let team of request.teams) {
-				labels.push(team.toString());
+				let t = this.project_.findTeamByNumber(team) ;
+				if (t) {
+					labels.push([team.toString(), t.nickname]) ;
+				}
+				else {
+					labels.push(team.toString()) ;
+				}
 			}
 
 			for (let tdset of request.data.leftteam) {
@@ -2518,7 +2507,7 @@ export class SCCentral extends SCBase {
 						}
 					}
 					else {
-						resolve('No Data') ;
+						resolve(null) ;
 					}
 				})
 				.catch((err) => {
@@ -2566,5 +2555,9 @@ export class SCCentral extends SCBase {
 
 	public updatePicklistColumns(cols: string[]) {
 		this.project_!.setPicklistCols(cols);
+	}
+
+	public updatePicklistData(data: number[]) {
+		this.project_!.setPicklistData(data) ;
 	}
 }

@@ -70,6 +70,7 @@ class StatusView extends TabulatorView {
                 resizableColumnFit: true,
                 columns: this.createColDesc(),
                 movableColumns: true,
+                initialSort: this.getInitialSort(),
             });
 
         this.top_.append(this.table_top_div_) ;
@@ -79,6 +80,12 @@ class StatusView extends TabulatorView {
 class TeamStatusView extends StatusView {
     constructor(div, viewtype) {
         super(div, viewtype, 'team', false);
+    }
+    
+    getInitialSort() {
+        return [
+            {column:"team_number", dir:"asc"}, //then sort by this second
+        ]
     }
 
     createColDesc() {
@@ -112,6 +119,12 @@ class TeamStatusView extends StatusView {
 class MatchStatusView extends StatusView {
     constructor(div, viewtype) {
         super(div, viewtype, 'match', false)
+    }
+
+    getInitialSort() {
+        return [
+            {column:"comp_level", dir:"asc"}, //then sort by this second
+        ]
     }
 
     createColDesc() {

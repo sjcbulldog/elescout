@@ -6,6 +6,20 @@ export class DataGenerator
     private formpath_ : string ;
     private items_ : any[] = [] ;
 
+    private static randomStrings = [
+        'error code xero',
+        'grond',
+        'data',
+        'robot',
+        'swimmy',
+        'allegro',
+        'wilsonville',
+        'hotwire',
+        'tbd',
+        'jesuit',
+        'flaming chickens'
+    ] ;
+
     constructor(formpath: string) {
         this.formpath_ = formpath;
     }
@@ -42,23 +56,13 @@ export class DataGenerator
         return Math.floor(Math.random() * max);
     }
 
+
     private generateItemValue(item: any) : any {
         let value = undefined ;
 
         if (item.type === 'text') {
-            let minlen = 8 ;
-            let maxlen = 32 ;
-
-            if (item.maxlen) {
-                maxlen = item.maxlen ;
-            }
-
-            let len = this.getRandomInt(maxlen - minlen) + minlen ;
-            value = '' ;
-            for(let i = 0 ; i < len; i++) {
-                let ch = this.getRandomInt(26) + 65 ;
-                value += String.fromCharCode(ch);
-            }
+            let index = this.getRandomInt(DataGenerator.randomStrings.length) ;
+            value = DataGenerator.randomStrings[index] ;
         }
         else if (item.type === 'choice') {
             let i = this.getRandomInt(item.choices.length) ;

@@ -14,7 +14,7 @@ const viewMap = new Map([
   ['teamdb', TeamDBView],
   ['matchdb', MatchDBView],
   ['teamgraph', TeamGraphView],
-  ['zebramatchview', ZebraMatchView],
+  ['zebraview', ZebraView],
   ['picklist', PickListView],
 ]) ;
 

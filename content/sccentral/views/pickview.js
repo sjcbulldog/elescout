@@ -36,6 +36,7 @@ class PickListView extends TabulatorView {
             });
     
         this.table_.on("rowMoved", this.teamMoved.bind(this));
+        this.table_.on("columnMoved", this.colMoved.bind(this)) ;
         this.top_.append(this.table_div_) ;
     }
 
@@ -54,13 +55,47 @@ class PickListView extends TabulatorView {
         }
     }
 
+    isNumeric(data) {
+        if (typeof data === 'number')
+            return true ;
+
+        if (typeof str !== 'string')
+            return false;
+
+        return !isNaN(parseFloat(data)) ;
+      }
+
     receivePicklistColData(args) {
         let dobj = args[0];
 
+        console.log(dobj.field) ;
+
+        let num = true ;
         for(let i = 0 ; i < dobj.teams.length ; i++) {
-            let team = dobj.teams[i] ;
-            let value = dobj.data[i] ;
-            this.setValue(dobj.field, team, value) ;
+            if (dobj.data[i] != null && !this.isNumeric(dobj.data[i])) {
+                num = false ;
+                break ;
+            }
+        }        
+
+        if (num) {
+            for(let i = 0 ; i < dobj.teams.length ; i++) {
+                let team = dobj.teams[i] ;
+                let value ;
+                if (dobj.data[i] === null) {
+                    value = 'N/A' ;
+                } else {
+                    value = dobj.data[i].toFixed(3) ;
+                }
+                this.setValue(dobj.field, team, value) ;
+            }
+        }
+        else {
+            for(let i = 0 ; i < dobj.teams.length ; i++) {
+                let team = dobj.teams[i] ;
+                let value = dobj.data[i] ;
+                this.setValue(dobj.field, team, value) ;
+            }            
         }
     }
 
@@ -78,12 +113,32 @@ class PickListView extends TabulatorView {
         this.match_fields_ = args[0] ;
     }
 
+    colMoved() {
+        this.cols_ = [] ;
+        for(let col of this.table_.getColumns()) {
+            let fld = col.getField() ;
+            if (fld !== 'rank' && fld != 'nickname' && fld != 'teamnumber') {
+                this.cols_.push(col.getField())
+            }
+        }
+
+        window.scoutingAPI.send('update-picklist-columns', this.cols_) ;
+    }
+
     teamMoved() {
         let rank = 1 ;
         for(let row of this.table_.getRows()) {
             let cell = row.getCell('rank') ;
             cell.setValue(rank++, false) ;
         }
+
+        let teams = [] ;
+        for(let row of this.table_.getRows()) {
+            let cell = row.getCell('teamnumber') ;
+            teams.push(cell.getData().teamnumber) ;
+        }
+
+        window.scoutingAPI.send('update-picklist-data', teams) ;
     }
 
     getColumnFromId(id) {
@@ -102,7 +157,6 @@ class PickListView extends TabulatorView {
         this.table_.addColumn({
             field: field,
             title: field,
-            headerSort: false,
         });
         window.scoutingAPI.send('get-picklist-col-data', field) ;
     }

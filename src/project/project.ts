@@ -17,6 +17,7 @@ import { BAEvent, BAMatch, BATeam } from '../extnet/badata';
 import { StatBotics } from '../extnet/statbotics';
 import { DataGenerator } from './datagen';
 import { deleteStoredGraph } from '../ipchandlers';
+import { FieldAndType } from '../model/datamodel';
 
 export interface ProjectOneColCfg {
     name: string,
@@ -107,9 +108,47 @@ export class Project {
 
         filename = path.join(dir, 'team.db') ;
         this.teamdb_ = new TeamDataModel(filename, logger) ;
+        this.teamdb_.on('column-added', this.teamColumnAdded.bind(this)) ;
 
         filename = path.join(dir, 'match.db') ;
         this.matchdb_ = new MatchDataModel(filename, logger) ;
+        this.matchdb_.on('column-added', this.matchColumnAdded.bind(this));
+    }
+
+    private teamColumnAdded(colname: string) {
+        this.logger_.silly('added new column \'' + colname + '\' to team database') ;
+
+        if (!this.info_.teamdb_col_config_) {
+            this.info_.teamdb_col_config_ = {
+                frozenColumnCount: 0,
+                columns:[]
+            };
+        }
+        
+        let colcfg = {
+            name: colname,
+            width: -1,
+            hidden: false
+        } ;
+        this.info_.teamdb_col_config_?.columns.push(colcfg) ;
+    }
+
+    private matchColumnAdded(colname: string) {
+        this.logger_.silly('added new column \'' + colname + '\' to match database') ;
+
+        if (!this.info_.matchdb_col_config_) {
+            this.info_.matchdb_col_config_ = {
+                frozenColumnCount: 0,
+                columns:[]
+            };
+        }
+
+        let colcfg = {
+            name: colname,
+            width: -1,
+            hidden: false
+        } ;
+        this.info_.matchdb_col_config_?.columns.push(colcfg) ;
     }
 
     public init() : Promise<void> {
@@ -254,16 +293,99 @@ export class Project {
                 }
 
                 if (this.generateTabletSchedule()) {
-                    this.info_.locked_ = true ;
-                    this.info_.uuid_ = uuid.v4() ;
-                    this.writeEventFile() ;
+                    this.populateDBWithForms()
+                        .then(()=> {
+                            this.info_.locked_ = true ;
+                            this.info_.uuid_ = uuid.v4() ;
+                            this.writeEventFile() ;
+                            resolve() ;
+                        })
+                        .catch((err) => {
+                            this.info_.teamassignments_ = undefined ;
+                            this.info_.matchassignements_ = undefined ;                            
+                            reject(err) ;
+                        }) ;
                 }
                 else {
                     this.info_.teamassignments_ = undefined ;
                     this.info_.matchassignements_ = undefined ;
+                    reject(new Error('could not generate tablet schedule for scouting')) ;
                 }
-                resolve() ;
             }
+        }) ;
+
+        return ret;
+    }
+
+    private xlateType(type: string) {
+        let ret = 'text' ;
+
+        switch(type) {
+            case 'boolean':
+                ret = 'INTEGER';
+                break;
+
+            case 'text':
+            case 'choice':
+                ret = 'TEXT' ;
+                break ;
+
+            case 'updown':
+                ret = 'REAL';
+                break; 
+
+            default:
+                ret = 'TEXT' ;
+                break ;
+        }
+
+        return ret ;
+    }
+
+    private xlate(fields: FieldAndType[]) {
+        let ret: FieldAndType[] = [] ;
+
+        for(let one of fields) {
+            let obj = {
+                name: one.name,
+                type: this.xlateType(one.type),
+            };
+            ret.push(obj) ;
+        }
+
+        return ret;
+    }
+
+    private populateDBWithForms() : Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
+            if (!this.info.teamform_) {
+                reject(new Error('Internal Error - team form is not set while locking event')) ;
+            }
+
+            if (!this.info.matchform_) {
+                reject(new Error('Internal Error - match form is not set while locking event')) ;
+            }
+
+            let tcols = this.getFormItemNames(this.info.teamform_!) ;
+            if (tcols instanceof Error) {
+                reject(tcols) ;
+            }
+
+            let mcols = this.getFormItemNames(this.info.matchform_!) ;
+            if (mcols instanceof Error) {
+                reject(mcols) ;
+            }
+
+            this.teamDB.createColumns(TeamDataModel.TeamTableName, this.xlate(tcols as FieldAndType[]))
+                .then(() => {
+                    this.matchDB.createColumns(MatchDataModel.MatchTableName, this.xlate(mcols as FieldAndType[]))
+                    .then(() => {
+                        resolve() ;
+                    }) ;
+                })
+            .catch((err) => {
+                reject(err) ;
+            })
         }) ;
 
         return ret;
@@ -329,6 +451,13 @@ export class Project {
             if (file !== Project.event_file_name) {
                 let err = new Error("the file selected was not an event file, name should be '" + Project.event_file_name + "'") ;
                 reject(err) ;
+                return ;
+            }
+
+            if (!fs.existsSync(filepath)) {
+                let err = new Error('the file selected does not exist') ;
+                reject(err) ;
+                return ;
             }
 
             let proj: Project = new Project(logger, loc, year) ;
@@ -457,24 +586,6 @@ export class Project {
 
         this.writeEventFile() ;
     }
-
-    public getFormFields(form: string) : string[] {
-        let ret: string[] = [] ;
-        let jsonstr = fs.readFileSync(form).toString();
-        try {
-          let jsonobj = JSON.parse(jsonstr);
-          for(let sect of jsonobj.sections) {
-            for(let item of sect.items) {
-                ret.push(item.tag) ;                
-            }
-          }
-
-        } catch (err) {
-        }        
-
-        return ret ;
-    }
-
 
     public hasTeamScoutingResults(team: number) : boolean {
         return this.info_.scouted_team_.includes(team) ;
@@ -617,6 +728,11 @@ export class Project {
         this.writeEventFile() ;
     }
 
+    public setPicklistData(teams: number[]) {
+        this.info.picklist_ = teams ;
+        this.writeEventFile() ;
+    }
+
     private readEventFile() : Error | undefined {
         let ret : Error | undefined = undefined ;
 
@@ -718,6 +834,30 @@ export class Project {
         this.writeEventFile() ;
     }
 
+	public getFormItemNames(filename: string) : FieldAndType[] | Error {
+		let ret: FieldAndType[] = [] ;
+
+		try {
+			let jsonstr = fs.readFileSync(filename).toString();
+			let jsonobj = JSON.parse(jsonstr);
+			for(let section of jsonobj.sections) {
+				for(let item of section.items) {
+                    let obj = {
+                        name: item.tag,
+                        type: item.type
+                    } ;
+					ret.push(obj) ;
+				}
+			}
+		}
+		catch(err) {
+			return err as Error ;
+		}
+
+		return ret ;
+	}
+
+
     //#region loading data from external sources
 
     public async loadMatchData(key: string, ba: BlueAlliance, results: boolean, callback?: (result: string) => void) : Promise<void> {
@@ -763,23 +903,23 @@ export class Project {
         let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
             try {
                 if (callback) {
-                    callback('Requesting match schedule from \'The Blue Alliance\' ... ') ;
+                    callback('Requesting OPR/DPR/CCWMS data from \'The Blue Alliance\' ... ') ;
                 }
                 let opr = await ba.getOPR(key) ;
 
                 if (Object.keys(opr.oprs).length === 0) {
                     if (callback) {
-                        callback('No OPR data received, try again later<br>') ;
+                        callback('No data received, try again later<br>') ;
                     }
                 }
                 else {
                     if (callback) {
-                        callback('received OPR, DPR, and CCWMS data.<br>') ;
+                        callback('Received OPR, DPR, and CCWMS data.<br>') ;
                         callback('Inserting data into XeroScout2 database ... ');
                     }
                     await this.teamDB.processOPR(opr) ;
                     if (callback) {
-                        callback('inserted OPR/DPR/CCWMS data into database.<br>') ;
+                        callback('Inserted OPR/DPR/CCWMS data into database.<br>') ;
                     }
                 }
                 resolve() ;
@@ -792,12 +932,27 @@ export class Project {
         return ret ;
     }
 
+    private fixupZebraTagData(zebra: any[]) {
+        for(let match of zebra) {
+            if (match) {
+                let m = this.findMatchByKey(match.key) ;
+                if (m) {
+                    match.comp_level = m.comp_level ;
+                    match.match_number = m.match_number ;
+                    match.set_number = m.set_number ;
+                }
+            }
+        }
+
+        return zebra ;
+    }
+
     public loadZebraTagData(ba: BlueAlliance, callback?: (result: string) => void) : Promise<[number, number]> {
         let ret: Promise<[number,number]> = new Promise<[number,number]>(async (resolve, reject) => {
             try {
                 let matches = this.info_!.matches_!.map((v)=> { return v.key}) ;
                 let zebra = await ba.getZebraTagData(matches) ;
-                this.info_.zebra_tag_data_ = zebra ;
+                this.info_.zebra_tag_data_ = this.fixupZebraTagData(zebra) ; ;
                 this.writeEventFile() ;
 
                 let count = 0 ;
@@ -820,7 +975,7 @@ export class Project {
         let ret: Promise<void> = new Promise<void>(async (resolve, reject) => {
             try {
                 if (callback) {
-                    callback('Requesting match schedule from \'The Blue Alliance\' ... ') ;
+                    callback('Requesting ranking data from \'The Blue Alliance\' ... ') ;
                 }
                 let rankings = await ba.getRankings(key) ;
 
@@ -831,12 +986,12 @@ export class Project {
                 }
                 else {
                     if (callback) {
-                        callback('received OPR, DPR, and CCWMS data.<br>') ;
+                        callback('received ranking data.<br>') ;
                         callback('Inserting data into XeroScout2 database ... ');
                     }
                     await this.teamDB.processRankings(rankings.rankings) ;
                     if (callback) {
-                        callback('inserted OPR/DPR/CCWMS data into database.<br>') ;
+                        callback('inserted ranking data into database.<br>') ;
                     }
                 }
                 resolve() ;

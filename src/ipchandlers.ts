@@ -201,19 +201,11 @@ export async function getMatchStatus(cmd: string, ...args: any[]) {
     } 
 }
 
-export async function getZebraMatchList(cmd: string, ...args: any[]) {
+export async function getZebraData(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
-        central.getZebraMatchList() ;
-    } 
-}
-
-export async function getZebraMatchData(cmd: string, ...args: any[]) {
-    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
-        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
-        let central : SCCentral = scappbase as SCCentral ;
-        central.getZebraMatchData(args[0]) ;
+        central.sendZebraData() ;
     } 
 }
 
@@ -302,6 +294,14 @@ export async function updatePicklistColumns(cmd: string, ...args: any[]) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
         central.updatePicklistColumns(args[0]) ;
+    } 
+}
+
+export async function updatePicklistData(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.updatePicklistData(args[0]) ;
     } 
 }
 

@@ -14,8 +14,6 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          sendMatchColConfig,
          sendTeamColConfig,
          getTeamGraphData,
-         getZebraMatchList,
-         getZebraMatchData,
          generateRandomData,
          getTeamList,
          getTeamFieldList,
@@ -30,7 +28,9 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          getPicklistColumns,
          getPicklistColData,
          getPreferences,
-         updatePreferences} from "./ipchandlers" ;
+         updatePreferences,
+         getZebraData,
+         updatePicklistData} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -109,8 +109,7 @@ app.on("ready", () => {
     ipcMain.on('send-match-col-config', (event, ...args) => { sendMatchColConfig('send-match-col-config', ...args)}) ;
     ipcMain.on('send-team-col-config', (event, ...args) => { sendTeamColConfig('send-team-col-config', ...args)}) ;
     ipcMain.on('get-team-graph-data', (event, ...args) => { getTeamGraphData('get-team-graph-data', ...args)}) ;
-    ipcMain.on('get-zebra-match-list', (event, ...args) => { getZebraMatchList('get-zebra-match-list', ...args)}) ;
-    ipcMain.on('get-zebra-match-data', (event, ...args) => { getZebraMatchData('get-zebra-match-data', ...args)}) ;
+    ipcMain.on('get-zebra-data', (event, ...args) => { getZebraData('get-zebra-data', ...args)}) ;
     ipcMain.on('get-team-list', (event, ...args) => { getTeamList('get-team-list', ...args)}) ;
     ipcMain.on('get-team-field-list', (event, ...args) => { getTeamFieldList('get-team-field-list', ...args)}) ;
     ipcMain.on('get-match-field-list', (event, ...args) => { getMatchFieldList('get-match-field-list', ...args)}) ;
@@ -120,6 +119,7 @@ app.on("ready", () => {
     ipcMain.on('delete-stored-graph', (event, ...args) => { deleteStoredGraph('delete-stored-graph', ...args)}) ;
     ipcMain.on('get-picklist-data', (event, ...args) => { getPicklistData('get-picklist-data', ...args)}) ;
     ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('update-picklist-columns', ...args)}) ;
+    ipcMain.on('update-picklist-data', (event, ...args) => { updatePicklistData('update-picklist-data', ...args)}) ;
     ipcMain.on('get-picklist-columns', (event, ...args) => { getPicklistColumns('get-picklist-columns', ...args)}) ;
     ipcMain.on('get-picklist-col-data', (event, ...args) => { getPicklistColData('get-picklist-col-data', ...args)}) ;
     ipcMain.on('get-preferences', (event, ...args) => { getPreferences('get-preferences', ...args)}) ;

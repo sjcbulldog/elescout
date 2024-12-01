@@ -40,6 +40,10 @@ export class TeamDataModel extends DataModel {
         return ret;
     }
 
+    protected initialTableColumns() : string[] {
+        return ['team_number'] ;
+    }
+
     protected createTableQuery() : string {
         let ret = 'create table ' + TeamDataModel.TeamTableName + ' (' ;
         ret += 'key TEXT';

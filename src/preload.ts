@@ -15,8 +15,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
   //
   send: (channel: string, data: any) => {
       let validChannels = [
-        'get-zebra-match-list',
-        'get-zebra-match-data',
+        'get-zebra-data',
         'get-nav-data', 
         'get-info-data',
         'generate-random-data',
@@ -52,7 +51,8 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-picklist-col-data',
         'get-preferences',
         'update-preferences',
-        'update-picklist-columns'
+        'update-picklist-columns',
+        'update-picklist-data',
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.send(channel, data);
@@ -64,8 +64,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
   //
   receive: (channel: string, func:any) => {
       let validChannels = [
-        'send-zebra-match-list',
-        'send-zebra-match-data',
+        'send-zebra-data',
         'update-main-window-view',
         'event-name',
         'send-nav-data', 

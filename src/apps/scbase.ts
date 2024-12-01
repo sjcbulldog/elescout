@@ -248,7 +248,7 @@ export abstract class SCBase {
     return ret;
   }
 
-  private searchForImage(jsonname: string) : string | undefined {
+  protected searchForImage(jsonname: string) : string | undefined {
     if (process.env.XEROIMAGEPATH) {
       let impath = process.env.XEROIMAGEPATH ;
       let elems = impath.split(';') ;
@@ -268,45 +268,32 @@ export abstract class SCBase {
     return undefined ;
   }
 
-  private getImageFromJson(form: FormInfo, name: string, jsonfile: string) : boolean {
-    let ret = true ;
+  protected getImageFromJson(name: string, jsonfile: string) : FormImage | undefined {
+    let ret: FormImage | undefined ;
 
     try {
       let str = fs.readFileSync(jsonfile) ;
       let desc = JSON.parse(str.toString()) ;
       let datafile = path.join(path.dirname(jsonfile), desc['field-image']) ;
 
-      if (!fs.existsSync(datafile)) {
-        form.form = undefined ;
-        form.message = 'Image file \'' + datafile + '\' specified by the JSON file \'' + jsonfile + '\' does not exist' ;
-        ret = false;
+      if (fs.existsSync(datafile)) {
+        let data: string  = fs.readFileSync(datafile).toString('base64');
+
+        ret = {
+          name: name,
+          data: data,
+          topleft : { x: desc['field-corners']['top-left'][0], y: desc['field-corners']['top-left'][1] },
+          bottomright: { x: desc['field-corners']['bottom-right'][0], y: desc['field-corners']['bottom-right'][1] },
+          fieldsize: { width: desc['field-size'][0], height: desc['field-size'][1] },
+          units: desc['field-unit']
+        }
       }
-
-      let data: string  = fs.readFileSync(datafile).toString('base64');
-
-      let imgdesc : FormImage = {
-        name: name,
-        data: data,
-        topleft : { x: desc['field-corners']['top-left'][0], y: desc['field-corners']['top-left'][1] },
-        bottomright: { x: desc['field-corners']['bottom-right'][0], y: desc['field-corners']['bottom-right'][1] },
-        fieldsize: { width: desc['field-size'][0], height: desc['field-size'][1] },
-        units: desc['field-unit']
-      }
-
-      if (!form.form!.images) {
-        form.form!.images = [] ;
-      }
-      form.form?.images.push(imgdesc) ;
-
     }
     catch(err) {
       let errobj = err as Error ;
-      form.form = undefined ;
-      form.message = 'Error reading image JSON file \'' + jsonfile + '\'- ' + errobj.message ;
-      ret = false;
     }
 
-    return ret ;
+    return ret;
   }
 
   protected getImages(form: FormInfo) {
@@ -318,8 +305,12 @@ export abstract class SCBase {
           form.form = undefined ;
         }
         else {
-          if (!this.getImageFromJson(form, section.image, imgjson)) {
-            return ;
+          let imgdesc = this.getImageFromJson(section.image, imgjson);
+          if (imgdesc) {
+            if (!form.form!.images) {
+              form.form!.images = [] ;
+            }
+            form.form?.images.push(imgdesc) ;
           }
         }
       }

@@ -2,6 +2,7 @@ import * as sqlite3 from 'sqlite3' ;
 import * as fs from 'fs' ;
 import winston from 'winston';
 import { format } from '@fast-csv/format';
+import { EventEmitter } from 'events';
 
 export type ValueType = string | number | boolean | null ;
 
@@ -41,7 +42,7 @@ export class DataRecord {
     }
 }
 
-export abstract class DataModel {
+export abstract class DataModel extends EventEmitter {
     private static readonly ColummTableName: string = 'cols' ;
     private static queryno_ : number = 0 ;
 
@@ -50,6 +51,7 @@ export abstract class DataModel {
     private logger_ : winston.Logger ;
 
     constructor(dbname: string, logger: winston.Logger) {
+        super() ;
         this.dbname_ = dbname ;
         this.logger_ = logger ;
     }
@@ -588,15 +590,22 @@ export abstract class DataModel {
             Promise.all(allpromises)
                 .then(() => {
                     this.logger_.debug('finished all createColumns promises') ;
+                    for(let col of toadd) {
+                        this.emit('column-added', col.name) ;
+                    }
                     resolve();
                 })
-                .catch((err) => reject(err)) ;
+                .catch((err) => {
+                    this.logger_.error('error creating columns in table', err) ;
+                    reject(err)
+                }) ;
         }) ;
 
         return ret ;
     }
 
     protected abstract createTableQuery() : string ;
+    protected abstract initialTableColumns() : string[] ;
 
     protected createTableIfNecessary(table: string) : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
@@ -608,6 +617,9 @@ export abstract class DataModel {
                         //
                         this.runQuery(this.createTableQuery())
                             .then((result: sqlite3.RunResult) => {
+                                for(let col of this.initialTableColumns()) {
+                                    this.emit('column-added', col) ;
+                                }
                                 resolve() ;
                             })
                             .catch((err) => {

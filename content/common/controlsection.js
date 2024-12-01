@@ -121,7 +121,7 @@ class XeroControlSection extends XeroBaseSection {
         return div ;
     }
     
-    incrUpDown(item) {
+    incrUpDown(item, ev) {
         let numstr = item.textContent ;
         let num = parseInt(numstr) ;
         if (num < item.maximumValue) {
@@ -131,7 +131,7 @@ class XeroControlSection extends XeroBaseSection {
         item.xerovalue = num ;
     }
     
-    decrUpDown(item) {
+    decrUpDown(item, ev) {
         let numstr = item.textContent ;
         let num = parseInt(numstr) ;
         if (num > item.minimumValue) {
@@ -160,12 +160,12 @@ class XeroControlSection extends XeroBaseSection {
         let plus = document.createElement('button') ;
         plus.className = 'form-item-updown-button' ;
         plus.textContent = '+' ;
-        plus.onclick = () => { incrUpDown(count) } ;
+        plus.onclick = this.incrUpDown.bind(this, count) ;
     
         let minus = document.createElement('button') ;
         minus.className = 'form-item-updown-button' ;
         minus.textContent = '-' ;
-        minus.onclick = () => { decrUpDown(count) } ;
+        minus.onclick = this.decrUpDown.bind(this, count) ;
     
         div.append(label) ;
         div.append(minus) ;

@@ -1,90 +1,4 @@
 
-class GraphDataSelector {
-  constructor(title) {
-    let detail = document.createElement('details');
-    detail.className = 'team-graph-details';
-
-    let summary = document.createElement('summary');
-    summary.innerText = title;
-    detail.append(summary);
-
-    let fieldset = document.createElement('fieldset');
-    detail.append(fieldset);
-
-    let legend = document.createElement('legend');
-    legend.innerText = title;
-    fieldset.append(legend);
-
-    let list = document.createElement('ul');
-    fieldset.append(list);
-
-    this.detail = detail;
-    this.summary = summary;
-    this.fieldset = fieldset;
-    this.list = list;
-  }
-
-  clear(elem) {
-    while (elem.firstChild) {
-      elem.removeChild(elem.firstChild);
-    }
-  }
-
-  getSelectorItems() {
-    let data = [];
-    for (let item of this.items) {
-      if (item.checked) {
-        data.push(item.xerodata);
-      }
-    }
-
-    return data;
-  }
-
-  addDataToSelectors(list, cb) {
-    this.items = [];
-    this.clear(this.list);
-
-    for (let item of list) {
-      let li = document.createElement('li');
-      let label = document.createElement('label');
-      label.for = item;
-      label.innerText = item;
-      li.append(label);
-
-      let check = document.createElement('input');
-      check.type = 'checkbox';
-      check.xerodata = item;
-      check.onchange = cb;
-      this.items.push(check);
-      label.append(check);
-
-      this.list.append(li);
-    }
-  }
-
-  clearAllSelected() {
-    for (let item of this.items) {
-      item.checked = false;
-    }
-  }
-
-  checkItem(data) {
-    for (let item of this.items) {
-      if (item.xerodata === data) {
-        item.checked = true;
-      }
-    }
-  }
-
-  selectItems(list) {
-    this.clearAllSelected();
-    for (let data of list) {
-      this.checkItem(data);
-    }
-  }
-}
-
 class GraphBaseView extends XeroView {
   constructor(div, viewtype) {
     super(div, viewtype);
@@ -161,19 +75,19 @@ class TeamGraphView extends GraphBaseView {
     this.select_div_two_.id = 'graph-team-select-two-div';
     this.select_div_.append(this.select_div_two_);
 
-    this.team_selector_ = new GraphDataSelector('Teams');
+    this.team_selector_ = new XeroSelector('Teams', false);
     this.select_div_one_.append(this.team_selector_.detail);
 
-    this.team_field_selector_left_ = new GraphDataSelector('Left Team Fields');
+    this.team_field_selector_left_ = new XeroSelector('Left Team Fields', false);
     this.select_div_one_.append(this.team_field_selector_left_.detail);
 
-    this.match_field_selector_left_ = new GraphDataSelector('Left Match Fields');
+    this.match_field_selector_left_ = new XeroSelector('Left Match Fields', false);
     this.select_div_one_.append(this.match_field_selector_left_.detail);
 
-    this.team_field_selector_right_ = new GraphDataSelector('Right Team Fields');
+    this.team_field_selector_right_ = new XeroSelector('Right Team Fields', false);
     this.select_div_one_.append(this.team_field_selector_right_.detail);
 
-    this.match_field_selector_right_ = new GraphDataSelector('Right Match Fields');
+    this.match_field_selector_right_ = new XeroSelector('Right Match Fields', false);
     this.select_div_one_.append(this.match_field_selector_right_.detail);
 
     this.select_match_label_ = document.createElement('label');
@@ -273,12 +187,12 @@ class TeamGraphView extends GraphBaseView {
   saveGraph() {
     let obj = {
       name: this.save_name_.value,
-      teams: this.team_selector_.getSelectorItems(),
+      teams: this.team_selector_.getSelectedItems(),
       data: {
-        leftteam: this.team_field_selector_left_.getSelectorItems(),
-        leftmatch: this.match_field_selector_left_.getSelectorItems(),
-        rightteam: this.team_field_selector_right_.getSelectorItems(),
-        rightmatch: this.match_field_selector_right_.getSelectorItems(),
+        leftteam: this.team_field_selector_left_.getSelectedItems(),
+        leftmatch: this.match_field_selector_left_.getSelectedItems(),
+        rightteam: this.team_field_selector_right_.getSelectedItems(),
+        rightmatch: this.match_field_selector_right_.getSelectedItems(),
       }
     };
 
@@ -313,12 +227,12 @@ class TeamGraphView extends GraphBaseView {
 
   somethingChanged() {
     let obj = {
-      teams: this.team_selector_.getSelectorItems(),
+      teams: this.team_selector_.getSelectedItems(),
       data: {
-        leftteam: this.team_field_selector_left_.getSelectorItems(this.team_field_selector_left_),
-        leftmatch: this.match_field_selector_left_.getSelectorItems(this.match_field_selector_left_),
-        rightteam: this.team_field_selector_right_.getSelectorItems(this.team_field_selector_right_),
-        rightmatch: this.match_field_selector_right_.getSelectorItems(this.match_field_selector_right_),
+        leftteam: this.team_field_selector_left_.getSelectedItems(this.team_field_selector_left_),
+        leftmatch: this.match_field_selector_left_.getSelectedItems(this.match_field_selector_left_),
+        rightteam: this.team_field_selector_right_.getSelectedItems(this.team_field_selector_right_),
+        rightmatch: this.match_field_selector_right_.getSelectedItems(this.match_field_selector_right_),
       }
     };
 

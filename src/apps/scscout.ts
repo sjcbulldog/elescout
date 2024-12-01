@@ -277,6 +277,7 @@ export class SCScout extends SCBase {
         this.logger_.silly('provideResults:' + this.current_scout_, res) ;
 
         if (this.want_cmd_) {
+            this.current_scout_ = undefined ;
             this.want_cmd_ = false ;
             this.executeCommand(this.next_cmd_!) ;
         }
@@ -565,6 +566,7 @@ export class SCScout extends SCBase {
 
     private reverseImage() {
         this.reversed_ = this.reverseImage_!.checked ;
+        this.current_scout_ = undefined ;
         if (this.info_.uuid_) {
             this.setViewString() ;
         }

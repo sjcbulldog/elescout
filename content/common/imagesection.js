@@ -267,7 +267,17 @@ class XeroImageSection extends XeroBaseSection {
         else {
             ctx.font = "64px serif";
         }
-        ctx.fillText(str, pos.x + size.width / 2.0, pos.y) ;
+
+        if (this.reverse_) {
+            ctx.save() ;
+            ctx.translate(pos.x + size.width / 2.0, pos.y) ;
+            ctx.scale(-1, 1) ;
+            ctx.fillText(str, 0, 0) ;
+            ctx.restore() ;
+        }
+        else {
+            ctx.fillText(str, pos.x + size.width / 2.0, pos.y) ;
+        }
     }
 
     upDownPlusClicked(name) {
@@ -392,7 +402,24 @@ class XeroImageSection extends XeroBaseSection {
         // Draw the basic box
         //
         this.ctx_.lineWidth = 5.0 ;
-        this.ctx_.strokeStyle = 'green' ;
+        let ccolor = undefined ;
+        if (value.value) {
+            if (ctrl.colors && ctrl.colors['true']) {
+                ccolor = ctrl.colors['true'] ;
+            }
+            else {
+                ccolor = 'green' ;
+            }
+        }
+        else {
+            if (ctrl.colors && ctrl.colors['false']) {
+                ccolor = ctrl.colors['false'] ;
+            }
+            else {
+                ccolor = 'red' ;
+            }
+        }
+        this.ctx_.strokeStyle = ccolor ;
         this.ctx_.strokeRect(pos.x, pos.y, size.width, size.height) ;
 
         if (value && value.value) {

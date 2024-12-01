@@ -13,13 +13,16 @@ class DBView extends TabulatorView {
     constructor(div, viewtype, type) {
         super(div, viewtype);
         this.type_ = type;
+        this.xyzzy = 42 ;
 
-        this.buildInitialView('Retreiving data for the ' + type + ' database view, please wait ...');
         this.registerCallback('send-' + type + '-db', this.formCallback.bind(this));
         this.registerCallback('send-' + type + '-col-config', this.colConfig.bind(this));
-        window.scoutingAPI.send('get-' + type + '-db');        
+        this.refresh() ;
+    }
 
-        this.frozenColumnCount_ = -1 ;
+    refresh() {
+        this.buildInitialView('Retreiving data for the ' + this.type_ + ' database view, please wait ...');
+        window.scoutingAPI.send('get-' + this.type_ + '-db');     
     }
 
     hideHiddenColumns() {
@@ -74,7 +77,7 @@ class DBView extends TabulatorView {
     colConfig(args) {
         if (args && args[0]) {
             this.colcfg_ = args[0].columns ;
-            this.frozenColumnCount_ = this.colcfg_.frozenColumnCount ;
+            this.frozenColumnCount_ = args[0].frozenColumnCount ;
         }
         else {
             this.colcfg_ = undefined ;
@@ -128,7 +131,14 @@ class TeamDBView extends DBView {
 
     close() {
         super.close() ;
+        this.sendConfigData() ;
+    }
 
+    freezingColumn() {
+        this.sendConfigData() ;
+    }
+
+    sendConfigData() {
         let coldata = [] ;
 
         //
@@ -165,13 +175,10 @@ class TeamDBView extends DBView {
         ]
     }
 
-
     //
     // Generate column descriptions based on the configuration information
     //
     generateColDesc(coldata) {
-        let count = this.frozenColumnCount_ ;
-        
         let cols = [];
         for(let col of coldata) {
             let one = this.findColCfg(col) ;
@@ -183,7 +190,7 @@ class TeamDBView extends DBView {
                 headerVertical: false,
             } ;
 
-            if (one && one.width) {
+            if (one && one.width && one.width != -1) {
                 coldesc.width = one.width ;
             }
     
@@ -196,7 +203,7 @@ class TeamDBView extends DBView {
 
         for(let i = 0 ; i < this.frozenColumnCount_ ; i++) {
             if (i < cols.length) {
-                coldesc[i].frozen = true ;
+                cols[i].frozen = true ;
             }
         }
 
@@ -256,7 +263,7 @@ class MatchDBView extends DBView {
                 coldesc['hidden'] = one.hidden ;
             }
     
-            if (one && one.width) {
+            if (one && one.width && one.width != -1) {
                 coldesc['width'] = one.width ;
             }
             
@@ -269,7 +276,7 @@ class MatchDBView extends DBView {
 
         for(let i = 0 ; i < this.frozenColumnCount_ ; i++) {
             if (i < cols.length) {
-                coldesc[i].frozen = true ;
+                cols[i].frozen = true ;
             }
         }
         return cols ; 

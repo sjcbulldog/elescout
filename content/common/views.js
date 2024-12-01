@@ -1,3 +1,101 @@
+class XeroSelector {
+	constructor(title, radio) {
+		this.radio_ = radio ;
+		let detail = document.createElement('details');
+		detail.className = 'zebra-selector-details';
+
+		let summary = document.createElement('summary');
+		summary.innerText = title;
+		detail.append(summary);
+
+		let fieldset = document.createElement('fieldset');
+		detail.append(fieldset);
+
+		let legend = document.createElement('legend');
+		legend.innerText = title;
+		fieldset.append(legend);
+
+		let list = document.createElement('ul');
+		fieldset.append(list);
+
+		this.detail = detail;
+		this.summary = summary;
+		this.fieldset = fieldset;
+		this.list = list;
+	}
+
+	setTitle(title) {
+		this.summary.innerText = title;
+	}
+
+	reset() {
+		this.clear(this.list) ;
+	}
+
+	clear(elem) {
+		while (elem.firstChild) {
+			elem.removeChild(elem.firstChild);
+		}
+	}
+
+	select(data) {
+		for (let item of this.items) {
+			if (item.xerodata === data) {
+				item.checked = true;
+			}
+		}
+	}
+
+	getSelectedItems() {
+		let data = [];
+		if (this.items) {
+			for (let item of this.items) {
+				if (item.checked) {
+					data.push(item.xerodata);
+				}
+			}
+		}
+
+		return data;
+	}
+
+	selectAll() {
+		for(let item of this.items) {
+			item.checked = true ;
+		}
+	}
+
+	addDataToSelectors(list, cb) {
+		this.items = [];
+		this.clear(this.list);
+
+		for (let item of list) {
+			let text = item;
+
+			let li = document.createElement('li');
+			let label = document.createElement('label');
+			label.innerText = text;
+			li.append(label);
+
+			let check = document.createElement('input');
+			if (this.radio_) {
+				check.type = 'radio';
+			}
+			else {
+				check.type = 'checkbox' ;
+			}
+
+			check.name = 'zebra-select';
+			check.xerodata = item;
+			check.onchange = cb;
+			this.items.push(check);
+			label.append(check);
+
+			this.list.append(li);
+		}
+	}
+}
+
 class CallbackMgr {
     constructor() {
         this.callbacks_ = new Map();
@@ -38,10 +136,12 @@ class CallbackMgr {
 }
 
 class XeroView {
+    static serial_num_global_ = 0 ;
 
     static callback_mgr_ = new CallbackMgr();
 
     constructor(div, viewtype) {
+        this.serial_ = XeroView.serial_num_global_++ ;
         this.top_ = div;
         this.viewtype_ = viewtype ;
         this.callbacks_ = [];
@@ -66,6 +166,9 @@ class XeroView {
         while (elem.firstChild) {
             elem.removeChild(elem.firstChild);
         }
+    }
+
+    refresh() {
     }
 
     reset() {
@@ -154,6 +257,9 @@ class TabulatorView extends XeroView {
         return undefined;
     }
 
+    freezingColumn() {
+    }
+
     freezeColumn(e, c) {
         let table = c.getTable();
 
@@ -164,12 +270,13 @@ class TabulatorView extends XeroView {
                 break;
             }
         }
-        updateMainWindow(this.viewtype_) ;
+        this.freezingColumn() ;
+        this.refresh() ;
     }
 
     unfreezeColumn(e, c) {
-        this.frozenColumnCount_ = -1;
-        updateMainWindow(this.viewtype_) ;
+        this.frozenColumnCount_ = -1 ;
+        this.refresh() ;
     }
 
     headerMenu(e, c) {

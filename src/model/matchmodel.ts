@@ -69,6 +69,10 @@ export class MatchDataModel extends DataModel {
         return ret;
     }
 
+    protected initialTableColumns() : string[] {
+        return ['comp_level', 'set_number', 'match_number', 'team_key'] ;
+    }
+
     protected createTableQuery() : string {
         let ret = 'create table ' + MatchDataModel.MatchTableName + ' (' ;
         ret += 'key TEXT' ;
