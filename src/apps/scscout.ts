@@ -47,6 +47,7 @@ export class SCScout extends SCBase {
     private static readonly syncEvent: string = "sync-event" ;
     private static readonly resetTablet: string = "reset-tablet" ;
     private static readonly preferences: string = 'preferences' ;
+    private static readonly reverseImage: string = 'reverse' ;
 
     private info_ : SCScoutInfo = new SCScoutInfo() ;
 
@@ -187,6 +188,9 @@ export class SCScout extends SCBase {
         }
         else if (cmd === SCScout.preferences) {
             this.setView('preferences');
+        }
+        else if (cmd === SCScout.reverseImage) {
+            this.reverseImage() ;
         }
         else if (cmd.startsWith('st-')) {
             this.scoutTeam(cmd) ;
@@ -619,7 +623,7 @@ export class SCScout extends SCBase {
             type: 'checkbox',
             label: 'Reverse',
             checked: false,
-            click: this.reverseImage.bind(this)
+            click: () => { this.executeCommand(SCScout.reverseImage)}
           }) ;
         optionmenu.submenu!.append(this.reverseImage_) ;
         ret.append(optionmenu);        

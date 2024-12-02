@@ -46,6 +46,12 @@ class XeroSelector {
 		}
 	}
 
+    selectItems(items) {
+        for(let item of items) {
+            this.select(item) ;
+        }
+    }
+
 	getSelectedItems() {
 		let data = [];
 		if (this.items) {
@@ -64,6 +70,12 @@ class XeroSelector {
 			item.checked = true ;
 		}
 	}
+
+    unselectAll() {
+        for(let item of this.items) {
+			item.checked = false ;
+		}
+    }
 
 	addDataToSelectors(list, cb) {
 		this.items = [];

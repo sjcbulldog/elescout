@@ -2264,6 +2264,8 @@ export class SCCentral extends SCBase {
 					cols.push(col.name) ;
 				}
 			}}
+
+		cols.sort() ;
 		this.sendToRenderer('send-match-field-list', cols) ;
 	}
 

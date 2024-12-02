@@ -932,11 +932,36 @@ export class Project {
         return ret ;
     }
 
+    private countNull(data: any[]) : number {
+        let ret = 0 ;
+
+        for(let v of data) {
+            if (v === null) {
+                ret++ ;
+            }
+        }
+
+        return ret ;
+    }
+
     private fixupZebraTagData(zebra: any[]) {
         for(let match of zebra) {
             if (match) {
                 let m = this.findMatchByKey(match.key) ;
                 if (m) {
+                    for(let i = 0 ; i < 3 ; i++) {
+                        let nullcount = this.countNull(match.alliances.blue[i].xs) ;
+                        if (nullcount > 0) {
+                            match.alliances.blue[i].xs = new Array(match.times.length).fill(0.0) ;
+                            match.alliances.blue[i].ys = new Array(match.times.length).fill(0.0) ;
+                        }
+
+                        nullcount = this.countNull(match.alliances.red[i].xs) ;
+                        if (nullcount > 0) {
+                            match.alliances.red[i].xs = new Array(match.times.length).fill(0.0) ;
+                            match.alliances.red[i].ys = new Array(match.times.length).fill(0.0) ;
+                        }
+                    }
                     match.comp_level = m.comp_level ;
                     match.match_number = m.match_number ;
                     match.set_number = m.set_number ;

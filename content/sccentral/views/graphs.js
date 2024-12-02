@@ -141,16 +141,21 @@ class TeamGraphView extends GraphBaseView {
 
   selectedMatchChanged() {
     var m = this.select_match_.options[this.select_match_.selectedIndex].value ;
-    let regex = /([a-z]+)-([0-9]+)-([0-9]+)/ ;
+    if (m === '---') {
+      this.team_selector_.unselectAll() ;
+    }
+    else {
+      let regex = /([a-z]+)-([0-9]+)-([0-9]+)/ ;
 
-    if (m.length > 0) {
-      let result = regex.exec(m) ;
-      if (result) {
-        for(let match of this.match_list_) {
-          if (match.comp_level === result[1] && match.set_number === +result[2] && match.match_number === +result[3]) {
-            this.team_selector_.selectItems([...match.red, ...match.blue]) ;
-            this.somethingChanged() ;
-            break ;
+      if (m.length > 0) {
+        let result = regex.exec(m) ;
+        if (result) {
+          for(let match of this.match_list_) {
+            if (match.comp_level === result[1] && match.set_number === +result[2] && match.match_number === +result[3]) {
+              this.team_selector_.selectItems([...match.red, ...match.blue]) ;
+              this.somethingChanged() ;
+              break ;
+            }
           }
         }
       }
@@ -229,10 +234,10 @@ class TeamGraphView extends GraphBaseView {
     let obj = {
       teams: this.team_selector_.getSelectedItems(),
       data: {
-        leftteam: this.team_field_selector_left_.getSelectedItems(this.team_field_selector_left_),
-        leftmatch: this.match_field_selector_left_.getSelectedItems(this.match_field_selector_left_),
-        rightteam: this.team_field_selector_right_.getSelectedItems(this.team_field_selector_right_),
-        rightmatch: this.match_field_selector_right_.getSelectedItems(this.match_field_selector_right_),
+        leftteam: this.team_field_selector_left_.getSelectedItems(),
+        leftmatch: this.match_field_selector_left_.getSelectedItems(),
+        rightteam: this.team_field_selector_right_.getSelectedItems(),
+        rightmatch: this.match_field_selector_right_.getSelectedItems(),
       }
     };
 
@@ -253,7 +258,7 @@ class TeamGraphView extends GraphBaseView {
       this.match_list_ = list[0] ;
 
       let opt = document.createElement('option');
-      opt.value = '' ;
+      opt.value = '---' ;
       opt.text = 'None' ;
       this.select_match_.append(opt);
 

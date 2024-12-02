@@ -1,3 +1,169 @@
+class TwoEndedSlider {
+	constructor(canvas, minval, maxval, stepval) {
+		this.canvas_ = canvas ;
+		this.ctx_ = this.canvas_.getContext('2d');
+		this.minval_ = minval ;
+		this.maxval_ = maxval ;
+		this.stepval_ = stepval ;
+		this.lvalue = minval ;
+		this.rvalue = maxval ;
+		this.left_right_ = 2 ;
+		this.top_bottom_ = 2 ;
+		this.bar_height_ = 10 ;
+		this.bar_space_ = 2 ;
+		this.background_color = 'lightgray';
+		this.fill_color = 'green' ;
+		this.outline_color = 'black' ;
+		this.top_ticks_ = 15 ;
+		this.handle_width_ = 12 ;
+		this.left_moving_ = false ;
+		this.right_moving_ = false ;
+
+		this.height_ = this.top_bottom_ * 2 + this.bar_height_ + this.top_ticks_ ;
+
+		this.canvas_.onmousedown = this.mouseDown.bind(this) ;
+		this.canvas_.onmousemove = this.mouseMove.bind(this) ;
+		this.canvas_.onmouseup = this.mouseUp.bind(this);
+		this.canvas_.onmouseleave = this.mouseUp.bind(this) ;
+	}
+
+	containsHandle(px, x, y) {
+		let x1 = px - this.handle_width_ / 2 ;
+		let y1 = this.top_bottom_ ;
+		let x2 = px + this.handle_width_ / 2 ;
+		let y2 = this.top_bottom_ + this.top_ticks_;
+
+		return x >= x1 && x <= x2 && y >= y1 && y <= y2 ;
+	}
+
+	clamp(num, lower, upper) {
+		return Math.min(Math.max(num, lower), upper);
+	}
+
+	mouseDown(ev) {
+		const rect = this.canvas_.getBoundingClientRect();
+		const x = ev.clientX - rect.left;
+		const y = ev.clientY - rect.top;
+
+		console.log("mousedown " + x + ", " + y) ;
+
+		if (this.containsHandle(this.userValueToPixels(this.lvalue), x, y)) {
+			this.left_moving_ = true ;
+		}
+		else if (this.containsHandle(this.userValueToPixels(this.rvalue), x, y)) {
+			this.right_moving_ = true ;
+		}
+	}
+
+	mouseUp(ev) {
+		console.log("mouseup") ;
+		this.left_moving_ = false ;
+		this.right_moving_ = false ;
+	}
+
+	mouseMove(ev) {
+		if (this.left_moving_ || this.right_moving_) {
+			const rect = this.canvas_.getBoundingClientRect();
+			const x = ev.clientX - rect.left;
+
+			let uval = this.pixelValueToUser(x) ;
+			console.log('mousemove pval=' + x + ', uval=' + uval + ', pval=' + this.userValueToPixels(uval)) ;
+
+			if (this.left_moving_) {
+				this.lvalue = this.clamp(uval, this.minval_, this.maxval_);
+				this.draw() ;
+			}
+			else if (this.right_moving_) {
+				this.rvalue = this.clamp(uval, this.minval_, this.maxval_);
+				this.draw() ;
+			}
+		}
+	}
+
+	userValueToPixels(uval) {
+		let pcnt = (uval - this.minval_) / (this.maxval_ - this.minval_) ;
+		let pval = this.left_right_ * 2 + this.mleft_.width + pcnt * this.bwidth_ ;
+
+		return pval ;
+	}
+
+	pixelValueToUser(pval) {
+		let pcnt = (pval - this.left_right_ * 2 - this.mleft_.width) / this.bwidth_ ;
+		let uval = this.minval_ + pcnt * (this.maxval_ - this.minval_) ;
+
+		return uval ;
+	}
+
+	drawHandle(px) {
+		this.ctx_.moveTo(px - this.handle_width_ / 2, this.top_bottom_) ;
+		this.ctx_.lineTo(px + this.handle_width_ / 2, this.top_bottom_) ;
+		this.ctx_.lineTo(px, this.top_bottom_ + this.top_ticks_) ;
+		this.ctx_.lineTo(px - this.handle_width_ / 2, this.top_bottom_) ;
+		this.ctx_.fillStyle = 'green' ;
+		this.ctx_.fill() ;
+	}
+
+	draw() {
+		this.canvas_.height = this.height_ ;
+		this.canvas_.width = this.canvas_.parentElement.offsetWidth;
+
+		this.ctx_.font = '18px serif' ;
+		let left = this.lvalue.toFixed(1);
+		this.mleft_ = this.ctx_.measureText(left) ;
+		let right = this.rvalue.toFixed(1) ;
+		this.mright_ = this.ctx_.measureText(right) ;
+		this.bwidth_ = this.canvas_.width - this.mleft_.width - this.mright_.width - this.left_right_ * 4 ;
+
+		//
+		// Draw the left and right text
+		//
+		this.ctx_.strokeText(left, this.left_right_, this.canvas_.height - this.top_bottom_) ;
+		this.ctx_.strokeText(right, this.left_right_ * 3 + this.mleft_.width + this.bwidth_, this.canvas_.height - this.top_bottom_) ;
+
+		//
+		// Fill the bar
+		//
+		this.ctx_.fillStyle = this.background_color ;
+		this.ctx_.fillRect(this.left_right_ * 2 + this.mleft_.width, this.top_bottom_ + this.top_ticks_, this.bwidth_, this.bar_height_) ;
+
+		//
+		// Outline the bar
+		//
+		this.ctx_.strokeStyle = this.outline_color ;
+		this.ctx_.strokeRect(this.left_right_ * 2 + this.mleft_.width, this.top_bottom_ + this.top_ticks_, this.bwidth_, this.bar_height_) ;
+
+		this.ctx_.fillStyle = this.fill_color ;
+		let leftpx = this.userValueToPixels(this.lvalue) ;
+		let rightpx = this.userValueToPixels(this.rvalue) ;
+		this.ctx_.fillRect(leftpx, this.top_bottom_ + this.top_ticks_ + this.bar_space_, rightpx - leftpx, this.bar_height_ - 2 * this.bar_space_) ;
+
+		//
+		// Draw the ticks
+		//
+		let grid = this.minval_ + this.stepval_ ;
+		while (grid < this.maxval_) {
+			let px = this.userValueToPixels(grid) ;
+			this.ctx_.moveTo(px, this.top_bottom_) ;
+			this.ctx_.lineTo(px, this.top_bottom_ + this.top_ticks_) ;
+			this.ctx_.stroke() ;
+
+			grid += this.stepval_ ;
+		}
+
+		//
+		// Draw the left handle
+		//
+		let px = this.userValueToPixels(this.lvalue) ;
+		this.drawHandle(px) ;
+
+		//
+		// Draw the rigth handle
+		//
+		px = this.userValueToPixels(this.rvalue) ;
+		this.drawHandle(px) ;
+	}
+}
+
 
 class FieldBasedView extends XeroView {
 	static ScrollBarHeight = 16 ;
@@ -139,6 +305,7 @@ class ZebraView extends FieldBasedView {
 		if (ev.target.checked && this.seltype_ != 'team') {
 			this.seltype_ = 'team';
 			this.setTeamChoices();
+			this.drawScreen() ;
 		}
 	}
 
@@ -146,6 +313,7 @@ class ZebraView extends FieldBasedView {
 		if (ev.target.checked && this.seltype_ != 'match') {
 			this.seltype_ = 'match';
 			this.setMatchChoices();
+			this.drawScreen() ;
 		}
 	}
 
@@ -201,11 +369,10 @@ class ZebraView extends FieldBasedView {
 		this.selector2_ = new XeroSelector('Step 3: Pick Matches For Team', false)
 		this.div3_.append(this.selector2_.detail);
 
-		this.slider_ = document.createElement('input') ;
-		this.slider_.type = 'range' ;
-		this.slider_.className = 'zebra-range' ;
-		this.slider_.value = 0 ;
-		this.zebra_top_.append(this.slider_) ;
+		let canvas = document.createElement('canvas') ;
+		canvas.className = 'zebra-time-select' ;
+		this.time_ctrl_ = new TwoEndedSlider(canvas, 0.0, this.getMaxTime(), 15.0) ;
+		this.zebra_top_.append(canvas) ;
 
 		this.canvas_ = document.createElement('canvas');
 		this.canvas_.className = 'zebra-canvas';
@@ -230,7 +397,7 @@ class ZebraView extends FieldBasedView {
 			bnum = +b ;
 		}
 
-		return a - b ;
+		return anum - bnum ;
 	}
 
 	getAllTeams() {
@@ -253,7 +420,7 @@ class ZebraView extends FieldBasedView {
 	}
 
 	matchSelectedForTeamCB(arg) {
-		console.log(arg) ;
+		this.drawScreen() ;
 	}
 
 	getMatchesByTeam() {
@@ -388,7 +555,7 @@ class ZebraView extends FieldBasedView {
 	}
 
 	teamSelectedForMatchCB(arg) {
-		console.log(args) ;
+		this.drawScreen() ;
 	}
 
 	matchSelectedCB(arg) {
@@ -508,10 +675,21 @@ class ZebraView extends FieldBasedView {
 	//
 	getTeamsForMatchData(target, teams) {
 		let data = [] ;
-		let m = this.findMatchByName(target) ;
+		let m = this.findMatchByTitle(target) ;
 		if (m) {
 			for(let i = 0 ; i < 3 ; i++) {
 				if (teams.includes(m.alliances.red[i].team_key)) {
+					let obj = {
+						team_key: m.alliances.red[i].team_key,
+						match: target,
+						times: m.times,
+						xs: m.alliances.red[0].xs,
+						ys: m.alliances.red[0].ys
+					}
+					data.push(obj) ;
+				}
+
+				if (teams.includes(m.alliances.blue[i].team_key)) {
 					let obj = {
 						team_key: m.alliances.blue[i].team_key,
 						match: title,
@@ -519,9 +697,7 @@ class ZebraView extends FieldBasedView {
 						xs: m.alliances.blue[0].xs,
 						ys: m.alliances.blue[0].ys
 					}
-				}
-
-				if (teams.includes(m.alliances.blue[i].team_key)) {
+					data.push(obj) ;					
 				}
 			}
 		}
@@ -530,7 +706,6 @@ class ZebraView extends FieldBasedView {
 	}
 
 	draw(data) {
-
 	}
 	
 	drawMatch() {
@@ -564,28 +739,12 @@ class ZebraView extends FieldBasedView {
 		return 135 ;
 	}
 
-	setRangeTicks() {
-		let maxval = this.getMaxTime() ;
-		this.slider_.max = maxval ;
-
-		let dset = document.createElement('datalist') ;
-		dset.id = 'timeticks' ;
-		for(let i = 0 ; i <= this.getMaxTime() ; i += 15.0) {
-			let opt = document.createElement('option') ;
-			opt.value = i ;
-			dset.append(opt) ;
-		}
-
-		this.slider_.append(dset) ;
-		this.slider_.setAttribute('list', 'timeticks') ;
-	}
-
 	drawScreen() {
 		if (!this.sizesInited_) {
 			this.sizesInited_ = true;
 			this.computeScaleFactor();
-			this.setRangeTicks() ;
 		}
+		this.time_ctrl_.draw() ;
 		this.drawZebraCanvas() ;
 	}
 
