@@ -949,19 +949,27 @@ export class Project {
             if (match) {
                 let m = this.findMatchByKey(match.key) ;
                 if (m) {
+                    let reddel = [] ;
+                    let bluedel = [] ;
                     for(let i = 0 ; i < 3 ; i++) {
                         let nullcount = this.countNull(match.alliances.blue[i].xs) ;
                         if (nullcount > 0) {
-                            match.alliances.blue[i].xs = new Array(match.times.length).fill(0.0) ;
-                            match.alliances.blue[i].ys = new Array(match.times.length).fill(0.0) ;
+                            bluedel.push(i) ;
                         }
 
                         nullcount = this.countNull(match.alliances.red[i].xs) ;
                         if (nullcount > 0) {
-                            match.alliances.red[i].xs = new Array(match.times.length).fill(0.0) ;
-                            match.alliances.red[i].ys = new Array(match.times.length).fill(0.0) ;
+                            reddel.push(i) ;
                         }
                     }
+
+                    for(let i = bluedel.length - 1 ; i >= 0 ; i--) {
+                        match.alliances.blue.splice(bluedel[i], 1) ;
+                    }
+                    for(let i = reddel.length - 1 ; i >= 0 ; i--) {
+                        match.alliances.red.splice(reddel[i], 1) ;
+                    }
+
                     match.comp_level = m.comp_level ;
                     match.match_number = m.match_number ;
                     match.set_number = m.set_number ;

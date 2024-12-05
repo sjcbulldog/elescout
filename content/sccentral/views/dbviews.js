@@ -31,7 +31,7 @@ class DBView extends TabulatorView {
             let index = 0 ;
             for(let col of this.table_.getColumns()) {
                 let cfg = this.colcfg_[index++];
-                if (cfg.hidden) {
+                if (cfg && cfg.hidden) {
                     col.hide() ;
                 }
             }
@@ -216,6 +216,10 @@ class MatchDBView extends DBView {
         super(div, mtype, 'match') ;
     }
 
+    freezingColumn() {
+        this.sendConfigData() ;
+    }    
+
     close() {
         super.close() ;
         let coldata = [] ;
@@ -241,6 +245,38 @@ class MatchDBView extends DBView {
             {column:"comp_level", dir:"asc"}, //then sort by this second
         ]
     }
+
+
+    sendConfigData() {
+        let coldata = [] ;
+
+        //
+        // Gather column configuration information into ana array
+        //
+        for(let col of this.table_.getColumns()) {
+            let info = {
+                name: col.getField(),
+                hidden: !col.isVisible(),
+                width: col.getWidth(),
+            }
+            coldata.push(info) ;
+        }
+
+        //
+        // This object will contain the number of frozen columns and configuration
+        // for each of the columns. 
+        //
+        let colcfg = {
+            columns: coldata,
+            frozenColumnCount: this.frozenColumnCount_,
+        } ;
+    
+        //
+        // Send the column configuration information to the main process side of the
+        // application to be stored for when the project is reloaded
+        //
+        window.scoutingAPI.send('send-match-col-config', colcfg) ;
+    }    
 
     generateColDesc(coldata) {
         let count = this.frozenColumnCount_ ;

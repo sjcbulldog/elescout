@@ -7,9 +7,10 @@ class TwoEndedSlider {
 		this.stepval_ = stepval ;
 		this.lvalue = minval ;
 		this.rvalue = maxval ;
+		this.current = (minval + maxval) / 2.0 ;
 		this.left_right_ = 2 ;
 		this.top_bottom_ = 2 ;
-		this.bar_height_ = 10 ;
+		this.bar_height_ = 25 ;
 		this.bar_space_ = 2 ;
 		this.background_color = 'lightgray';
 		this.fill_color = 'green' ;
@@ -18,13 +19,14 @@ class TwoEndedSlider {
 		this.handle_width_ = 12 ;
 		this.left_moving_ = false ;
 		this.right_moving_ = false ;
+		this.current_moving_ = false ;
+		this.onchanged = undefined ;
 
 		this.height_ = this.top_bottom_ * 2 + this.bar_height_ + this.top_ticks_ ;
 
 		this.canvas_.onmousedown = this.mouseDown.bind(this) ;
 		this.canvas_.onmousemove = this.mouseMove.bind(this) ;
 		this.canvas_.onmouseup = this.mouseUp.bind(this);
-		this.canvas_.onmouseleave = this.mouseUp.bind(this) ;
 	}
 
 	containsHandle(px, x, y) {
@@ -53,16 +55,20 @@ class TwoEndedSlider {
 		else if (this.containsHandle(this.userValueToPixels(this.rvalue), x, y)) {
 			this.right_moving_ = true ;
 		}
+		else if (this.containsHandle(this.userValueToPixels(this.current), x, y)) {
+			this.current_moving_ = true ;
+		}
 	}
 
 	mouseUp(ev) {
 		console.log("mouseup") ;
 		this.left_moving_ = false ;
 		this.right_moving_ = false ;
+		this.current_moving_ = false ;
 	}
 
 	mouseMove(ev) {
-		if (this.left_moving_ || this.right_moving_) {
+		if (this.left_moving_ || this.right_moving_ || this.current_moving_) {
 			const rect = this.canvas_.getBoundingClientRect();
 			const x = ev.clientX - rect.left;
 
@@ -72,10 +78,23 @@ class TwoEndedSlider {
 			if (this.left_moving_) {
 				this.lvalue = this.clamp(uval, this.minval_, this.maxval_);
 				this.draw() ;
+				if (this.onchanged) {
+					this.onchanged() 
+				}
 			}
 			else if (this.right_moving_) {
 				this.rvalue = this.clamp(uval, this.minval_, this.maxval_);
 				this.draw() ;
+				if (this.onchanged) {
+					this.onchanged() ;
+				}
+			}
+			else if (this.current_moving_) {
+				this.current = this.clamp(uval, this.minval_, this.maxval_);
+				this.draw() ;
+				if (this.onchanged) {
+					this.onchanged() ;
+				}
 			}
 		}
 	}
@@ -94,12 +113,13 @@ class TwoEndedSlider {
 		return uval ;
 	}
 
-	drawHandle(px) {
+	drawHandle(px, color) {
+		this.ctx_.beginPath() ;
 		this.ctx_.moveTo(px - this.handle_width_ / 2, this.top_bottom_) ;
 		this.ctx_.lineTo(px + this.handle_width_ / 2, this.top_bottom_) ;
 		this.ctx_.lineTo(px, this.top_bottom_ + this.top_ticks_) ;
 		this.ctx_.lineTo(px - this.handle_width_ / 2, this.top_bottom_) ;
-		this.ctx_.fillStyle = 'green' ;
+		this.ctx_.fillStyle = color;
 		this.ctx_.fill() ;
 	}
 
@@ -113,12 +133,15 @@ class TwoEndedSlider {
 		let right = this.rvalue.toFixed(1) ;
 		this.mright_ = this.ctx_.measureText(right) ;
 		this.bwidth_ = this.canvas_.width - this.mleft_.width - this.mright_.width - this.left_right_ * 4 ;
+		this.ctx_.textBaseline = 'middle' ;
 
 		//
 		// Draw the left and right text
 		//
-		this.ctx_.strokeText(left, this.left_right_, this.canvas_.height - this.top_bottom_) ;
-		this.ctx_.strokeText(right, this.left_right_ * 3 + this.mleft_.width + this.bwidth_, this.canvas_.height - this.top_bottom_) ;
+		this.ctx_.fillText(left, this.left_right_, this.canvas_.height - this.top_bottom_ - this.bar_height_ / 2) ;
+		this.ctx_.fillText(right, this.left_right_ * 3 + this.mleft_.width + this.bwidth_, this.canvas_.height - this.top_bottom_ - this.bar_height_ / 2) ;
+
+
 
 		//
 		// Fill the bar
@@ -132,10 +155,22 @@ class TwoEndedSlider {
 		this.ctx_.strokeStyle = this.outline_color ;
 		this.ctx_.strokeRect(this.left_right_ * 2 + this.mleft_.width, this.top_bottom_ + this.top_ticks_, this.bwidth_, this.bar_height_) ;
 
+
 		this.ctx_.fillStyle = this.fill_color ;
 		let leftpx = this.userValueToPixels(this.lvalue) ;
 		let rightpx = this.userValueToPixels(this.rvalue) ;
 		this.ctx_.fillRect(leftpx, this.top_bottom_ + this.top_ticks_ + this.bar_space_, rightpx - leftpx, this.bar_height_ - 2 * this.bar_space_) ;
+
+		
+		let center = this.current.toFixed(1);
+		this.ctx_.save() ;
+		this.ctx_.textAlign = 'center';
+		this.ctx_.fillStyle = 'white' ;
+		this.ctx_.font = '20px serif' ;
+		let x = this.left_right_ * 2 + this.mleft_.width + this.bwidth_  / 2 ;
+		let y = this.canvas_.height - this.top_bottom_ - this.bar_height_ / 2 ;
+		this.ctx_.fillText(center, x, y) ;
+		this.ctx_.restore() ;
 
 		//
 		// Draw the ticks
@@ -154,22 +189,61 @@ class TwoEndedSlider {
 		// Draw the left handle
 		//
 		let px = this.userValueToPixels(this.lvalue) ;
-		this.drawHandle(px) ;
+		this.drawHandle(px, 'green') ;
 
 		//
 		// Draw the rigth handle
 		//
 		px = this.userValueToPixels(this.rvalue) ;
-		this.drawHandle(px) ;
+		this.drawHandle(px, 'green') ;
+
+		//
+		// Draw the current handle
+		//
+		px = this.userValueToPixels(this.current) ;
+		this.drawHandle(px, 'blue') ;
 	}
 }
 
-
-class FieldBasedView extends XeroView {
+class ZebraView extends XeroView {
 	static ScrollBarHeight = 16 ;
+
+	
+	static RobotColors = [
+		'red',
+		'green',
+		'blue',
+		'salmon',
+		'deeppink',
+		'darkorange',
+		'gold',
+		'yellow',
+		'plum',
+		'fuchsia',
+		'purple',
+		'lime',
+		'olive',
+		'darkseagreen',
+		'lightseagreen',
+		'cyan',
+		'steelblue',
+		'skyblue',
+		'wheat',
+		'chocolate',
+		'slategray'
+	] ;
 
 	constructor(div, viewtype) {
 		super(div, viewtype);
+
+		this.seltype_ = '';
+		this.target_ = '' ;
+
+		this.sizesInited_ = false;
+		this.createWindowLayout();
+		this.registerCallback('send-zebra-data', this.formCallback.bind(this));
+		window.scoutingAPI.send("get-zebra-data");
+
 	}
 
 	loadImages() {
@@ -187,6 +261,7 @@ class FieldBasedView extends XeroView {
 	imageLoadComplete(im) {
 		im.loaded_ = true;
 		this.image_ = this.image_descs_[0];
+		this.teamRadioCBInt() ;
 		this.drawScreen();
 	}
 
@@ -231,27 +306,27 @@ class FieldBasedView extends XeroView {
 	}
 
 	fieldToImagePt(pt) {
-		let imwidth = this.bottomright.x - this.topleft.x;
-		let imheight = this.bottomright.y - this.topleft.y;
+		let imwidth = this.image_.bottomright.x - this.image_.topleft.x;
+		let imheight = this.image_.bottomright.y - this.image_.topleft.y;
 
-		let fpcntx = pt.x / this.fieldsize.width;
-		let fpcnty = pt.y / this.fieldsize.height;
+		let fpcntx = pt.x / this.image_.fieldsize.width;
+		let fpcnty = pt.y / this.image_.fieldsize.height;
 
 		let impixw = fpcntx * imwidth;
 		let impixh = fpcnty * imheight;
 
-		let imx = impixw + this.topleft.x;
-		let imy = this.bottomright.y - impixh;
+		let imx = impixw + this.image_.topleft.x;
+		let imy = this.image_.bottomright.y - impixh;
 
 		return new XeroPoint(imx, imy);
 	}
 
 	fieldToImageSize(sz) {
-		let imwidth = this.bottomright.x - this.topleft.x;
-		let imheight = this.bottomright.y - this.topleft.y;
+		let imwidth = this.image_.bottomright.x - this.image_.topleft.x;
+		let imheight = this.image_.bottomright.y - this.image_.topleft.y;
 
-		let width = sz.width / this.fieldsize.width * imwidth;
-		let height = sz.height / this.fieldsize.height * imheight;
+		let width = sz.width / this.image_.fieldsize.width * imwidth;
+		let height = sz.height / this.image_.fieldsize.height * imheight;
 
 		return new XeroSize(width, height);
 	}
@@ -282,20 +357,7 @@ class FieldBasedView extends XeroView {
 		// Draw the image on the canvas, centered and scaled
 		this.ctx_.drawImage(this.image_.image_, 0, 0, this.scaledWidth_, this.scaledHeight_);
 	}
-}
 
-class ZebraView extends FieldBasedView {
-	constructor(div, viewtype) {
-		super(div, viewtype);
-
-		this.seltype_ = '';
-		this.target_ = '' ;
-
-		this.sizesInited_ = false;
-		this.createWindowLayout();
-		this.registerCallback('send-zebra-data', this.formCallback.bind(this));
-		window.scoutingAPI.send("get-zebra-data");
-	}
 
 	matchToMatchTitle(m) {
 		return m.comp_level + '-' + m.set_number + '-' + m.match_number ;
@@ -303,17 +365,19 @@ class ZebraView extends FieldBasedView {
 
 	teamRadioCB(ev) {
 		if (ev.target.checked && this.seltype_ != 'team') {
-			this.seltype_ = 'team';
-			this.setTeamChoices();
-			this.drawScreen() ;
+			this.teamRadioCBInt() ;
 		}
+	}
+
+	teamRadioCBInt() {
+		this.seltype_ = 'team';
+		this.setTeamChoices();
 	}
 
 	matchRadioCB(ev) {
 		if (ev.target.checked && this.seltype_ != 'match') {
 			this.seltype_ = 'match';
 			this.setMatchChoices();
-			this.drawScreen() ;
 		}
 	}
 
@@ -373,6 +437,7 @@ class ZebraView extends FieldBasedView {
 		canvas.className = 'zebra-time-select' ;
 		this.time_ctrl_ = new TwoEndedSlider(canvas, 0.0, this.getMaxTime(), 15.0) ;
 		this.zebra_top_.append(canvas) ;
+		this.time_ctrl_.onchanged = this.drawScreen.bind(this) ;
 
 		this.canvas_ = document.createElement('canvas');
 		this.canvas_.className = 'zebra-canvas';
@@ -403,12 +468,12 @@ class ZebraView extends FieldBasedView {
 	getAllTeams() {
 		let teamlist = [];
 		for (let match of this.data_) {
-			for (let i = 0; i < 3; i++) {
-				if (match) {
-					if (!teamlist.includes(match.alliances.red[i].team_key)) {
+			if (match) {
+				for (let i = 0; i < 3; i++) {
+					if (i < match.alliances.red.length && !teamlist.includes(match.alliances.red[i].team_key)) {
 						teamlist.push(match.alliances.red[i].team_key);
 					}
-					if (!teamlist.includes(match.alliances.blue[i].team_key)) {
+					if (i < match.alliances.blue.length && !teamlist.includes(match.alliances.blue[i].team_key)) {
 						teamlist.push(match.alliances.blue[i].team_key);
 					}
 				}
@@ -429,12 +494,12 @@ class ZebraView extends FieldBasedView {
 		for(let m of this.data_) {
 			if (m) {
 				for(let i = 0 ; i < 3 ; i++) {
-					if (m.alliances.red[i].team_key == this.target_) {
+					if (i < m.alliances.red.length && m.alliances.red[i].team_key == this.target_) {
 						mat.push(this.matchToMatchTitle(m));
 						break ;
 					}
 
-					if (m.alliances.blue[i].team_key == this.target_) {
+					if (i < m.alliances.blue.length && m.alliances.blue[i].team_key == this.target_) {
 						mat.push(this.matchToMatchTitle(m)) ;
 						break ;
 					}
@@ -446,8 +511,14 @@ class ZebraView extends FieldBasedView {
 	}
 
 	teamSelectedCB(arg) {
-		this.target_ = arg.target.xerodata ;
+		this.teamSelectedCBInt(arg.target.xerodata) ;
+	}
+
+	teamSelectedCBInt(data) {
+		this.target_ = data ;
 		let matches = this.getMatchesByTeam() ;
+		this.selector2_.reset() ;
+		this.selector2_.setTitle('Step 3: Select Matches For Selected Team');
 		this.selector2_.addDataToSelectors(matches, this.matchSelectedForTeamCB.bind(this)) ;
 		this.selector2_.selectAll() ;
 		this.drawScreen() ;
@@ -521,11 +592,9 @@ class ZebraView extends FieldBasedView {
 		this.selector_.setTitle('Step 2: Pick A Specific Team');
 		let teams = this.getAllTeams();
 		this.selector_.addDataToSelectors(teams, this.teamSelectedCB.bind(this));
-		this.target_ = teams[0] ;
 		this.selector_.select(teams[0]) ;
+		this.teamSelectedCBInt(teams[0]) ;
 
-		this.selector2_.reset() ;
-		this.selector2_.setTitle('Step 3: Select Matches For Selected Team');
 	}
 
 	findMatchByTitle(title) {
@@ -546,8 +615,13 @@ class ZebraView extends FieldBasedView {
 		let m = this.findMatchByTitle(this.target_) ;
 		if (m) {
 			for(let i = 0 ; i < 3 ; i++) {
-				ret.push(m.alliances.red[i].team_key); 
-				ret.push(m.alliances.blue[i].team_key) ;
+				if (i < m.alliances.red.length) {
+					ret.push(m.alliances.red[i].team_key); 
+				}
+
+				if (i < m.alliances.blue.length) {
+					ret.push(m.alliances.blue[i].team_key) ;
+				}
 			}
 		}
 
@@ -559,8 +633,14 @@ class ZebraView extends FieldBasedView {
 	}
 
 	matchSelectedCB(arg) {
-		this.target_ = arg.target.xerodata ;
+		this.matchSelectedCBInt(arg.target.xerodata) ;
+	}
+
+	matchSelectedCBInt(data) {
+		this.target_ = data ;
 		let teams = this.getTeamsInMatch() ;
+		this.selector2_.reset() ;
+		this.selector2_.setTitle('Step 3: Pick Teams From Selected Match');
 		this.selector2_.addDataToSelectors(teams, this.teamSelectedForMatchCB.bind(this)) ;
 		this.selector2_.selectAll() ;
 		this.drawScreen() ;
@@ -584,11 +664,10 @@ class ZebraView extends FieldBasedView {
 		this.selector_.setTitle('Step 2: Pick A Specific Match');
 		let matches = this.getAllMatches();
 		this.selector_.addDataToSelectors(matches, this.matchSelectedCB.bind(this));
-		this.target_ = matches[0] ;
-		this.selector_.select(matches[0]) ;
 
-		this.selector2_.reset() ;
-		this.selector2_.setTitle('Step 3: Pick Teams From Selected Match')
+		this.selector_.select(matches[0]) ;
+		this.matchSelectedCBInt(matches[0]) ;
+
 	}
 
 	getTeamData() {
@@ -599,14 +678,13 @@ class ZebraView extends FieldBasedView {
 
 			if (m) {
 				for(let i = 0 ; i < 3 ; i++) {
-					console.log(i) ;
-					if (m.alliances.red[i].team_key === this.target_) {
+					if (i < m.alliances.red.length && m.alliances.red[i].team_key === this.target_) {
 						obj = {
 							xs: m.alliances.red[i].xs,
 							ys: m.alliances.red[i].ys
 						} ;
 					}
-					else if (m.alliances.blue[i].team_key === this.target_) {
+					else if (i < m.alliances.blue.length && m.alliances.blue[i].team_key === this.target_) {
 						obj = {
 							xs: m.alliances.blue[i].xs,
 							ys: m.alliances.blue[i].ys
@@ -638,25 +716,27 @@ class ZebraView extends FieldBasedView {
 					// Now, find the right slot for the team in question
 					//
 					for(let i = 0 ; i < 3 ; i++) {
-						if (m.alliances.red[i].team_key === team) {
+						if (i < m.alliances.red.length && m.alliances.red[i].team_key === team) {
 							let obj = {
 								team_key: m.alliances.red[i].team_key,
 								match: title,
 								times: m.times,
-								xs: m.alliances.red[0].xs,
-								ys: m.alliances.red[0].ys
+								xs: m.alliances.red[i].xs,
+								ys: m.alliances.red[i].ys,
+								alliance: 'red'
 							}
 							ret.push(obj) ;
 							break ;
 						}
 						
-						if (m.alliances.blue[i].team_key === team) {
+						if (i < m.alliances.blue.length && m.alliances.blue[i].team_key === team) {
 							let obj = {
 								team_key: m.alliances.blue[i].team_key,
 								match: title,
 								times: m.times,
-								xs: m.alliances.blue[0].xs,
-								ys: m.alliances.blue[0].ys
+								xs: m.alliances.blue[i].xs,
+								ys: m.alliances.blue[i].ys,
+								alliance: 'blue'
 							}
 							ret.push(obj) ;
 							break ;
@@ -678,24 +758,26 @@ class ZebraView extends FieldBasedView {
 		let m = this.findMatchByTitle(target) ;
 		if (m) {
 			for(let i = 0 ; i < 3 ; i++) {
-				if (teams.includes(m.alliances.red[i].team_key)) {
+				if (i < m.alliances.red.length && teams.includes(m.alliances.red[i].team_key)) {
 					let obj = {
 						team_key: m.alliances.red[i].team_key,
 						match: target,
 						times: m.times,
-						xs: m.alliances.red[0].xs,
-						ys: m.alliances.red[0].ys
+						xs: m.alliances.red[i].xs,
+						ys: m.alliances.red[i].ys,
+						alliance: 'red'
 					}
 					data.push(obj) ;
 				}
 
-				if (teams.includes(m.alliances.blue[i].team_key)) {
+				if (i < m.alliances.blue.length && teams.includes(m.alliances.blue[i].team_key)) {
 					let obj = {
 						team_key: m.alliances.blue[i].team_key,
-						match: title,
+						match: target,
 						times: m.times,
-						xs: m.alliances.blue[0].xs,
-						ys: m.alliances.blue[0].ys
+						xs: m.alliances.blue[i].xs,
+						ys: m.alliances.blue[i].ys,
+						alliance: 'blue'
 					}
 					data.push(obj) ;					
 				}
@@ -705,19 +787,127 @@ class ZebraView extends FieldBasedView {
 		return data ;
 	}
 
-	draw(data) {
+	getPositionByTime(one, time) {
+		let low = 0 ;
+		let high = one.times.length - 1 ;
+
+		while (high - low > 1) {
+			let mid = Math.floor((low + high) / 2) ;
+			if (time < one.times[mid]) {
+				high = mid ;
+			}
+			else {
+				low = mid ;
+			}
+		}
+
+		let pcnt = (time - one.times[low]) / (one.times[high] - one.times[low]) ;
+		let x = one.xs[low] + pcnt * (one.xs[high] - one.xs[low]) ;
+		let y = one.ys[low] + pcnt * (one.ys[high] - one.ys[low]) ;
+
+		return new XeroPoint(x, y) ;
+	}
+
+	drawRobot(one, index, mirror, isteam) {
+		let fpt = this.getPositionByTime(one, this.time_ctrl_.current) ;
+		
+		if (one.alliance === 'red' && mirror) {
+			fpt = new XeroPoint(fpt.x, this.image_.fieldsize.height - fpt.y) ;
+		}
+		else {
+			fpt = new XeroPoint(this.image_.fieldsize.width - fpt.x, this.image_.fieldsize.height - fpt.y) ;			
+		}
+
+		let cpt = this.fieldToCanvasPt(fpt) ;
+		let radius = 25.0 ;
+
+		this.ctx_.fillStyle = 'black' ;
+		this.ctx_.beginPath() ;
+		this.ctx_.arc(cpt.x, cpt.y, radius, 0.0, 2 * Math.PI) ;
+		this.ctx_.fill() ;
+
+		this.ctx_.strokeStyle = ZebraView.RobotColors[index] ;
+		this.ctx_.lineWidth = 5.0 ;
+		this.ctx_.beginPath() ;
+		this.ctx_.arc(cpt.x, cpt.y, radius, 0.0, 2 * Math.PI) ;
+		this.ctx_.stroke() ;
+
+		let text = isteam ? one.match : one.team_key ;
+		if (text.startsWith('frc')) {
+			text = text.substring(3) ;
+		}
+		this.ctx_.textAlign = 'center' ;
+		this.ctx_.textBaseline = 'middle' ;
+		if (!isteam) {
+			this.ctx_.font = '18px serif' ;
+		}
+		else {
+			this.ctx_.font = '14px serif' ;
+		}
+		this.ctx_.fillStyle = 'white' ;
+		this.ctx_.fillText(text, cpt.x, cpt.y) ;
+	}
+
+	drawOne(one, index, mirror) {
+		let first = true ;
+		let last = undefined ;
+
+		this.ctx_.beginPath() ;
+		for(let i = 0 ; i < one.times.length ; i++) {
+			if (one.times[i] >= this.time_ctrl_.lvalue & one.times[i] <= this.time_ctrl_.rvalue) {
+				let fpt = new XeroPoint(one.xs[i], one.ys[i]) ;
+				
+				if (one.alliance === 'red' && mirror) {
+					fpt = new XeroPoint(fpt.x, this.image_.fieldsize.height - fpt.y) ;
+				}
+				else {
+					fpt = new XeroPoint(this.image_.fieldsize.width - fpt.x, this.image_.fieldsize.height - fpt.y) ;			
+				}
+
+				let cpt = this.fieldToCanvasPt(fpt) ;
+				if (first) {
+					this.ctx_.moveTo(cpt.x, cpt.y) ;
+					first = false ;
+				}
+				else {
+					this.ctx_.lineTo(cpt.x, cpt.y) ;
+				}
+				last = cpt ;
+			}
+		}
+		this.ctx_.lineWidth = 2.0 ;
+		this.ctx_.strokeStyle = ZebraView.RobotColors[index] ;
+		this.ctx_.stroke() ;
+	}
+
+	draw(data, mirror, isteam) {
+		let index = 0 ;
+		for(let one of data) {
+			this.drawOne(one, index++, mirror) ;
+			if (index === ZebraView.RobotColors.length) {
+				index = 0 ;
+			}
+		}
+
+		index = 0 ;
+		for(let one of data) {
+			this.drawRobot(one, index++, mirror, isteam) ;
+			if (index === ZebraView.RobotColors.length) {
+				index = 0 ;
+			}
+		}
 	}
 	
 	drawMatch() {
 		let teams = this.selector2_.getSelectedItems() ;
 		let drawdata = this.getTeamsForMatchData(this.target_, teams) ;
-		this.draw(drawdata) ;
+		this.draw(drawdata, false, false) ;
 	}
 
 	drawTeam() {
 		let matches = this.selector2_.getSelectedItems() ;
 		let drawdata = this.getMatchsForTeamData(this.target_, matches) ;
-		this.draw(drawdata) ;
+		this.draw(drawdata, true, true) ;
 	}
 
 	drawZebraCanvas() {
@@ -757,7 +947,6 @@ class ZebraView extends FieldBasedView {
 		let obj = arg[0];
 		this.image_descs_ = obj.images;
 		this.data_ = obj.data;
-		this.setTeamChoices();
 		this.loadImages();
 	}
 }
