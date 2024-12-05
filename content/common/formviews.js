@@ -52,6 +52,7 @@ class FormView extends XeroView {
 
             this.titlediv_ = document.createElement('div') ;
             this.titlediv_.innerText = obj.form.title ;
+            this.titlediv_.style.color = color ;
             if (obj.form.type === 'preview') {
                 this.titlediv_.innerText += ' - ' + obj.form.json.form ;
             }
