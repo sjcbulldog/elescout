@@ -47,6 +47,8 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-stored-graph-list',
         'delete-stored-graph',
         'get-picklist-data',
+        'get-picklist-list',
+        'create-new-picklist',
         'get-picklist-columns',
         'get-picklist-col-data',
         'get-preferences',
@@ -97,6 +99,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-stored-graph-list',
         'tablet-title',
         'send-picklist-data',
+        'send-picklist-list',
         'send-picklist-columns',
         'send-picklist-col-data',
         'send-preferences'

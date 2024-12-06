@@ -36,6 +36,7 @@ export abstract class SCBase {
   protected appdir_: string;
   protected content_dir_: string ;
   public logger_: winston.Logger;
+  public lastview_?: string ;
 
   protected constructor(win: BrowserWindow, type: string) {
     this.typestr_ = type;
@@ -184,6 +185,8 @@ export abstract class SCBase {
   }
 
   protected setView(view: string, ...args: any[]) {
+    this.lastview_ = view ;
+    
     args.unshift(view) ;
     this.sendToRenderer("update-main-window-view", ...args);
   }

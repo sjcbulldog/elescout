@@ -433,6 +433,17 @@ class ZebraView extends XeroView {
 		this.selector2_ = new XeroSelector('Step 3: Pick Matches For Team', false)
 		this.div3_.append(this.selector2_.detail);
 
+		this.status_div_ = document.createElement('div') ;
+		this.status_div_.className = 'zebra-status-div' ;
+		this.zebra_top_.append(this.status_div_) ;
+
+		this.status_type_ = document.createElement('span') ;
+		this.status_type_.className = 'zebra-status-type' ;
+		this.status_div_.append(this.status_type_) ;
+		this.status_list_ = document.createElement('span') ;
+		this.status_list_.className = 'zebra-status-list' ;
+		this.status_div_.append(this.status_list_) ;
+
 		let canvas = document.createElement('canvas') ;
 		canvas.className = 'zebra-time-select' ;
 		this.time_ctrl_ = new TwoEndedSlider(canvas, 0.0, this.getMaxTime(), 15.0) ;
@@ -485,6 +496,7 @@ class ZebraView extends XeroView {
 	}
 
 	matchSelectedForTeamCB(arg) {
+		this.updateMatchesForTeam() ;
 		this.drawScreen() ;
 	}
 
@@ -514,6 +526,15 @@ class ZebraView extends XeroView {
 		this.teamSelectedCBInt(arg.target.xerodata) ;
 	}
 
+	updateMatchesForTeam() {
+		let matches = this.selector2_.getSelectedItems() ;
+		let text = 'Matches:';
+		for(let m of matches) {
+			text += ' ' + m ;
+		}
+		this.status_list_.innerText = text ;		
+	}
+
 	teamSelectedCBInt(data) {
 		this.target_ = data ;
 		let matches = this.getMatchesByTeam() ;
@@ -521,6 +542,10 @@ class ZebraView extends XeroView {
 		this.selector2_.setTitle('Step 3: Select Matches For Selected Team');
 		this.selector2_.addDataToSelectors(matches, this.matchSelectedForTeamCB.bind(this)) ;
 		this.selector2_.selectAll() ;
+
+		this.status_type_.innerText = 'Team: ' + data;
+
+		this.updateMatchesForTeam() ;
 		this.drawScreen() ;
 	}
 
@@ -595,6 +620,7 @@ class ZebraView extends XeroView {
 		this.selector_.select(teams[0]) ;
 		this.teamSelectedCBInt(teams[0]) ;
 
+		this.status_type_.innerText = 'Team: ' + teams[0] ;
 	}
 
 	findMatchByTitle(title) {
@@ -629,11 +655,22 @@ class ZebraView extends XeroView {
 	}
 
 	teamSelectedForMatchCB(arg) {
+		this.updateTeamsInMatch() ;
+		this.status_type_.innerText = 'Team: ' + teams[0] ;
 		this.drawScreen() ;
 	}
 
 	matchSelectedCB(arg) {
 		this.matchSelectedCBInt(arg.target.xerodata) ;
+	}
+
+	updateTeamsInMatch() {
+		let teams = this.selector2_.getSelectedItems() ;
+		let text = 'Teams:';
+		for(let m of teams) {
+			text += ' ' + m ;
+		}
+		this.status_list_.innerText = text ;
 	}
 
 	matchSelectedCBInt(data) {
@@ -643,6 +680,10 @@ class ZebraView extends XeroView {
 		this.selector2_.setTitle('Step 3: Pick Teams From Selected Match');
 		this.selector2_.addDataToSelectors(teams, this.teamSelectedForMatchCB.bind(this)) ;
 		this.selector2_.selectAll() ;
+
+		this.status_type_ = 'Match: ' + data ;
+		this.updateTeamsInMatch() ;
+
 		this.drawScreen() ;
 	}
 
@@ -665,6 +706,7 @@ class ZebraView extends XeroView {
 		let matches = this.getAllMatches();
 		this.selector_.addDataToSelectors(matches, this.matchSelectedCB.bind(this));
 
+		this.status_type_.innerText = 'Match: ' + matches[0] ;
 		this.selector_.select(matches[0]) ;
 		this.matchSelectedCBInt(matches[0]) ;
 

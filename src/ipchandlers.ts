@@ -269,7 +269,23 @@ export async function getPicklistData(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
-        central.sendPicklistData() ;
+        central.sendPicklistData(args[0]) ;
+    } 
+}
+
+export async function getPicklistList(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.sendPicklistList(args[0]) ;
+    } 
+}
+
+export async function createNewPicklist(cmd: string, ...args: any[]) {
+    if (scappbase && scappbase.applicationType === XeroAppType.Central) {
+        scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
+        let central : SCCentral = scappbase as SCCentral ;
+        central.createNewPicklist(args[0]) ;
     } 
 }
 
@@ -277,7 +293,7 @@ export async function getPicklistColumns(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
-        central.sendPicklistColumns() ;
+        central.sendPicklistColumns(args[0]) ;
     } 
 }
 
@@ -293,7 +309,7 @@ export async function updatePicklistColumns(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
-        central.updatePicklistColumns(args[0]) ;
+        central.updatePicklistColumns(args[0], args[1]) ;
     } 
 }
 
@@ -301,7 +317,7 @@ export async function updatePicklistData(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
-        central.updatePicklistData(args[0]) ;
+        central.updatePicklistData(args[0], args[1]) ;
     } 
 }
 

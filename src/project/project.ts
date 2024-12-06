@@ -16,7 +16,6 @@ import winston from 'winston';
 import { BAEvent, BAMatch, BATeam } from '../extnet/badata';
 import { StatBotics } from '../extnet/statbotics';
 import { DataGenerator } from './datagen';
-import { deleteStoredGraph } from '../ipchandlers';
 import { FieldAndType } from '../model/datamodel';
 
 export interface ProjectOneColCfg {
@@ -30,6 +29,12 @@ export interface ProjColConfig
     columns: ProjectOneColCfg[],
     frozenColumnCount: number,
 } ;
+
+export interface PickList {
+    name: string ;
+    teams: number[] ;
+    columns: string[] ;
+}
 
 export interface NamedGraphDataRequest {
     name: string;
@@ -62,8 +67,7 @@ export class ProjectInfo {
     public teamdb_col_config_? : ProjColConfig ;        // List of hidden columns in team data
     public zebra_tag_data_?: any ;                      // Zebra tag data
     public team_graph_data_: NamedGraphDataRequest[] ;  // Stored graphs defined by the user
-    public picklist_ : number[] = [] ;                  // Pick list, a list of team number
-    public picklist_columns_ : string[] = [] ;          // The additional data to display in the pick list
+    public picklist_ : PickList[] = [] ;                // Pick list, a list of team number
 
     constructor() {
         this.locked_ = false ;
@@ -723,13 +727,31 @@ export class Project {
         return true ;
     }
 
-    public setPicklistCols(cols: string[]) {
-        this.info.picklist_columns_ = cols ;
-        this.writeEventFile() ;
+    public addPicklist(name: string) {
+
     }
 
-    public setPicklistData(teams: number[]) {
-        this.info.picklist_ = teams ;
+    public findPicklistByName(name: string) : PickList | undefined {
+        for(let picklist of this.info_.picklist_) {
+            if (picklist.name === name)
+                return picklist ;
+        }
+
+        return undefined ;
+    }
+
+    public setPicklistCols(name: string, cols: string[]) {
+        let picklist = this.findPicklistByName(name) ;
+        if (picklist) {
+            picklist.columns = cols ;
+        }
+    }
+
+    public setPicklistData(name: string, teams: number[]) {
+        let picklist = this.findPicklistByName(name) ;
+        if (picklist) {
+            picklist.teams = teams ;
+        }
         this.writeEventFile() ;
     }
 
@@ -749,14 +771,6 @@ export class Project {
                 // we just add an empty picklist if it was not in the file read.
                 //
                 this.info_.picklist_ = [] ;
-            }
-
-            if (!this.info_.picklist_columns_) {
-                //
-                // The previous version did not include the picklist.  Rather than make a user re-create their project,
-                // we just add an empty picklist if it was not in the file read.
-                //
-                this.info_.picklist_columns_ = [] ;
             }
         }
         

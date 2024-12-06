@@ -1,0 +1,27 @@
+.picklist-info {
+    display: flex ;
+    flex-direction: row;
+    width: 100%;
+    border: solid black ;
+}
+
+.picklist-info-name {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.picklist-info-existing {
+    margin-left: 1px ;
+}
+
+.picklist-info-text {
+    margin-left: 1px ;
+}
+
+.picklist-info-button {
+    margin-left: 1px;
+}
+
+.picklist-info-label {
+    margin-left: 1px;
+}

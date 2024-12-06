@@ -90,6 +90,7 @@ export class SCCentral extends SCBase {
 	private redMenuItem_ : MenuItem | undefined ;
 	private blueMenuItem_ : MenuItem | undefined ;
 	private reverseImage_: MenuItem | undefined ;
+	private lastformview_? : string ;
 
 	constructor(win: BrowserWindow, args: string[]) {
 		super(win, "server");
@@ -150,23 +151,41 @@ export class SCCentral extends SCBase {
 		return ret;
 	}
 
+	private updateView() : boolean {
+		let ret: boolean = false ;
+
+		if (this.lastview_ && this.lastview_ === 'formview' && this.lastformview_) {
+			this.setView('formview', this.lastformview_) ;
+			ret = true ;
+		}
+
+		return ret ;
+	}
+
 	private colorMenuItem(color: string) {
 		this.color_ = color ;
-		if (this.project_) {
-			this.setView('info') ;
-		}
-		else {
-			this.setView('empty') ;
+
+		if (!this.updateView()) {
+			if (this.project_) {
+				this.setView('info') ;
+			}
+			else {
+
+				this.setView('empty') ;
+			}
 		}
 	}
 
 	private reverseImage() {
 		this.reversed_ = this.reverseImage_!.checked ;
-		if (this.project_) {
-			this.setView('info') ;
-		}
-		else {
-			this.setView('empty') ;
+		if (!this.updateView()) {
+			if (this.project_) {
+				this.setView('info') ;
+			}
+			else {
+
+				this.setView('empty') ;
+			}
 		}
 	}
 
@@ -892,8 +911,7 @@ export class SCCentral extends SCBase {
 
 	public sendEventData(): void {
 		if (this.project_ && this.isBAAvailable()) {
-			this.ba_
-				?.getEvents()
+			this.ba_?.getEvents()
 				.then((frcevs: BAEvent[]) => {
 					this.baevents_ = frcevs;
 					this.sendToRenderer("send-event-data", frcevs);
@@ -1236,9 +1254,9 @@ export class SCCentral extends SCBase {
 		} else if (cmd === SCCentral.importMatches) {
 			this.importMatches();
 		} else if (cmd === SCCentral.viewTeamForm) {
-			this.setView('formview', 'team');
+			this.setFormView('team');
 		} else if (cmd === SCCentral.viewMatchForm) {
-			this.setView('formview', 'match');
+			this.setFormView('match');
 		} else if (cmd === SCCentral.viewTeamStatus) {
 			if (!this.project_?.info.teamassignments_) {
 				this.sendToRenderer(
@@ -1293,10 +1311,15 @@ export class SCCentral extends SCBase {
 			if (!pathname.canceled) {
 				if (this.validateForm(pathname.filePaths[0], '*')) {
 					this.previewfile_ = pathname.filePaths[0];
-					this.setView('formview', 'preview');
+					this.setFormView('preview');
 				}
 			}
 		});
+	}
+
+	private setFormView(view: string) {
+		this.lastformview_ = view ;
+		this.setView('formview', view);
 	}
 
 	private importTeams() {
@@ -1487,8 +1510,7 @@ export class SCCentral extends SCBase {
 
 	private loadBAEvent() {
 		if (this.isBAAvailable()) {
-			this.ba_
-				?.getEvents()
+			this.ba_?.getEvents()
 				.then((frcevs) => {
 					this.sendToRenderer("send-event-data", frcevs);
 				})
@@ -2406,30 +2428,65 @@ export class SCCentral extends SCBase {
 		return 'UNKNOWN';
 	}
 
-	public sendPicklistColumns() {
-		if (this.project_ && this.project_.info.picklist_columns_) {
-			this.sendToRenderer('send-picklist-columns', this.project_.info.picklist_columns_) ;
+	public sendPicklistColumns(name: string) {
+		if (this.project_) {
+			let picklist = this.project_.findPicklistByName(name) ;
+			if (picklist) {
+				this.sendToRenderer('send-picklist-columns', picklist.columns) ;
+			}
 		}
 	}
 
-	public sendPicklistData() {
+	public createNewPicklist(name: string) {
+		if (this.project_) {
+			let picklist = this.project_.findPicklistByName(name) ;
+			if (picklist) {
+				dialog.showMessageBox(this.win_, {
+					title: 'Error Creating New Picklist',
+					message: 'There is already a picklist named \'' + name + '\''
+				});
+			}
+			else {
+				this.project_.addPicklist(name) ;
+				this.sendPicklistData(name) ;
+				this.sendPicklistColumns(name) ;
+			}
+		}
+	}
+
+	public sendPicklistList(name: string) {
+		let data: string[] = [] ;
+
+		if (this.project_) {
+			for(let picklist of this.project_?.info.picklist_) {
+				data.push(picklist.name) ;
+			}
+		}
+
+		this.sendToRenderer('send-picklist-list', data) ;
+	}
+
+	public sendPicklistData(name: string) {
         let data : any[] = [] ;
         if (this.project_ && this.project_.info.teams_) {
-			if (this.project_.info.picklist_.length === 0) {
-				for(let team of this.project_.info.teams_) {
-					this.project_.info.picklist_.push(team.team_number) ;
+			let picklist = this.project_.findPicklistByName(name) ;
+			if (picklist) {
+				if (picklist.teams.length === 0) {
+					for(let team of this.project_.info.teams_) {
+						picklist.teams.push(team.team_number) ;
+					}
 				}
-			}
 
-			let rank = 1 ;
-			for(let team of this.project_.info.picklist_) {
-				let name = this.getNickNameFromTeamNumber(team) ;
-				let obj = {
-					rank: rank++,
-					teamnumber: team,
-					nickname: name
-				};
-				data.push(obj) ;
+				let rank = 1 ;
+				for(let team of picklist.teams) {
+					let name = this.getNickNameFromTeamNumber(team) ;
+					let obj = {
+						rank: rank++,
+						teamnumber: team,
+						nickname: name
+					};
+					data.push(obj) ;
+				}
 			}
         }
         this.sendToRenderer('send-picklist-data', data) ;
@@ -2555,11 +2612,11 @@ export class SCCentral extends SCBase {
 		this.sendToRenderer('send-picklist-col-data', data) ;
 	}
 
-	public updatePicklistColumns(cols: string[]) {
-		this.project_!.setPicklistCols(cols);
+	public updatePicklistColumns(name: string, cols: string[]) {
+		this.project_!.setPicklistCols(name, cols);
 	}
 
-	public updatePicklistData(data: number[]) {
-		this.project_!.setPicklistData(data) ;
+	public updatePicklistData(name: string, data: number[]) {
+		this.project_!.setPicklistData(name, data) ;
 	}
 }

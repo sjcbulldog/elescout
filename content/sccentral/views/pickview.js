@@ -7,17 +7,72 @@ class PickListView extends TabulatorView {
         this.team_fields_ = [] ;
         this.match_fields_ = [] ;
 
-        this.buildInitialView('Retreiving data for the pick list view, please wait ...') ;
+        this.createInitialWindow() ;
+
         this.registerCallback('send-picklist-data', this.formCallback.bind(this));
         this.registerCallback('send-picklist-columns', this.receivePicklistColumns.bind(this));
         this.registerCallback('send-picklist-col-data', this.receivePicklistColData.bind(this));
         this.registerCallback('send-team-field-list', this.receiveTeamFieldList.bind(this));
         this.registerCallback('send-match-field-list', this.receiveMatchFieldList.bind(this));
 
+        window.scoutingAPI.send('get-picklist-list') ;
         window.scoutingAPI.send('get-picklist-data');
         window.scoutingAPI.send('get-team-field-list');
         window.scoutingAPI.send('get-match-field-list');
         window.scoutingAPI.send('get-picklist-columns');
+    }
+
+    createInitialWindow() {
+        this.picklist_top_ = document.createElement('div') ;
+
+        this.picklist_info_ = document.createElement('div') ;
+        this.picklist_info_.className = 'picklist-info' ;
+
+        this.picklist_info_name_ = document.createElement('div') ;
+        this.picklist_info_name_.className = 'picklist-info-name' ;
+        this.picklist_info_name_.textContent = 'Picklist: Not Selected' ;
+
+        this.picklist_info_existing_ = document.createElement('select');
+        this.picklist_info_existing_.className = 'picklist-info-existing' ;
+        const opt = document.createElement('option') ;
+        opt.value = '' ;
+        opt.text = 'NONE' ;
+        this.picklist_info_existing_.append(opt) ;
+
+        this.picklist_info_label_ = document.createElement('label') ;
+        this.picklist_info_label_.className = 'picklist-info-label' ;
+        this.picklist_info_label_.textContent = 'Pick List Name'
+        this.picklist_info_.append(this.picklist_info_label_) ;
+        this.picklist_info_label_.append(this.picklist_info_create_) ;
+
+        this.picklist_info_text_ = document.createElement('input') ;
+        this.picklist_info_text_.className = 'picklist-info-text' ;
+        this.picklist_info_text_.setAttribute('type', 'text') ;
+        this.picklist_info_label_.append(this.picklist_info_existing_) ;
+
+        this.picklist_info_create_ = document.createElement('button') ;
+        this.picklist_info_create_.className = 'picklist-info-button' ;
+        this.picklist_info_create_.textContent = 'Create' ;
+        this.picklist_info_.append(this.picklist_info_create_) ;
+
+        this.picklist_info_delete_ = document.createElement('button') ;
+        this.picklist_info_delete_.className = 'picklist-info-button' ;
+        this.picklist_info_delete_.textContent = 'Create' ;
+        this.picklist_info_.append(this.picklist_info_delete_) ;
+    }
+
+    populatePicklistNames(names) {
+        for(let choice of names) {
+            const opt = document.createElement('option');    
+            opt.value = choice ;
+            opt.text = choice ;
+            this.picklist_info_existing_.append(opt) ;
+        }
+    }
+
+    render() {
+        this.reset() ;
+        this.top_.append(this.picklist_top_) ;
     }
 
     formCallback(data) {
