@@ -9,31 +9,34 @@ class PickListView extends TabulatorView {
 
         this.createInitialWindow() ;
 
-        this.registerCallback('send-picklist-data', this.formCallback.bind(this));
+        this.registerCallback('send-picklist-list', this.receivePicklistList.bind(this)) ;
+        this.registerCallback('send-picklist-data', this.receivePicklistData.bind(this));
         this.registerCallback('send-picklist-columns', this.receivePicklistColumns.bind(this));
         this.registerCallback('send-picklist-col-data', this.receivePicklistColData.bind(this));
         this.registerCallback('send-team-field-list', this.receiveTeamFieldList.bind(this));
         this.registerCallback('send-match-field-list', this.receiveMatchFieldList.bind(this));
 
         window.scoutingAPI.send('get-picklist-list') ;
-        window.scoutingAPI.send('get-picklist-data');
         window.scoutingAPI.send('get-team-field-list');
         window.scoutingAPI.send('get-match-field-list');
-        window.scoutingAPI.send('get-picklist-columns');
     }
 
     createInitialWindow() {
         this.picklist_top_ = document.createElement('div') ;
 
+        //
+        // Top level picklist info panel
+        //
         this.picklist_info_ = document.createElement('div') ;
         this.picklist_info_.className = 'picklist-info' ;
+        this.picklist_top_.append(this.picklist_info_) ;
 
-        this.picklist_info_name_ = document.createElement('div') ;
-        this.picklist_info_name_.className = 'picklist-info-name' ;
-        this.picklist_info_name_.textContent = 'Picklist: Not Selected' ;
-
+        //
+        // A selector to select any existing picklist with a label
+        //
         this.picklist_info_existing_ = document.createElement('select');
         this.picklist_info_existing_.className = 'picklist-info-existing' ;
+        this.picklist_info_existing_.onchange = this.selectedPicklistChanged.bind(this);
         const opt = document.createElement('option') ;
         opt.value = '' ;
         opt.text = 'NONE' ;
@@ -41,48 +44,112 @@ class PickListView extends TabulatorView {
 
         this.picklist_info_label_ = document.createElement('label') ;
         this.picklist_info_label_.className = 'picklist-info-label' ;
-        this.picklist_info_label_.textContent = 'Pick List Name'
+        this.picklist_info_label_.textContent = 'Available Picklists:'
         this.picklist_info_.append(this.picklist_info_label_) ;
-        this.picklist_info_label_.append(this.picklist_info_create_) ;
+        this.picklist_info_label_.append(this.picklist_info_existing_) ;
 
+        //
+        // A button to delete a selected picklist
+        //
+        this.picklist_info_delete_ = document.createElement('button') ;
+        this.picklist_info_delete_.className = 'picklist-info-button' ;
+        this.picklist_info_delete_.textContent = 'Delete' ;
+        this.picklist_info_delete_.onclick = this.deletePicklist.bind(this) ;
+        this.picklist_info_.append(this.picklist_info_delete_) ;
+
+        //
+        // An input text field to name a new picklist
+        //
         this.picklist_info_text_ = document.createElement('input') ;
         this.picklist_info_text_.className = 'picklist-info-text' ;
         this.picklist_info_text_.setAttribute('type', 'text') ;
-        this.picklist_info_label_.append(this.picklist_info_existing_) ;
 
+        this.picklist_info_label2_ = document.createElement('label') ;
+        this.picklist_info_label2_.className = 'picklist-info-label2' ;
+        this.picklist_info_label2_.textContent = 'New Picklist Name:'
+        this.picklist_info_.append(this.picklist_info_label2_) ;
+        this.picklist_info_label2_.append(this.picklist_info_text_) ;
+
+        //
+        // A button to create a new picklist
+        //
         this.picklist_info_create_ = document.createElement('button') ;
         this.picklist_info_create_.className = 'picklist-info-button' ;
         this.picklist_info_create_.textContent = 'Create' ;
+        this.picklist_info_create_.onclick = this.createPicklist.bind(this) ;
         this.picklist_info_.append(this.picklist_info_create_) ;
 
-        this.picklist_info_delete_ = document.createElement('button') ;
-        this.picklist_info_delete_.className = 'picklist-info-button' ;
-        this.picklist_info_delete_.textContent = 'Create' ;
-        this.picklist_info_.append(this.picklist_info_delete_) ;
-    }
+        this.table_top_ = document.createElement('div') ;
+        this.picklist_top_.append(this.table_top_) ;
 
-    populatePicklistNames(names) {
-        for(let choice of names) {
-            const opt = document.createElement('option');    
-            opt.value = choice ;
-            opt.text = choice ;
-            this.picklist_info_existing_.append(opt) ;
-        }
-    }
-
-    render() {
         this.reset() ;
         this.top_.append(this.picklist_top_) ;
     }
 
-    formCallback(data) {
-        this.reset() ;
+    selectedPicklistChanged() {
+        this.updateTeamData() ;
+        window.scoutingAPI.send('get-picklist-data', this.picklist_info_existing_.value) ;
+        window.scoutingAPI.send('get-picklist-columns', this.picklist_info_existing_.value) ;
+    }
+
+    createPicklist() {
+        this.updateTeamData() ;
+
+        let name = this.picklist_info_text_.value ;
+        window.scoutingAPI.send('create-new-picklist', name) ;
+    }
+
+    deletePicklist() {
+        let name = this.picklist_info_existing_.value ;
+        this.clear(this.table_top_) ;
+        window.scoutingAPI.send('delete-picklist', name) ;
+    }
+
+    populatePicklistNames(names) {
+        this.clear(this.picklist_info_existing_) ;
+
+        if (names && names.length > 0) {
+            this.picklist_info_existing_.disabled = false ;
+            for(let choice of names) {
+                const opt = document.createElement('option');    
+                opt.value = choice ;
+                opt.text = choice ;
+                this.picklist_info_existing_.append(opt) ;
+            }
+        }
+        else {
+            const opt = document.createElement('option');    
+            opt.value = '' ;
+            opt.text = 'No Picklist Defined' ;
+            opt.disabled = true ;
+            this.picklist_info_existing_.append(opt) ;
+            this.picklist_info_existing_.disabled = true;
+        }
+    }
+
+    receivePicklistList(arg) {
+        this.populatePicklistNames(arg[0].list) ;
+        if (arg[0].default) {
+            this.picklist_info_existing_.value = arg[0].default ;
+            window.scoutingAPI.send('get-picklist-data', this.picklist_info_existing_.value) ;
+            window.scoutingAPI.send('get-picklist-columns', this.picklist_info_existing_.value) ;
+        }
+    }
+
+    receivePicklistData(arg) {
+        let obj = arg[0] ;
+        this.clear(this.table_top_) ;
+        this.cols_ = [] ;
+
+        this.picklist_name_ = obj.name ;
+        this.picklist_info_existing_.value = obj.name ;
+
         this.table_div_ = document.createElement('div');
         this.table_div_.id = 'tablediv';
 
         this.table_ = new Tabulator(this.table_div_, 
             {
-                data:data[0],
+                data:obj.data,
                 layout:"fitData",
                 resizableColumnFit:true,
                 columns: this.generateColDesc(),
@@ -92,7 +159,7 @@ class PickListView extends TabulatorView {
     
         this.table_.on("rowMoved", this.teamMoved.bind(this));
         this.table_.on("columnMoved", this.colMoved.bind(this)) ;
-        this.top_.append(this.table_div_) ;
+        this.table_top_.append(this.table_div_) ;
     }
 
     setValue(field, team, value) {
@@ -122,8 +189,6 @@ class PickListView extends TabulatorView {
 
     receivePicklistColData(args) {
         let dobj = args[0];
-
-        console.log(dobj.field) ;
 
         let num = true ;
         for(let i = 0 ; i < dobj.teams.length ; i++) {
@@ -155,6 +220,11 @@ class PickListView extends TabulatorView {
     }
 
     receivePicklistColumns(args) {
+        let store = [...this.cols_] ;
+        for(let col of store) {
+            this.removeColumn(col) ;
+        }
+
         for(let col of args[0]) {
             this.addPickListCol(col) ;
         }
@@ -180,6 +250,40 @@ class PickListView extends TabulatorView {
         window.scoutingAPI.send('update-picklist-columns', this.cols_) ;
     }
 
+    getTeamNumberFromRank(rank) {
+        for(let row of this.table_.getRows()) {
+            let cell = row.getCell('rank') ;
+            if (cell.getData().rank === rank) {
+                return cell.getData().teamnumber ;
+            }
+        }
+
+        return -1 ;
+    }
+
+    updateTeamData() {
+        if (!this.table_) {
+            return ;
+        }
+
+        let teams = [] ;
+
+        //
+        // Now, the teams may not be sorted by rank order
+        //
+        for(let i = 1 ; i <= this.table_.getRows().length ; i++) {
+            let team = this.getTeamNumberFromRank(i) ;
+            teams.push(team) ;
+        }
+
+        let obj = {
+            name: this.picklist_name_,
+            teams: teams
+        }
+
+        window.scoutingAPI.send('update-picklist-data', obj) ;
+    }
+
     teamMoved() {
         let rank = 1 ;
         for(let row of this.table_.getRows()) {
@@ -187,13 +291,7 @@ class PickListView extends TabulatorView {
             cell.setValue(rank++, false) ;
         }
 
-        let teams = [] ;
-        for(let row of this.table_.getRows()) {
-            let cell = row.getCell('teamnumber') ;
-            teams.push(cell.getData().teamnumber) ;
-        }
-
-        window.scoutingAPI.send('update-picklist-data', teams) ;
+        this.updateTeamData() ;
     }
 
     getColumnFromId(id) {
@@ -216,18 +314,26 @@ class PickListView extends TabulatorView {
         window.scoutingAPI.send('get-picklist-col-data', field) ;
     }
 
+    removeColumn(field) {
+        let index = this.cols_.indexOf(field) ;
+        this.cols_.splice(index, 1) ;
+        let col = this.getColumnFromId(field) ;
+        col.delete() ;
+    }
+
     selectPicklistMenu(field) {
         if (this.cols_.includes(field)) {
-            let index = this.cols_.indexOf(field) ;
-            this.cols_.splice(index, 1) ;
-            let col = this.getColumnFromId(field) ;
-            col.delete() ;
+            this.removeColumn(field) ;
         }
         else {
             this.addPickListCol(field) ;
         }
 
-        window.scoutingAPI.send('update-picklist-columns', this.cols_) ;
+        let coldata = {
+            name: this.picklist_name_,
+            cols: this.cols_
+        }
+        window.scoutingAPI.send('update-picklist-columns', coldata) ;
     }
 
     picklistMenu() {
@@ -283,6 +389,7 @@ class PickListView extends TabulatorView {
     }
 }
 
+window.scoutingAPI.receive("send-picklist-list", (args) => { XeroView.callback_mgr_.dispatchCallback('send-picklist-list', args); });
 window.scoutingAPI.receive("send-picklist-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-picklist-data', args); });
 window.scoutingAPI.receive("send-picklist-columns", (args) => { XeroView.callback_mgr_.dispatchCallback('send-picklist-columns', args); });
 window.scoutingAPI.receive("send-picklist-col-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-picklist-col-data', args); });

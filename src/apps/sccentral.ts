@@ -3,7 +3,7 @@ import { BlueAlliance } from "../extnet/ba";
 import { NamedGraphDataRequest, Project } from "../project/project";
 import { BrowserWindow, dialog, Menu, MenuItem, shell } from "electron";
 import { TCPSyncServer } from "../sync/tcpserver";
-import { Packet } from "../sync/packet";
+import { PacketObj } from "../sync/packetobj";
 import { PacketType } from "../sync/packettypes";
 import { MatchDataModel } from "../model/matchmodel";
 import { BAEvent, BAMatch, BATeam } from "../extnet/badata";
@@ -2015,8 +2015,8 @@ export class SCCentral extends SCBase {
 			});
 	}
 
-	private processPacket(p: Packet): Packet | undefined {
-		let resp: Packet | undefined;
+	private processPacket(p: PacketObj): PacketObj | undefined {
+		let resp: PacketObj | undefined;
 
 		if (p.type_ === PacketType.Hello) {
 			if (p.data_.length > 0) {
@@ -2038,7 +2038,7 @@ export class SCCentral extends SCBase {
 				name: evname,
 			};
 			let uuidbuf = Buffer.from(JSON.stringify(evid), "utf-8");
-			resp = new Packet(PacketType.Hello, uuidbuf);
+			resp = new PacketObj(PacketType.Hello, uuidbuf);
 		} else if (p.type_ === PacketType.RequestTablets) {
 			let data: Uint8Array = new Uint8Array(0);
 			if (this.project_ && this.project_.info.tablets_) {
@@ -2053,16 +2053,16 @@ export class SCCentral extends SCBase {
 				let msg: string = JSON.stringify(tablets);
 				data = Buffer.from(msg, "utf-8");
 			}
-			resp = new Packet(PacketType.ProvideTablets, data);
+			resp = new PacketObj(PacketType.ProvideTablets, data);
 		} else if (p.type_ === PacketType.RequestTeamForm) {
 			if (this.project_?.info.teamform_) {
 				let jsonstr = fs.readFileSync(this.project_.info.teamform_).toString();
-				resp = new Packet(
+				resp = new PacketObj(
 					PacketType.ProvideTeamForm,
 					Buffer.from(jsonstr, "utf8")
 				);
 			} else {
-				resp = new Packet(
+				resp = new PacketObj(
 					PacketType.Error,
 					Buffer.from("internal error #1 - no team form", "utf-8")
 				);
@@ -2074,12 +2074,12 @@ export class SCCentral extends SCBase {
 		} else if (p.type_ === PacketType.RequestMatchForm) {
 			if (this.project_?.info.matchform_) {
 				let jsonstr = fs.readFileSync(this.project_.info.matchform_).toString();
-				resp = new Packet(
+				resp = new PacketObj(
 					PacketType.ProvideMatchForm,
 					Buffer.from(jsonstr, "utf8")
 				);
 			} else {
-				resp = new Packet(
+				resp = new PacketObj(
 					PacketType.Error,
 					Buffer.from("internal error #1 - no match form", "utf-8")
 				);
@@ -2091,9 +2091,9 @@ export class SCCentral extends SCBase {
 		} else if (p.type_ === PacketType.RequestTeamList) {
 			if (this.project_?.info.teamassignments_) {
 				let str = JSON.stringify(this.project_?.info.teamassignments_);
-				resp = new Packet(PacketType.ProvideTeamList, Buffer.from(str));
+				resp = new PacketObj(PacketType.ProvideTeamList, Buffer.from(str));
 			} else {
-				resp = new Packet(
+				resp = new PacketObj(
 					PacketType.Error,
 					Buffer.from(
 						"internal error #2 - no team list generated for a locked event",
@@ -2108,9 +2108,9 @@ export class SCCentral extends SCBase {
 		} else if (p.type_ === PacketType.RequestMatchList) {
 			if (this.project_?.info.matchassignements_) {
 				let str = JSON.stringify(this.project_?.info.matchassignements_);
-				resp = new Packet(PacketType.ProvideMatchList, Buffer.from(str));
+				resp = new PacketObj(PacketType.ProvideMatchList, Buffer.from(str));
 			} else {
-				resp = new Packet(
+				resp = new PacketObj(
 					PacketType.Error,
 					Buffer.from(
 						"internal error #3 - no match list has been generated for a locked event",
@@ -2126,7 +2126,7 @@ export class SCCentral extends SCBase {
 			try {
 				let obj = JSON.parse(p.payloadAsString());
 				this.project_!.processResults(obj);
-				resp = new Packet(PacketType.ReceivedResults);
+				resp = new PacketObj(PacketType.ReceivedResults);
 
 				if (this.project_!.isTabletTeam(p.payloadAsString())) {
 					this.setView("teamstatus");
@@ -2134,7 +2134,7 @@ export class SCCentral extends SCBase {
 					this.setView("matchstatus");
 				}
 			} catch (err) {
-				resp = new Packet(
+				resp = new PacketObj(
 					PacketType.Error,
 					Buffer.from(
 						"internal error #5 - invalid results json received by central host",
@@ -2157,7 +2157,7 @@ export class SCCentral extends SCBase {
 				type: "info",
 			});
 		} else {
-			resp = new Packet(
+			resp = new PacketObj(
 				PacketType.Error,
 				Buffer.from("internal error #4 - invalid packet type received")
 			);
@@ -2184,8 +2184,8 @@ export class SCCentral extends SCBase {
 						"Cannot start TCP sync - " + err.message
 					);
 				});
-			this.tcpsyncserver_.on("packet", (p: Packet) => {
-				let reply: Packet | undefined = this.processPacket(p);
+			this.tcpsyncserver_.on("packet", (p: PacketObj) => {
+				let reply: PacketObj | undefined = this.processPacket(p);
 				if (reply) {
 					this.tcpsyncserver_!.send(reply).then(() => {
 						if (reply.type_ === PacketType.Error) {
@@ -2437,6 +2437,22 @@ export class SCCentral extends SCBase {
 		}
 	}
 
+	public deletePicklist(name: string) {
+		if (this.project_) {
+			let picklist = this.project_.findPicklistByName(name) ;
+			if (picklist) {
+				this.project_.deletePicklist(name) ;
+			}
+			else {
+				dialog.showMessageBox(this.win_, {
+					title: 'Error Deleting Picklist',
+					message: 'There was a request to delete picklist \'' + name + '\' which does not exist'
+				});
+			}
+			this.sendPicklistList() ;
+		}
+	}
+
 	public createNewPicklist(name: string) {
 		if (this.project_) {
 			let picklist = this.project_.findPicklistByName(name) ;
@@ -2450,11 +2466,12 @@ export class SCCentral extends SCBase {
 				this.project_.addPicklist(name) ;
 				this.sendPicklistData(name) ;
 				this.sendPicklistColumns(name) ;
+				this.sendPicklistList() ;
 			}
 		}
 	}
 
-	public sendPicklistList(name: string) {
+	public sendPicklistList() {
 		let data: string[] = [] ;
 
 		if (this.project_) {
@@ -2463,12 +2480,31 @@ export class SCCentral extends SCBase {
 			}
 		}
 
-		this.sendToRenderer('send-picklist-list', data) ;
+		let obj = {
+			list: data,
+			default: this.project_?.info.last_picklist_
+		}
+
+		this.sendToRenderer('send-picklist-list', obj) ;
 	}
 
 	public sendPicklistData(name: string) {
         let data : any[] = [] ;
         if (this.project_ && this.project_.info.teams_) {
+			if (!name) {
+				if (this.project_.info.picklist_.length === 0) {
+					return ;
+				}
+
+				if (this.project_.info.last_picklist_) {
+					name = this.project_.info.last_picklist_ ;
+				}
+				else {
+					name = this.project_.info.picklist_[0].name ;
+				}
+			}
+
+			this.project_.setLastPicklistUsed(name) ;
 			let picklist = this.project_.findPicklistByName(name) ;
 			if (picklist) {
 				if (picklist.teams.length === 0) {
@@ -2489,7 +2525,11 @@ export class SCCentral extends SCBase {
 				}
 			}
         }
-        this.sendToRenderer('send-picklist-data', data) ;
+		let obj = {
+			name: name,
+			data: data
+		} ;
+        this.sendToRenderer('send-picklist-data', obj) ;
 	}
 
 	private getTeamData(field: string, team: number) : Promise<number> {
@@ -2612,11 +2652,11 @@ export class SCCentral extends SCBase {
 		this.sendToRenderer('send-picklist-col-data', data) ;
 	}
 
-	public updatePicklistColumns(name: string, cols: string[]) {
-		this.project_!.setPicklistCols(name, cols);
+	public updatePicklistColumns(obj: any) {
+		this.project_!.setPicklistCols(obj.name, obj.cols);
 	}
 
-	public updatePicklistData(name: string, data: number[]) {
-		this.project_!.setPicklistData(name, data) ;
+	public updatePicklistData(obj: any) {
+		this.project_!.setPicklistData(obj.name, obj.teams) ;
 	}
 }

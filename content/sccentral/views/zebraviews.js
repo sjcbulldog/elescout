@@ -453,6 +453,9 @@ class ZebraView extends XeroView {
 		this.canvas_ = document.createElement('canvas');
 		this.canvas_.className = 'zebra-canvas';
 		this.zebra_top_.append(this.canvas_);
+
+		this.reset();
+		this.top_.append(this.zebra_top_);
 	}
 
 	teamCompareFunction(a, b) {
@@ -978,11 +981,6 @@ class ZebraView extends XeroView {
 		}
 		this.time_ctrl_.draw() ;
 		this.drawZebraCanvas() ;
-	}
-
-	render() {
-		this.reset();
-		this.top_.append(this.zebra_top_);
 	}
 
 	formCallback(arg) {

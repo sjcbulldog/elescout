@@ -1,5 +1,5 @@
 import winston from "winston";
-import { Packet } from "./packet";
+import { PacketObj } from "./packetobj";
 import { SyncClient } from "./syncclient";
 import * as net from 'net' ;
 import { dialog } from "electron";
@@ -53,7 +53,7 @@ export class TCPClient extends SyncClient {
         this.socket_.destroy() ;
     }
 
-    public send(p: Packet) : Promise<void> {
+    public send(p: PacketObj) : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
             let buffer = this.convertToBytes(p) ;
             this.socket_.write(buffer, (err) => {

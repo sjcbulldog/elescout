@@ -32,7 +32,8 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          getZebraData,
          updatePicklistData,
          getPicklistList,
-         createNewPicklist} from "./ipchandlers" ;
+         createNewPicklist,
+         deletePicklist} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -122,6 +123,7 @@ app.on("ready", () => {
     ipcMain.on('get-picklist-data', (event, ...args) => { getPicklistData('get-picklist-data', ...args)}) ;
     ipcMain.on('get-picklist-list', (event, ...args) => { getPicklistList('get-picklist-list', ...args)}) ;
     ipcMain.on('create-new-picklist', (event, ...args) => { createNewPicklist('create-new-picklist', ...args)}) ;
+    ipcMain.on('delete-picklist', (event, ...args) => { deletePicklist('delete-picklist', ...args)}) ;
     ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('update-picklist-columns', ...args)}) ;
     ipcMain.on('update-picklist-data', (event, ...args) => { updatePicklistData('update-picklist-data', ...args)}) ;
     ipcMain.on('get-picklist-columns', (event, ...args) => { getPicklistColumns('get-picklist-columns', ...args)}) ;

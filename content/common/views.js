@@ -193,9 +193,6 @@ class XeroView {
         this.preview_div_ = document.createElement("div");
         this.preview_div_.innerHTML = "<b>" + text + "</b>";
         this.preview_div_.id = "info";
-    }
-
-    render() {
         this.top_.append(this.preview_div_) ;
     }
 }

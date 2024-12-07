@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { Packet } from './packet';
+import { PacketObj } from './packetobj';
 import { PacketCompressionNone, PacketNameMap } from './packettypes';
 import { SyncServer } from './syncserver';
 import winston from 'winston';
@@ -61,7 +61,7 @@ export class SyncBase extends EventEmitter {
                     this.emit('error', err) ;
                 }
                 else {
-                    let p = new Packet(ptype, this.buffer_.slice(10, 10 + len)) ;
+                    let p = new PacketObj(ptype, this.buffer_.slice(10, 10 + len)) ;
                     this.logPacket('received', p) ;
                     this.emit('packet', p) ;
                     if (this.buffer_) {
@@ -85,7 +85,7 @@ export class SyncBase extends EventEmitter {
     //
     // Convert a packet to a byte array
     //
-    protected convertToBytes(p: Packet) : Uint8Array {
+    protected convertToBytes(p: PacketObj) : Uint8Array {
         this.logPacket('sending', p) ;
 
         let buffer: Uint8Array = new Uint8Array(12 + p.data_.length) ;
@@ -121,7 +121,7 @@ export class SyncBase extends EventEmitter {
         return ret ;
     }
 
-    private logPacket(text: string, p: Packet) {
+    private logPacket(text: string, p: PacketObj) {
         let msg: string = text + ':' + this.packetTypeName(p.type_) + ':' + p.data_.length + ':' ;
         let index = 0 ; 
         while (index < p.data_.length) {

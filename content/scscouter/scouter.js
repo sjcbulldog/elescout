@@ -31,8 +31,6 @@ function setNewMainView(mtype, args) {
   else {
     currentView = new TextView(top, 'Invalid View Requested - ' + mtype);
   }
-
-  currentView.render() ;
 }
 
 function updateView(args) {

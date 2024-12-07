@@ -30,13 +30,9 @@ class TeamGraphView extends GraphBaseView {
     window.scoutingAPI.send('get-match-field-list');
     window.scoutingAPI.send('get-match-list');
     window.scoutingAPI.send('get-stored-graph-list');
-  }
 
-  render() {
-    this.reset();
     this.top_.append(this.top_div_);
   }
-
   createGraph(ctx, data) {
     this.current_chart_ = new Chart(ctx,
       {
@@ -130,6 +126,9 @@ class TeamGraphView extends GraphBaseView {
 
     this.canvas_ = document.createElement('canvas');
     this.top_div_.append(this.canvas_);
+
+    this.reset();
+    this.top_.append(this.top_div_);
   }
 
   deleteStoredGraph() {
@@ -203,11 +202,6 @@ class TeamGraphView extends GraphBaseView {
 
     window.scoutingAPI.send('save-team-graph-setup', obj);
     window.scoutingAPI.send('get-stored-graph-list');
-  }
-
-  render() {
-    this.reset();
-    this.top_.append(this.top_div_);
   }
 
   formCallback(args) {

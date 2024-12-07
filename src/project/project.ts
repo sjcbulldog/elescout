@@ -68,6 +68,7 @@ export class ProjectInfo {
     public zebra_tag_data_?: any ;                      // Zebra tag data
     public team_graph_data_: NamedGraphDataRequest[] ;  // Stored graphs defined by the user
     public picklist_ : PickList[] = [] ;                // Pick list, a list of team number
+    public last_picklist_? : string ;                   // The last picklist used
 
     constructor() {
         this.locked_ = false ;
@@ -117,6 +118,11 @@ export class Project {
         filename = path.join(dir, 'match.db') ;
         this.matchdb_ = new MatchDataModel(filename, logger) ;
         this.matchdb_.on('column-added', this.matchColumnAdded.bind(this));
+    }
+
+    public setLastPicklistUsed(name: string) {
+        this.info_.last_picklist_ = name ;
+        this.writeEventFile() ;
     }
 
     private teamColumnAdded(colname: string) {
@@ -727,8 +733,39 @@ export class Project {
         return true ;
     }
 
-    public addPicklist(name: string) {
+    public deletePicklist(name: string) {
+        let which = -1 ;
+        for(let i = 0 ; i < this.info_.picklist_.length; i++) {
+            if(this.info_.picklist_[i].name === name) {
+                which = i ;
+                break ;
+            }
+        }
 
+        if (which !== -1) {
+            if (which === 0 && this.info_.picklist_.length === 1) {
+                this.info_.picklist_ = [] ;
+            }
+            else {
+                this.info_.picklist_.splice(which, 1) ;
+            }
+            this.writeEventFile() ;
+        }
+    }
+
+    public addPicklist(name: string) {
+        let tnum: number[] = [] ;
+        for(let t of this.info.teams_!) {
+            tnum.push(t.team_number) ;
+        }
+
+        let picklist = {
+            name: name,
+            teams: tnum,
+            columns: []
+        }
+        this.info_.picklist_.push(picklist) ;
+        this.writeEventFile();
     }
 
     public findPicklistByName(name: string) : PickList | undefined {
@@ -745,6 +782,7 @@ export class Project {
         if (picklist) {
             picklist.columns = cols ;
         }
+        this.writeEventFile() ;
     }
 
     public setPicklistData(name: string, teams: number[]) {
@@ -780,10 +818,22 @@ export class Project {
     private writeEventFile() : Error | undefined {
         let ret: Error | undefined = undefined ;
 
-        const jsonString = JSON.stringify(this.info_);
-
-        // Write the string to a file
         let projfile = path.join(this.location_, Project.event_file_name) ;
+        if (fs.existsSync(projfile)) {
+            let i = 1 ;
+            let fullname = undefined ;
+            while (true) {
+                fullname = path.join(this.location_, 'event-' + i + '.json') ;
+                if (!fs.existsSync(fullname)) {
+                    break; 
+                }
+                i++ ;
+            }
+
+            fs.copyFileSync(projfile, fullname) ;
+        }
+
+        const jsonString = JSON.stringify(this.info_, null, 2);
         fs.writeFile(projfile, jsonString, (err) => {
             if (err) {
                 fs.rmSync(projfile) ;   

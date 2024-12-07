@@ -1,7 +1,7 @@
 import * as net from 'net' ;
 import { SyncServer } from './syncserver';
 import winston from 'winston';
-import { Packet } from './packet';
+import { PacketObj } from './packetobj';
 
 export class TCPSyncServer extends SyncServer {
     private static readonly portNumber: number = 45455 ;
@@ -19,7 +19,7 @@ export class TCPSyncServer extends SyncServer {
         this.resetBuffers() ;
     }
 
-    public async send(p: Packet) : Promise<void> {
+    public async send(p: PacketObj) : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
             let buffer = this.convertToBytes(p) ;
             this.logger_.debug('TCPServer sending ' + buffer.length + ' bytes of data');

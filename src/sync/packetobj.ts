@@ -1,7 +1,7 @@
 import { PacketType } from "./packettypes";
 
 
-export class Packet {
+export class PacketObj {
     public type_ : PacketType ;
     public data_: Uint8Array ;
 

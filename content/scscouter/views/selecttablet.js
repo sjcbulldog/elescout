@@ -11,9 +11,7 @@ class SelectTablet extends XeroView
 
         window.scoutingAPI.send("get-tablet-data");
         this.registerCallback('send-tablet-data', this.formCallback.bind(this));
-    }
 
-    render() {
         this.reset() ;
         this.top_.append(this.startup_div_) ;
     }

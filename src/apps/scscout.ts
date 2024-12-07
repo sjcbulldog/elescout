@@ -2,7 +2,7 @@ import { BrowserWindow, dialog, Menu, MenuItem } from "electron";
 import { SCBase, XeroAppType } from "./scbase";
 import { SyncClient } from "../sync/syncclient";
 import { TCPClient } from "../sync/tcpclient";
-import { Packet } from "../sync/packet";
+import { PacketObj } from "../sync/packetobj";
 import * as path from 'path' ;
 import * as fs from 'fs' ;
 import { PacketType } from "../sync/packettypes";
@@ -401,7 +401,7 @@ export class SCScout extends SCBase {
                     }
                     data = Buffer.from(JSON.stringify(obj)) ;
                 }
-                let p: Packet = new Packet(PacketType.Hello, data) ;
+                let p: PacketObj = new PacketObj(PacketType.Hello, data) ;
                 await this.conn_!.send(p) ;
 
                 this.conn_!.on('close', () => {
@@ -428,7 +428,7 @@ export class SCScout extends SCBase {
                     this.sendToRenderer('set-status-close-button-visible', true) ;
                 }) ;
 
-                this.conn_!.on('packet', (p: Packet) => {
+                this.conn_!.on('packet', (p: PacketObj) => {
                     this.syncTablet(p) ;
                 }) ;
             })
@@ -441,7 +441,7 @@ export class SCScout extends SCBase {
         return uuid ;
     }
 
-    private syncTablet(p: Packet) {
+    private syncTablet(p: PacketObj) {
         let ret = true ;
 
         if (p.type_ === PacketType.Hello) {
@@ -473,7 +473,7 @@ export class SCScout extends SCBase {
                 else {
                     this.info_.uuid_ = obj.uuid ;
                     this.info_.evname_ = obj.name;
-                    let p: Packet = new Packet(PacketType.RequestTablets) ;
+                    let p: PacketObj = new PacketObj(PacketType.RequestTablets) ;
                     this.conn_!.send(p) ;
                 }
             }
@@ -505,7 +505,7 @@ export class SCScout extends SCBase {
             ret = this.getMissingData() ;  
         }
         else if (p.type_ === PacketType.ReceivedResults) {
-            this.conn_?.send(new Packet(PacketType.Goodbye, Buffer.from(this.info_.tablet_!))) ;
+            this.conn_?.send(new PacketObj(PacketType.Goodbye, Buffer.from(this.info_.tablet_!))) ;
             this.conn_?.close() ;
         }
         else if (p.type_ === PacketType.Error) {
@@ -526,26 +526,26 @@ export class SCScout extends SCBase {
         let buffer = Buffer.from(jsonstr) ;
         let jsonstr2 = buffer.toString() ;
         console.log(jsonstr2);
-        this.conn_?.send(new Packet(PacketType.ProvideResults, Buffer.from(jsonstr))) ;
+        this.conn_?.send(new PacketObj(PacketType.ProvideResults, Buffer.from(jsonstr))) ;
     }
 
     private getMissingData() {
         let ret: boolean = false ;
 
         if (!this.info_.teamform_) {
-            this.conn_?.send(new Packet(PacketType.RequestTeamForm)) ;
+            this.conn_?.send(new PacketObj(PacketType.RequestTeamForm)) ;
             ret = true ;
         }
         else if (!this.info_.matchform_) {
-            this.conn_?.send(new Packet(PacketType.RequestMatchForm)) ;
+            this.conn_?.send(new PacketObj(PacketType.RequestMatchForm)) ;
             ret = true ;
         }
         else if (!this.info_.matchlist_) {
-            this.conn_?.send(new Packet(PacketType.RequestMatchList)) ;
+            this.conn_?.send(new PacketObj(PacketType.RequestMatchList)) ;
             ret = true ;
         }
         else if (!this.info_.teamlist_) {
-            this.conn_?.send(new Packet(PacketType.RequestTeamList)) ;
+            this.conn_?.send(new PacketObj(PacketType.RequestTeamList)) ;
             ret = true ;
         }
         

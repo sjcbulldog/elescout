@@ -49,6 +49,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-picklist-data',
         'get-picklist-list',
         'create-new-picklist',
+        'delete-picklist',
         'get-picklist-columns',
         'get-picklist-col-data',
         'get-preferences',

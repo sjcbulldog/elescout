@@ -12,9 +12,7 @@ class TextView extends XeroView {
         this.span_.innerHTML = "<b>" + this.message_ + "</b>" ;
         
         this.empty_div_.append(this.span_);
-    }
 
-    render() {
         this.reset() ;
         this.top_.append(this.empty_div_) ;
     }
