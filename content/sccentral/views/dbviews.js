@@ -22,7 +22,7 @@ class DBView extends TabulatorView {
 
     refresh() {
         this.buildInitialView('Retreiving data for the ' + this.type_ + ' database view, please wait ...');
-        window.scoutingAPI.send('get-' + this.type_ + '-db');     
+        this.scoutingAPI('get-' + this.type_ + '-db');     
     }
 
     hideHiddenColumns() {
@@ -166,7 +166,7 @@ class TeamDBView extends DBView {
         // Send the column configuration information to the main process side of the
         // application to be stored for when the project is reloaded
         //
-        window.scoutingAPI.send('send-team-col-config', colcfg) ;
+        this.scoutingAPI('send-team-col-config', colcfg) ;
     }
 
     getInitialSort() {
@@ -237,7 +237,7 @@ class MatchDBView extends DBView {
             frozenColumnCount: this.frozenColumnCount_
         } ;
     
-        window.scoutingAPI.send('send-match-col-config', colcfg) ;
+        this.scoutingAPI('send-match-col-config', colcfg) ;
     }
 
     getInitialSort() {
@@ -275,7 +275,7 @@ class MatchDBView extends DBView {
         // Send the column configuration information to the main process side of the
         // application to be stored for when the project is reloaded
         //
-        window.scoutingAPI.send('send-match-col-config', colcfg) ;
+        this.scoutingAPI('send-match-col-config', colcfg) ;
     }    
 
     generateColDesc(coldata) {
@@ -317,9 +317,5 @@ class MatchDBView extends DBView {
         }
         return cols ; 
     }
-}
 
-window.scoutingAPI.receive("send-match-db", (args) => { XeroView.callback_mgr_.dispatchCallback('send-match-db', args); });
-window.scoutingAPI.receive("send-match-col-config", (args) => { XeroView.callback_mgr_.dispatchCallback('send-match-col-config', args); });
-window.scoutingAPI.receive("send-team-col-config", (args) => { XeroView.callback_mgr_.dispatchCallback('send-team-col-config', args); });
-window.scoutingAPI.receive("send-team-db", (args) => { XeroView.callback_mgr_.dispatchCallback('send-team-db', args); });
+}

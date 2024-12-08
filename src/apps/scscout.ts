@@ -525,7 +525,6 @@ export class SCScout extends SCBase {
         let jsonstr = JSON.stringify(obj) ;
         let buffer = Buffer.from(jsonstr) ;
         let jsonstr2 = buffer.toString() ;
-        console.log(jsonstr2);
         this.conn_?.send(new PacketObj(PacketType.ProvideResults, Buffer.from(jsonstr))) ;
     }
 

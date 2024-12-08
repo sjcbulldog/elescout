@@ -13,7 +13,7 @@ class FormView extends XeroView {
         this.registerCallback('send-form', this.formCallback.bind(this));
         this.registerCallback('request-results',this.requestResults.bind(this)) ;
         this.registerCallback('send-initial-values',this.initializeForm.bind(this)) ;
-        window.scoutingAPI.send('get-form', this.type_);
+        this.scoutingAPI('get-form', this.type_);
 
         this.nameToSectionMap_ = new Map() ;
     }
@@ -23,7 +23,7 @@ class FormView extends XeroView {
         for(let sect of this.sections_) {
             results = [...results, ...sect.getValues()] ;
         }
-        window.scoutingAPI.send("provide-result", results);
+        this.scoutingAPI("provide-result", results);
     }
 
     formCallback(args) {
@@ -54,7 +54,7 @@ class FormView extends XeroView {
             this.titlediv_.innerText = obj.form.title ;
             this.titlediv_.style.color = color ;
             if (obj.form.type === 'preview') {
-                this.titlediv_.innerText += ' - ' + obj.form.json.form ;
+                this.titlediv_.innerText += ' - ' + obj.form.json.form + (reversed ? ' - reversed' : '') ;
             }
             this.titlediv_.className = 'form-view-title' ;
             this.alltop_.append(this.titlediv_) ;
@@ -216,7 +216,3 @@ class FormView extends XeroView {
         }
     }
 }
-
-window.scoutingAPI.receive("send-form", (args) => { XeroView.callback_mgr_.dispatchCallback('send-form', args); });
-window.scoutingAPI.receive("request-results", (args) => { XeroView.callback_mgr_.dispatchCallback('request-results', args); });
-window.scoutingAPI.receive("send-initial-values", (args) => { XeroView.callback_mgr_.dispatchCallback('send-initial-values', args); });

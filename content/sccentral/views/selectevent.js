@@ -4,7 +4,7 @@ class SelectEventView extends TabulatorView {
 
         this.buildInitialView('Waiting for events ...') ;
         this.registerCallback('send-event-data', this.formCallback.bind(this));
-        window.scoutingAPI.send("get-event-data");
+        this.scoutingAPI("get-event-data");
         this.loading_ = false ;
     }
 
@@ -28,7 +28,7 @@ class SelectEventView extends TabulatorView {
         statusSetText('') ;
         statusShowCloseButton(false) ;
 
-        window.scoutingAPI.send("load-ba-event-data", key);
+        this.scoutingAPI("load-ba-event-data", key);
     }
 
     updateFilter() {
@@ -87,5 +87,3 @@ class SelectEventView extends TabulatorView {
         this.table_.on("cellDblClick", this.loadBAEvent.bind(this)) ;
     }
 }
-
-window.scoutingAPI.receive("send-event-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-event-data', args) ; }) ;

@@ -2432,7 +2432,11 @@ export class SCCentral extends SCBase {
 		if (this.project_) {
 			let picklist = this.project_.findPicklistByName(name) ;
 			if (picklist) {
-				this.sendToRenderer('send-picklist-columns', picklist.columns) ;
+				let obj = {
+					name: name,
+					columns: picklist.columns
+				}
+				this.sendToRenderer('send-picklist-columns', obj) ;
 			}
 		}
 	}
@@ -2449,7 +2453,8 @@ export class SCCentral extends SCBase {
 					message: 'There was a request to delete picklist \'' + name + '\' which does not exist'
 				});
 			}
-			this.sendPicklistList() ;
+
+			this.sendPicklistList(false) ;
 		}
 	}
 
@@ -2466,12 +2471,16 @@ export class SCCentral extends SCBase {
 				this.project_.addPicklist(name) ;
 				this.sendPicklistData(name) ;
 				this.sendPicklistColumns(name) ;
-				this.sendPicklistList() ;
+				this.sendPicklistList(false) ;
 			}
 		}
 	}
 
-	public sendPicklistList() {
+	public sendPicklistList(senddef: boolean) {
+		interface MyObject {
+			[key: string]: any; // Allows any property with a string key
+		}
+
 		let data: string[] = [] ;
 
 		if (this.project_) {
@@ -2480,9 +2489,10 @@ export class SCCentral extends SCBase {
 			}
 		}
 
-		let obj = {
-			list: data,
-			default: this.project_?.info.last_picklist_
+		let obj: MyObject = {} ;
+		obj.list = data ;
+		if (senddef) {
+			obj.default = this.project_?.info.last_picklist_
 		}
 
 		this.sendToRenderer('send-picklist-list', obj) ;

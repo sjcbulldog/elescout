@@ -161,9 +161,8 @@ export abstract class DataModel extends EventEmitter {
     public runQuery(query: string) : Promise<sqlite3.RunResult> {
         let ret = new Promise<sqlite3.RunResult>((resolve, reject) => {
             let qno = DataModel.queryno_++ ;
-            this.logger_.debug(qno + ': runQuery \'' + query + '\'') ;
+            this.logger_.debug('DATABASE: ' + qno + ': runQuery \'' + query + '\'') ;
             this.db_?.run(query, (res: sqlite3.RunResult, err: Error) => {
-                this.logger_.debug(qno + ": result", { err: err, res: res}) ;
                 if (err) {
                     reject(err) ;
                 }
@@ -184,9 +183,8 @@ export abstract class DataModel extends EventEmitter {
     public all(query: string) : Promise<unknown[]> {
         let ret = new Promise<unknown[]>((resolve, reject) => {
             let qno = DataModel.queryno_++ ;
-            this.logger_.debug(qno + ': all \'' + query + '\'') ;
+            this.logger_.debug('DATABASE: ' + qno + ': all \'' + query + '\'') ;
             this.db_?.all(query, (err, rows) => {
-                this.logger_.debug(qno + ": result", { err: err, rows: rows}) ;
                 if (err) {
                     reject(err) ;
                 }
@@ -589,14 +587,13 @@ export abstract class DataModel extends EventEmitter {
 
             Promise.all(allpromises)
                 .then(() => {
-                    this.logger_.debug('finished all createColumns promises') ;
                     for(let col of toadd) {
                         this.emit('column-added', col.name) ;
                     }
                     resolve();
                 })
                 .catch((err) => {
-                    this.logger_.error('error creating columns in table', err) ;
+                    this.logger_.error('error creating columns in table \'' + table + '\'', err) ;
                     reject(err)
                 }) ;
         }) ;

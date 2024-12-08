@@ -5,7 +5,7 @@ class InfoView extends XeroView {
         super(div, viewtype);
         this.buildInitialView("Retreiving data for the info view, Please wait ....");
         this.registerCallback('send-info-data', this.formCallback.bind(this));
-        window.scoutingAPI.send("get-info-data");
+        this.scoutingAPI("get-info-data");
     }
 
     addlocation(info) {
@@ -32,7 +32,7 @@ class InfoView extends XeroView {
         evname.innerHTML = (info.name_ ? info.name_ : 'NONE');
         evname.addEventListener('input', function () {
             if (evname && evname.innerText !== 'NONE') {
-                window.scoutingAPI.send('set-event-name', evname.innerText);
+                this.scoutingAPI('set-event-name', evname.innerText);
             }
         });
 
@@ -111,7 +111,7 @@ class InfoView extends XeroView {
             cell.append(button);
 
             button.innerText = 'Select Team Form';
-            button.onclick = () => { window.scoutingAPI.send('execute-command', 'select-team-form'); };
+            button.onclick = () => { this.scoutingAPI('execute-command', 'select-team-form'); };
         }
 
         cell = document.createElement('td');
@@ -151,7 +151,7 @@ class InfoView extends XeroView {
             cell.append(button);
 
             button.innerText = 'Select Match Form';
-            button.onclick = () => { window.scoutingAPI.send('execute-command', 'select-match-form') };
+            button.onclick = () => { this.scoutingAPI('execute-command', 'select-match-form') };
         }
 
         cell = document.createElement('td');
@@ -191,7 +191,7 @@ class InfoView extends XeroView {
             cell.append(button);
     
             button.innerText = 'Assign Tablets';
-            button.onclick = () => { window.scoutingAPI.send('execute-command', 'assign-tablets') };
+            button.onclick = () => { this.scoutingAPI('execute-command', 'assign-tablets') };
         }
     
         cell = document.createElement('td');
@@ -231,7 +231,7 @@ class InfoView extends XeroView {
             cell.append(button);
     
             button.innerText = 'Edit Teams';
-            button.onclick = () => { window.scoutingAPI.send('execute-command', 'edit-teams') };
+            button.onclick = () => { this.scoutingAPI('execute-command', 'edit-teams') };
         }
     
         cell = document.createElement('td');
@@ -270,7 +270,7 @@ class InfoView extends XeroView {
             cell.append(button);
     
             button.innerText = 'Edit Matches';
-            button.onclick = () => { window.scoutingAPI.send('execute-command', 'edit-matches') };
+            button.onclick = () => { this.scoutingAPI('execute-command', 'edit-matches') };
         }
     
         cell = document.createElement('td');
@@ -310,7 +310,7 @@ class InfoView extends XeroView {
     
             button.innerText = 'Lock Event';
             button.onclick = () => {
-                window.scoutingAPI.send('execute-command', 'lock-event')
+                this.scoutingAPI('execute-command', 'lock-event')
             };
         }
     
@@ -396,5 +396,3 @@ class InfoView extends XeroView {
         this.top_.append(this.main_div_);
     }
 }
-
-window.scoutingAPI.receive("send-info-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-info-data', args); });

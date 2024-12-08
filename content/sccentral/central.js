@@ -45,6 +45,9 @@ function setNewMainView(mtype, args) {
 
 function updateView(args) {
   let view = args[0] ;
+
+  window.scoutingAPI.send('client-log', { type: 'debug', message: 'update-view called', args: args }) ;
+
   if (view === undefined) {
     updateMainWindow("error") ;
   }

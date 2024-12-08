@@ -8,7 +8,7 @@ class AssignTablets extends XeroView {
 
         this.buildInitialView("Retreiving data for the tablet assignments, please wait ....");
         this.registerCallback('send-tablet-data', this.formCallback.bind(this));
-        window.scoutingAPI.send("get-tablet-data");
+        this.scoutingAPI("get-tablet-data");
     }
 
     doesTabletExist(name) {
@@ -160,7 +160,7 @@ class AssignTablets extends XeroView {
             }
             this.frctablets_.push(obj);
         }
-        window.scoutingAPI.send("set-tablet-data", this.frctablets_);
+        this.scoutingAPI("set-tablet-data", this.frctablets_);
     }
 
     resetTablets() {
@@ -296,5 +296,3 @@ class AssignTablets extends XeroView {
         this.placeTablets();
     }
 }
-
-window.scoutingAPI.receive("send-tablet-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-tablet-data', args); });

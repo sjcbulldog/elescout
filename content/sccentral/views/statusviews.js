@@ -7,7 +7,7 @@ class StatusView extends TabulatorView {
 
         this.buildInitialView('Retreiving data for the ' + type + ' status view, please wait ...');
         this.registerCallback('send-' + type + '-status', this.formCallback.bind(this));
-        window.scoutingAPI.send('get-' + type + '-status');
+        this.scoutingAPI('get-' + type + '-status');
     }
 
     sizeCellFormatter(cell) {
@@ -319,6 +319,3 @@ class MatchStatusView extends StatusView {
         return cols;
     }
 }
-
-window.scoutingAPI.receive("send-team-status", (args) => { XeroView.callback_mgr_.dispatchCallback('send-team-status', args); });
-window.scoutingAPI.receive("send-match-status", (args) => { XeroView.callback_mgr_.dispatchCallback('send-match-status', args); });

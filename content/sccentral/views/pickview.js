@@ -1,8 +1,23 @@
 
 class PickListView extends TabulatorView {
+    static instnum = 0 ;
+
+    static RankFieldName = 'rank' ;
+    static TeamNumberFieldName = 'teamnumber' ;
+    static NickNameFieldName = 'nickname' ;
+    static PickNotesFieldName = 'picknotes' ;
+
+    static DefaultFields = [
+        { field: this.RankFieldName, title: 'Rank' },
+        { field: this.NickNameFieldName, title: 'Name' },
+        { field: this.TeamNumberFieldName, title: 'Number' },
+        { field: this.PickNotesFieldName, title: 'Notes' }
+    ];
+
     constructor(div,viewtype) {
         super(div, viewtype);
 
+        this.instance_ = PickListView.instnum++ ;
         this.cols_ = [] ;
         this.team_fields_ = [] ;
         this.match_fields_ = [] ;
@@ -16,9 +31,13 @@ class PickListView extends TabulatorView {
         this.registerCallback('send-team-field-list', this.receiveTeamFieldList.bind(this));
         this.registerCallback('send-match-field-list', this.receiveMatchFieldList.bind(this));
 
-        window.scoutingAPI.send('get-picklist-list') ;
-        window.scoutingAPI.send('get-team-field-list');
-        window.scoutingAPI.send('get-match-field-list');
+        this.scoutingAPI('get-picklist-list') ;
+        this.scoutingAPI('get-team-field-list');
+        this.scoutingAPI('get-match-field-list');
+    }
+
+    close() {
+        super.close() ;
     }
 
     createInitialWindow() {
@@ -88,21 +107,21 @@ class PickListView extends TabulatorView {
 
     selectedPicklistChanged() {
         this.updateTeamData() ;
-        window.scoutingAPI.send('get-picklist-data', this.picklist_info_existing_.value) ;
-        window.scoutingAPI.send('get-picklist-columns', this.picklist_info_existing_.value) ;
+        this.scoutingAPI('get-picklist-data', this.picklist_info_existing_.value) ;
+        this.scoutingAPI('get-picklist-columns', this.picklist_info_existing_.value) ;
     }
 
     createPicklist() {
         this.updateTeamData() ;
 
         let name = this.picklist_info_text_.value ;
-        window.scoutingAPI.send('create-new-picklist', name) ;
+        this.scoutingAPI('create-new-picklist', name) ;
     }
 
     deletePicklist() {
         let name = this.picklist_info_existing_.value ;
         this.clear(this.table_top_) ;
-        window.scoutingAPI.send('delete-picklist', name) ;
+        this.scoutingAPI('delete-picklist', name) ;
     }
 
     populatePicklistNames(names) {
@@ -131,15 +150,25 @@ class PickListView extends TabulatorView {
         this.populatePicklistNames(arg[0].list) ;
         if (arg[0].default) {
             this.picklist_info_existing_.value = arg[0].default ;
-            window.scoutingAPI.send('get-picklist-data', this.picklist_info_existing_.value) ;
-            window.scoutingAPI.send('get-picklist-columns', this.picklist_info_existing_.value) ;
+            this.scoutingAPI('get-picklist-data', this.picklist_info_existing_.value) ;
+            this.scoutingAPI('get-picklist-columns', this.picklist_info_existing_.value) ;
         }
     }
 
     receivePicklistData(arg) {
         let obj = arg[0] ;
+
         this.clear(this.table_top_) ;
-        this.cols_ = [] ;
+        if (this.columns_picklist_name_ !== obj.name) {
+            //
+            // If the stored columns are from a different picklist, they the columns
+            // will arrive later.  We get rid of the columns that are there because they
+            // are not valid.  If the columns that are stored are from the same picklist,
+            // the columns arrived first and were stored away waiting on the actual picklist
+            // data.
+            //
+            this.cols_ = [] ;
+        }
 
         this.picklist_name_ = obj.name ;
         this.picklist_info_existing_.value = obj.name ;
@@ -156,15 +185,18 @@ class PickListView extends TabulatorView {
                 movableColumns: true,
                 movableRows: true,
             });
+
+        this.scoutingAPI('client-log', { type: 'debug', message: 'created table in client software - instance serial ' + this.instance_ }) ;
     
         this.table_.on("rowMoved", this.teamMoved.bind(this));
         this.table_.on("columnMoved", this.colMoved.bind(this)) ;
+        this.table_.on("columnResized", this.sendColumnConfiguration.bind(this)) ;
         this.table_top_.append(this.table_div_) ;
     }
 
     setValue(field, team, value) {
         let fieldcolobj = this.getColumnFromId(field) ;
-        let teamnumobj = this.getColumnFromId('teamnumber') ;
+        let teamnumobj = this.getColumnFromId(PickListView.TeamNumberFieldName) ;
         for(let row of this.table_.getRows()) {
             let rdata = row.getCell(teamnumobj) ;
             if (rdata.getValue() === team) {
@@ -219,14 +251,30 @@ class PickListView extends TabulatorView {
         }
     }
 
+    setColumnWidth(name, width) {
+        for(let col of this.table_.getColumns()) {
+            if (col.getField() === name) {
+                col.setWidth(width) ;
+            }
+        }
+    }
+
     receivePicklistColumns(args) {
         let store = [...this.cols_] ;
         for(let col of store) {
-            this.removeColumn(col) ;
+            this.removeColumn(col.name) ;
         }
 
-        for(let col of args[0]) {
-            this.addPickListCol(col) ;
+        let obj = args[0] ;
+        this.columns_picklist_name_ = obj.name ;
+
+        for(let col of obj.columns) {
+            if (this.isIgnoredField(col.name)) {
+                this.setColumnWidth(col.name, col.width) ;
+            }
+            else {
+                this.addPickListCol(col) ;
+            }
         }
     }
 
@@ -241,18 +289,19 @@ class PickListView extends TabulatorView {
     colMoved() {
         this.cols_ = [] ;
         for(let col of this.table_.getColumns()) {
-            let fld = col.getField() ;
-            if (fld !== 'rank' && fld != 'nickname' && fld != 'teamnumber') {
-                this.cols_.push(col.getField())
+            let one = {
+                name: col.getField(),
+                width: col.getWidth(),
             }
+            this.cols_.push(one);
         }
 
-        window.scoutingAPI.send('update-picklist-columns', this.cols_) ;
+        this.scoutingAPI('update-picklist-columns', this.cols_) ;
     }
 
     getTeamNumberFromRank(rank) {
         for(let row of this.table_.getRows()) {
-            let cell = row.getCell('rank') ;
+            let cell = row.getCell(RankFieldName) ;
             if (cell.getData().rank === rank) {
                 return cell.getData().teamnumber ;
             }
@@ -281,13 +330,13 @@ class PickListView extends TabulatorView {
             teams: teams
         }
 
-        window.scoutingAPI.send('update-picklist-data', obj) ;
+        this.scoutingAPI('update-picklist-data', obj) ;
     }
 
     teamMoved() {
         let rank = 1 ;
         for(let row of this.table_.getRows()) {
-            let cell = row.getCell('rank') ;
+            let cell = row.getCell(RankFieldName) ;
             cell.setValue(rank++, false) ;
         }
 
@@ -305,35 +354,117 @@ class PickListView extends TabulatorView {
         return undefined ;
     }
 
-    addPickListCol(field) {
-        this.cols_.push(field) ;
+    sortColumn(aval, bval) {
+        let ret = 0 ;
+
+        let a = parseInt(aval) ;
+        if (a === NaN) {
+            a = aval ;
+        }
+
+        let b = parseInt(bval) ;
+        if (b === NaN) {
+            b = bval ;
+        }
+
+        if (typeof a === 'number' && typeof b === 'number') {
+            ret = b - a ;
+        }
+        else if (typeof a === 'number') {
+            ret = 1 ;
+        }
+        else if (typeof b === 'number') {
+            ret = -1 ;
+        }
+        else {
+            ret = a.localeCompare(b) ;
+        }
+
+        return ret ;
+    }
+
+    isIgnoredField(name) {
+        for(let deffield of PickListView.DefaultFields) {
+            if (deffield.field === name)
+                return true ;
+        }
+
+        return false ;
+    }
+
+    sendColumnConfiguration() {
+        let coldescs = [] ;
+        for(let col of this.table_.getColumns()) {
+            let coldesc = {
+                name: col.getField(),
+                width: col.getWidth()
+            }
+            coldescs.push(coldesc) ;
+        }
+
+        let coldata = {
+            name: this.picklist_name_,
+            cols: coldescs
+        }
+        this.scoutingAPI('update-picklist-columns', coldata) ;
+    }
+
+    addPickListCol(desc) {
+        if (typeof desc === 'string') {
+            desc = {
+                name: desc,
+                width: 64,
+            }
+        }
+
+        this.cols_.push(desc) ;
         this.table_.addColumn({
-            field: field,
-            title: field,
+            field: desc.name,
+            title: desc.name,
+            width: desc.width ? desc.width : 32,
+            sorter: this.sortColumn.bind(this)
         });
-        window.scoutingAPI.send('get-picklist-col-data', field) ;
+        this.scoutingAPI('get-picklist-col-data', desc.name) ;
+    }
+
+    findColumnIndexByName(name) {
+        for(let i = 0 ; i < this.cols_.length ; i++) {
+            if (this.cols_[i].name === name) {
+                return i ;
+            }
+        }
+
+        return -1 ;
+    }
+
+    findColumnByName(name) {
+        for(let col of this.cols_) {
+            if (col.name === name) {
+                return col ;
+            }
+        }
+        return undefined ;
     }
 
     removeColumn(field) {
-        let index = this.cols_.indexOf(field) ;
+        let index = this.findColumnIndexByName(field) ;
         this.cols_.splice(index, 1) ;
         let col = this.getColumnFromId(field) ;
         col.delete() ;
     }
 
     selectPicklistMenu(field) {
-        if (this.cols_.includes(field)) {
+        if (this.findColumnIndexByName(field) !== -1) {
             this.removeColumn(field) ;
         }
         else {
-            this.addPickListCol(field) ;
+            let desc = {
+                name: field,
+                width: 64
+            }
+            this.addPickListCol(desc) ;
         }
-
-        let coldata = {
-            name: this.picklist_name_,
-            cols: this.cols_
-        }
-        window.scoutingAPI.send('update-picklist-columns', coldata) ;
+        this.sendColumnConfiguration();
     }
 
     picklistMenu() {
@@ -343,7 +474,7 @@ class PickListView extends TabulatorView {
         for (let field of [...this.team_fields_, ...this.match_fields_]) {
             //create checkbox element using font awesome icons
             let icon = document.createElement("i");
-            icon.innerHTML = this.cols_.includes(field) ? '&check;' : ' ';
+            icon.innerHTML = (this.findColumnIndexByName(field) !== -1) ? '&check;' : ' ';
 
             //build label
             let label = document.createElement("span");
@@ -368,28 +499,18 @@ class PickListView extends TabulatorView {
     generateColDesc() {
         let cols = [] ;
 
-        cols.push({
-            field: 'rank',
-            title: 'Rank',
-            headerMenu: this.picklistMenu.bind(this),
-        }) ;
-
-        cols.push({
-            field: 'teamnumber',
-            title: 'Team Number',
-            headerSort: false,
-        }) ;
-
-        cols.push({
-            field: 'nickname',
-            title: 'Team Name',
-            headerSort: false,
-        }) ;        
+        for(let field of PickListView.DefaultFields) {           
+            let desc = {
+                field: field.field,
+                title: field.title,
+                headerMenu: this.picklistMenu.bind(this),
+            }
+            let coldesc = this.findColumnByName(field.field) ;
+            if (coldesc && coldesc.width) {
+                desc['width'] = coldesc.width ;
+            }
+            cols.push(desc) ;
+        }
         return cols;
     }
 }
-
-window.scoutingAPI.receive("send-picklist-list", (args) => { XeroView.callback_mgr_.dispatchCallback('send-picklist-list', args); });
-window.scoutingAPI.receive("send-picklist-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-picklist-data', args); });
-window.scoutingAPI.receive("send-picklist-columns", (args) => { XeroView.callback_mgr_.dispatchCallback('send-picklist-columns', args); });
-window.scoutingAPI.receive("send-picklist-col-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-picklist-col-data', args); });

@@ -9,7 +9,7 @@ class SelectTablet extends XeroView
         this.startup_div_ = document.createElement('div') ;
         this.top_.append(this.startup_div_) ;
 
-        window.scoutingAPI.send("get-tablet-data");
+        this.scoutingAPI("get-tablet-data");
         this.registerCallback('send-tablet-data', this.formCallback.bind(this));
 
         this.reset() ;
@@ -17,7 +17,7 @@ class SelectTablet extends XeroView
     }
 
     selectTablet(event) {
-        window.scoutingAPI.send("set-tablet-name-purpose", 
+        this.scoutingAPI("set-tablet-name-purpose", 
             { 'name' : event.currentTarget.tabletName, 
               'purpose' : event.currentTarget.tabletPurpose
             }) ;
@@ -83,6 +83,3 @@ class SelectTablet extends XeroView
     
     
 }
-
-window.scoutingAPI.receive("send-tablet-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-tablet-data', args); });
-

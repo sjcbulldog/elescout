@@ -47,8 +47,6 @@ class TwoEndedSlider {
 		const x = ev.clientX - rect.left;
 		const y = ev.clientY - rect.top;
 
-		console.log("mousedown " + x + ", " + y) ;
-
 		if (this.containsHandle(this.userValueToPixels(this.lvalue), x, y)) {
 			this.left_moving_ = true ;
 		}
@@ -61,7 +59,6 @@ class TwoEndedSlider {
 	}
 
 	mouseUp(ev) {
-		console.log("mouseup") ;
 		this.left_moving_ = false ;
 		this.right_moving_ = false ;
 		this.current_moving_ = false ;
@@ -73,7 +70,6 @@ class TwoEndedSlider {
 			const x = ev.clientX - rect.left;
 
 			let uval = this.pixelValueToUser(x) ;
-			console.log('mousemove pval=' + x + ', uval=' + uval + ', pval=' + this.userValueToPixels(uval)) ;
 
 			if (this.left_moving_) {
 				this.lvalue = this.clamp(uval, this.minval_, this.maxval_);
@@ -242,7 +238,7 @@ class ZebraView extends XeroView {
 		this.sizesInited_ = false;
 		this.createWindowLayout();
 		this.registerCallback('send-zebra-data', this.formCallback.bind(this));
-		window.scoutingAPI.send("get-zebra-data");
+		this.scoutingAPI("get-zebra-data");
 
 	}
 
@@ -990,5 +986,3 @@ class ZebraView extends XeroView {
 		this.loadImages();
 	}
 }
-
-window.scoutingAPI.receive("send-zebra-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-zebra-data', args); });

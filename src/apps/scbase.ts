@@ -150,6 +150,29 @@ export abstract class SCBase {
     settings.unset(name);
   }
 
+  public logClientMessage(obj: any) {
+    let msg = 'renderer: ' + obj.message;
+    if (obj.args) {
+      msg += ', args=\'' + obj.args.toString() + '\'' ;
+    }
+
+    if (obj.type === 'silly') {
+      this.logger_.silly(msg) ;
+    }
+    if (obj.type === 'info') {
+      this.logger_.info(msg) ;
+    }
+    else if (obj.type === 'debug') {
+      this.logger_.debug(msg) ;
+    }
+    if (obj.type === 'warn') {
+      this.logger_.warn(msg) ;
+    }
+    if (obj.type === 'error') {
+      this.logger_.error(msg) ;
+    }
+  }
+
   public get isDevelop(): boolean {
     //
     // So, if the path to the executable contains both cygwin64 and my home directory, then
@@ -173,11 +196,17 @@ export abstract class SCBase {
   }
 
   public sendToRenderer(ev: string, ...args: any) {
+    let argval: any[] = args ;
+
+    if (ev === 'send-info-data') {
+      argval = ['Arguments too long'] ;
+    }
+
     this.logger_.silly({
       message: "main -> renderer",
       args: {
         event: ev,
-        evargs: args,
+        evargs: argval,
       },
     });
 

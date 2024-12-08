@@ -277,7 +277,7 @@ export async function getPicklistList(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {
         scappbase.logger_.silly({ message: 'renderer ->main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
-        central.sendPicklistList() ;
+        central.sendPicklistList(true) ;
     } 
 }
 
@@ -343,4 +343,10 @@ export async function updatePreferences(cmd: string, ...args: any[]) {
         let scout : SCScout = scappbase as SCScout ;
         scout.updatePreferences(args[0]) ;
     } 
+}
+
+export async function clientLog(cmd: string, ...args: any[]) {
+    if (scappbase) {
+        scappbase.logClientMessage(args[0]) ;
+    }
 }

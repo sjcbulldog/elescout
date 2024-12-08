@@ -25,11 +25,11 @@ class TeamGraphView extends GraphBaseView {
 
     this.createBasePage();
 
-    window.scoutingAPI.send('get-team-list');
-    window.scoutingAPI.send('get-team-field-list');
-    window.scoutingAPI.send('get-match-field-list');
-    window.scoutingAPI.send('get-match-list');
-    window.scoutingAPI.send('get-stored-graph-list');
+    this.scoutingAPI('get-team-list');
+    this.scoutingAPI('get-team-field-list');
+    this.scoutingAPI('get-match-field-list');
+    this.scoutingAPI('get-match-list');
+    this.scoutingAPI('get-stored-graph-list');
 
     this.top_.append(this.top_div_);
   }
@@ -134,7 +134,7 @@ class TeamGraphView extends GraphBaseView {
   deleteStoredGraph() {
     let name = this.select_stored_.value ;
     if (name.length > 0) {
-      window.scoutingAPI.send('delete-stored-graph', name);
+      this.scoutingAPI('delete-stored-graph', name);
     }
   }
 
@@ -200,8 +200,8 @@ class TeamGraphView extends GraphBaseView {
       }
     };
 
-    window.scoutingAPI.send('save-team-graph-setup', obj);
-    window.scoutingAPI.send('get-stored-graph-list');
+    this.scoutingAPI('save-team-graph-setup', obj);
+    this.scoutingAPI('get-stored-graph-list');
   }
 
   formCallback(args) {
@@ -236,7 +236,7 @@ class TeamGraphView extends GraphBaseView {
     };
 
     if (this.isGraphValid(obj)) {
-      window.scoutingAPI.send('get-team-graph-data', obj);
+      this.scoutingAPI('get-team-graph-data', obj);
     }
     else {
       if (this.current_chart_) {
@@ -298,10 +298,3 @@ class TeamGraphView extends GraphBaseView {
     this.match_field_selector_right_.addDataToSelectors(list[0], this.somethingChanged.bind(this));
   }
 }
-
-window.scoutingAPI.receive("send-team-list", (args) => { XeroView.callback_mgr_.dispatchCallback('send-team-list', args); });
-window.scoutingAPI.receive("send-team-field-list", (args) => { XeroView.callback_mgr_.dispatchCallback('send-team-field-list', args); });
-window.scoutingAPI.receive("send-match-field-list", (args) => { XeroView.callback_mgr_.dispatchCallback('send-match-field-list', args); });
-window.scoutingAPI.receive("send-team-graph-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-team-graph-data', args); });
-window.scoutingAPI.receive("send-match-list", (args) => { XeroView.callback_mgr_.dispatchCallback('send-match-list', args); });
-window.scoutingAPI.receive("send-stored-graph-list", (args) => { XeroView.callback_mgr_.dispatchCallback('send-stored-graph-list', args); });

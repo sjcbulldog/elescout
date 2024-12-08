@@ -33,7 +33,8 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          updatePicklistData,
          getPicklistList,
          createNewPicklist,
-         deletePicklist} from "./ipchandlers" ;
+         deletePicklist,
+         clientLog} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -130,6 +131,7 @@ app.on("ready", () => {
     ipcMain.on('get-picklist-col-data', (event, ...args) => { getPicklistColData('get-picklist-col-data', ...args)}) ;
     ipcMain.on('get-preferences', (event, ...args) => { getPreferences('get-preferences', ...args)}) ;
     ipcMain.on('update-preferences', (event, ...args) => { updatePreferences('update-preferences', ...args)}) ;
+    ipcMain.on('client-log', (event, ...args) => { clientLog('client-log', ...args)}) ;
     createWindow() ;
 }) ;
 

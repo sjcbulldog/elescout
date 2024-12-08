@@ -7,7 +7,7 @@ class PreferencesView extends XeroView {
 
         this.buildInitialView('Waiting for preferences ...') ;
         this.registerCallback('send-preferences',this.formCallback.bind(this)) ;
-        window.scoutingAPI.send('get-preferences');
+        this.scoutingAPI('get-preferences');
     }
 
     formCallback(args) {
@@ -40,7 +40,7 @@ class PreferencesView extends XeroView {
         let prefs = {
             ipaddr_ : this.ipaddr_.value
         }
-        window.scoutingAPI.send('update-preferences', prefs);
+        this.scoutingAPI('update-preferences', prefs);
         setNewMainView('empty') ;
     }
 
@@ -88,6 +88,3 @@ class PreferencesView extends XeroView {
         return div ;
     }
 }
-
-window.scoutingAPI.receive("send-preferences", (args) => { XeroView.callback_mgr_.dispatchCallback('send-preferences', args); });
-

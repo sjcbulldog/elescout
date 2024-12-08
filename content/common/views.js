@@ -111,9 +111,15 @@ class XeroSelector {
 class CallbackMgr {
     constructor() {
         this.callbacks_ = new Map();
+        this.registeredReceive = [] ;
     }
 
     registerCallback(name, func) {
+        if (!this.registeredReceive.includes(name)) {
+            window.scoutingAPI.receive(name, (args) => { XeroView.callback_mgr_.dispatchCallback(name, args); });
+            this.registeredReceive.push(name) ;
+        }
+
         if (!this.callbacks_.has(name)) {
             this.callbacks_.set(name, []);
         }
@@ -172,6 +178,10 @@ class XeroView {
         for (let cbs of this.callbacks_) {
             XeroView.callback_mgr_.unregisterCallback(cbs.name, cbs.func);
         }
+    }
+
+    scoutingAPI(request, ...args) {
+        window.scoutingAPI.send(request, args[0]) ;
     }
 
     clear(elem) {

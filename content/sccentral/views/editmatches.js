@@ -5,7 +5,7 @@ class EditMatchesView extends TabulatorView {
 
         this.buildInitialView("Retreiving match information, please wait ....");
         this.registerCallback('send-match-data', this.formCallback.bind(this));
-        window.scoutingAPI.send("get-match-data");
+        this.scoutingAPI("get-match-data");
     }
 
     createColsDescs() {
@@ -130,7 +130,7 @@ class EditMatchesView extends TabulatorView {
     }
 
     importMatches() {
-        window.scoutingAPI.send('execute-command', 'import-matches');
+        this.scoutingAPI('execute-command', 'import-matches');
     }
 
     saveMatchData() {
@@ -156,7 +156,7 @@ class EditMatchesView extends TabulatorView {
             data.push(obj);
         }
 
-        window.scoutingAPI.send('set-match-data', data);
+        this.scoutingAPI('set-match-data', data);
     }
 
     delMatch() {
@@ -242,5 +242,3 @@ class EditMatchesView extends TabulatorView {
 
     }
 }
-
-window.scoutingAPI.receive("send-match-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-match-data', args); });

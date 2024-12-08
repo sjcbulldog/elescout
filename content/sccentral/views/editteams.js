@@ -4,7 +4,7 @@ class EditTeamsView extends TabulatorView {
 
         this.buildInitialView("Retreiving team information, please wait ....");
         this.registerCallback('send-team-data', this.formCallback.bind(this));
-        window.scoutingAPI.send("get-team-data");
+        this.scoutingAPI("get-team-data");
     }
 
     createColsDescs() {
@@ -32,7 +32,7 @@ class EditTeamsView extends TabulatorView {
     }
 
     importTeams() {
-        window.scoutingAPI.send('execute-command', 'import-teams');
+        this.scoutingAPI('execute-command', 'import-teams');
     }
 
     saveTeamData() {
@@ -47,7 +47,7 @@ class EditTeamsView extends TabulatorView {
             data.push(obj);
         }
 
-        window.scoutingAPI.send('set-team-data', data);
+        this.scoutingAPI('set-team-data', data);
     }
 
     delTeam() {
@@ -133,5 +133,3 @@ class EditTeamsView extends TabulatorView {
         this.top_.append(this.table_top_div_);
     }
 }
-
-window.scoutingAPI.receive("send-team-data", (args) => { XeroView.callback_mgr_.dispatchCallback('send-team-data', args); });

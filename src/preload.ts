@@ -56,6 +56,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'update-preferences',
         'update-picklist-columns',
         'update-picklist-data',
+        'client-log'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.send(channel, data);

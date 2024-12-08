@@ -121,8 +121,10 @@ export class Project {
     }
 
     public setLastPicklistUsed(name: string) {
-        this.info_.last_picklist_ = name ;
-        this.writeEventFile() ;
+        if (!this.info_.last_picklist_ || this.info_.last_picklist_ !== name) {
+            this.info_.last_picklist_ = name ;
+            this.writeEventFile() ;
+        }
     }
 
     private teamColumnAdded(colname: string) {
@@ -417,13 +419,17 @@ export class Project {
 
     public static async createEvent(logger: winston.Logger, dir: string, year: number) : Promise<Project> {
         let ret: Promise<Project> = new Promise<Project>((resolve, reject) => {
+            logger.info('Creating event in directory \'' + dir + '\'') ;
+
             if (!fs.existsSync(dir)) {
+                logger.info('    directory does not exist, creating directory \'' + dir + '\'') ;
                 //
                 // Does not exist, create it
                 //
                 fs.mkdirSync(dir) ;
                 if (!fs.existsSync(dir)) {
                     let err : Error = new Error("could not create directory '" + dir + "' for new event") ;
+                    logger.error('    directory does not exist, create directory failed', err) ;
                     reject(err) ;
                 }
             } else if (!Project.isDirectoryEmpty(dir)) {
@@ -431,6 +437,7 @@ export class Project {
                 // The directory exists, it must be empty
                 //
                 let err : Error = new Error("directory '" + dir + "' is not empty, cannot use a new event directory") ;
+                logger.error('    directory is not empty, location \'' + dir + '\'') ;
                 reject(err) ;
             }
 
@@ -455,17 +462,21 @@ export class Project {
     public static async openEvent(logger: winston.Logger, filepath: string, year: number) : Promise<Project> {
         let ret: Promise<Project> = new Promise<Project>((resolve, reject) => {
 
+            logger.info('Open event, location \'' + filepath + '\'') ;
+
             let loc: string = path.dirname(filepath) ;
             let file: string = path.basename(filepath) ;
 
             if (file !== Project.event_file_name) {
                 let err = new Error("the file selected was not an event file, name should be '" + Project.event_file_name + "'") ;
+                logger.error(err) ;
                 reject(err) ;
                 return ;
             }
 
             if (!fs.existsSync(filepath)) {
-                let err = new Error('the file selected does not exist') ;
+                let err = new Error('the file selected \'' + filepath + '\'does not exist') ;
+                logger.error(err) ;
                 reject(err) ;
                 return ;
             }
@@ -797,6 +808,8 @@ export class Project {
         let ret : Error | undefined = undefined ;
 
         let projfile = path.join(this.location_, Project.event_file_name) ;
+        this.logger_.info('Reading project file \'' + projfile + '\'') ;
+
         if (!fs.existsSync(projfile)) {
             ret = new Error("the directory '" + this.location_ + "' is not a valid event project, missing file '" + Project.event_file_name + "'") ;
         }
@@ -815,32 +828,50 @@ export class Project {
         return ret ;
     }
 
+    private serial_ : number = 0 ;
+
     private writeEventFile() : Error | undefined {
         let ret: Error | undefined = undefined ;
 
-        let projfile = path.join(this.location_, Project.event_file_name) ;
-        if (fs.existsSync(projfile)) {
-            let i = 1 ;
-            let fullname = undefined ;
-            while (true) {
-                fullname = path.join(this.location_, 'event-' + i + '.json') ;
-                if (!fs.existsSync(fullname)) {
-                    break; 
+        let projfile = path.join(this.location_, Project.event_file_name) ;        
+        this.logger_.info('Writing project file [' + this.serial_++ + '] ' + projfile) ;
+
+        try {
+            if (fs.existsSync(projfile)) {
+                let i = 10 ;
+                let fullname = path.join(this.location_, 'event-' + i + '.json') ;
+                if (fs.existsSync(fullname)) {
+                    fs.rmSync(fullname) ;
                 }
-                i++ ;
+                i-- ;
+
+                while (i > 0) {
+                    fullname = path.join(this.location_, 'event-' + i + '.json') ;
+                    let newname = path.join(this.location_, 'event-' + ( i + 1) + '.json') ;
+                    if (fs.existsSync(fullname)) {
+                        fs.renameSync(fullname, newname) ;
+                    }
+                    i-- ;
+                }
+
+                fullname = path.join(this.location_, 'event-1.json') ;
+                fs.renameSync(projfile, fullname) ;
             }
 
-            fs.copyFileSync(projfile, fullname) ;
+            const jsonString = JSON.stringify(this.info_, null, 2);
+            fs.writeFile(projfile, jsonString, (err) => {
+                if (err) {
+                    fs.rmSync(projfile) ;   
+                    ret = err ;
+                }
+            });
         }
-
-        const jsonString = JSON.stringify(this.info_, null, 2);
-        fs.writeFile(projfile, jsonString, (err) => {
-            if (err) {
-                fs.rmSync(projfile) ;   
-                ret = err ;
-            }
-        });
+        catch(err) {
+            this.logger_.error('    Error project file [' + (this.serial_- 1) + '] ' + projfile) ;
+            return err as Error ;
+        }
         
+        this.logger_.info('    Finished project file [' + (this.serial_- 1) + '] ' + projfile) ;
         return ret;
     } 
 
