@@ -150,6 +150,19 @@ export abstract class SCBase {
     settings.unset(name);
   }
 
+  public static stripKeyString(key: string) {
+    let ret = key ;
+
+    if (key.startsWith('frc')) {
+      ret = key.substring(3) ;
+    }
+    return ret ;
+  }
+
+  public static keyToTeamNumber(key: string) {
+    return +this.stripKeyString(key) ;
+  }
+
   public logClientMessage(obj: any) {
     let msg = 'renderer: ' + obj.message;
     if (obj.args) {

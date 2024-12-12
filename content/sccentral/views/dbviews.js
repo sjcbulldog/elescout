@@ -67,6 +67,7 @@ class DBView extends TabulatorView {
                 columns: this.generateColDesc(cols),
                 movableColumns: true,
                 initialSort: this.getInitialSort(),
+                popupContainer: '#rightcontent'
             });
 
         this.table_.on('tableBuilt', this.hideHiddenColumns.bind(this)) ;

@@ -34,7 +34,13 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          getPicklistList,
          createNewPicklist,
          deletePicklist,
-         clientLog} from "./ipchandlers" ;
+         clientLog,
+         updatePicklistNotes,
+         getPicklistNotes,
+         getSingleTeamData,
+         updateSingleTeamData,
+         getSingleTeamFields,
+         getZebraStatus} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -127,11 +133,17 @@ app.on("ready", () => {
     ipcMain.on('delete-picklist', (event, ...args) => { deletePicklist('delete-picklist', ...args)}) ;
     ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('update-picklist-columns', ...args)}) ;
     ipcMain.on('update-picklist-data', (event, ...args) => { updatePicklistData('update-picklist-data', ...args)}) ;
+    ipcMain.on('update-picklist-notes', (event, ...args) => { updatePicklistNotes('update-picklist-notes', ...args)}) ;
+    ipcMain.on('get-picklist-notes', (event, ...args) => { getPicklistNotes('get-picklist-notes', ...args)}) ;
     ipcMain.on('get-picklist-columns', (event, ...args) => { getPicklistColumns('get-picklist-columns', ...args)}) ;
     ipcMain.on('get-picklist-col-data', (event, ...args) => { getPicklistColData('get-picklist-col-data', ...args)}) ;
     ipcMain.on('get-preferences', (event, ...args) => { getPreferences('get-preferences', ...args)}) ;
     ipcMain.on('update-preferences', (event, ...args) => { updatePreferences('update-preferences', ...args)}) ;
     ipcMain.on('client-log', (event, ...args) => { clientLog('client-log', ...args)}) ;
+    ipcMain.on('get-single-team-data', (event, ...args) => { getSingleTeamData('get-single-team-data', ...args)}) ;
+    ipcMain.on('update-single-team-data', (event, ...args) => { updateSingleTeamData('update-single-team-data', ...args)}) ;
+    ipcMain.on('get-single-team-fields', (event, ...args) => { getSingleTeamFields('get-single-team-fields', ...args)}) ;
+    ipcMain.on('get-zebra-status', (event, ...args) => { getZebraStatus('get-zebra-status', ...args)}) ;
     createWindow() ;
 }) ;
 

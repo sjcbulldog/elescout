@@ -1,6 +1,7 @@
 import Matrix from "ml-matrix";
 import { MatchDataModel } from "../model/matchmodel";
 import { TeamDataModel } from "../model/teammodel";
+import { SCBase } from "../apps/scbase";
 
 export class OPRCalculator {
     private teams_ : TeamDataModel ;
@@ -30,14 +31,6 @@ export class OPRCalculator {
         return ret ;
     }
 
-    private getTeamNumber(s: string) {
-        if (s.startsWith('frc')) {
-            s = s.substring(3);
-        }
-
-        return +s ;
-    }
-
     // comp_level, set_number, match_number, ba_redscore, ba_bluescore
     private collectMatchScores(matches: any[]) : number[][] {
         let ret : number[][] = [] ;
@@ -52,16 +45,16 @@ export class OPRCalculator {
 
             if (match.ba_bluescore && match.ba_redscore) {
                 let blue : number[] = [] ;
-                blue.push(this.getTeamNumber(match.b1)) ;
-                blue.push(this.getTeamNumber(match.b2)) ;
-                blue.push(this.getTeamNumber(match.b3)) ;
+                blue.push(SCBase.keyToTeamNumber(match.b1)) ;
+                blue.push(SCBase.keyToTeamNumber(match.b2)) ;
+                blue.push(SCBase.keyToTeamNumber(match.b3)) ;
                 blue.push(match.ba_bluescore) ;
                 ret.push(blue) ;
 
                 let red : number[] = [] ;
-                red.push(this.getTeamNumber(match.r1)) ;
-                red.push(this.getTeamNumber(match.r2)) ;
-                red.push(this.getTeamNumber(match.r3)) ;
+                red.push(SCBase.keyToTeamNumber(match.r1)) ;
+                red.push(SCBase.keyToTeamNumber(match.r2)) ;
+                red.push(SCBase.keyToTeamNumber(match.r3)) ;
                 red.push(match.ba_redscore) ;
                 ret.push(red) ;
             }

@@ -35,7 +35,14 @@ class SelectEventView extends TabulatorView {
         this.table_.setFilter('name', 'like', this.search_input_.value) ;
     }
 
+    tableComplete() {   
+        for(let col of this.table_.getColumns()) {
+            col.setWidth(true) ;
+        }
+    }
+
     formCallback(args) {
+        this.logMessage('silly', 'SelectEventView.formCallback') ;
         this.reset() ;
 
         this.view_div_ = document.createElement('div') ;
@@ -56,22 +63,26 @@ class SelectEventView extends TabulatorView {
 
         let cols = [] ;
         cols.push({
+            width: 100,
             field: 'key',
             title: 'Event Key',
         }) ;
     
         cols.push({
+            width: 100,
             field: 'name',
             title: 'Name',
         }) ;
     
         cols.push({
+            width: 100,
             field: 'district.display_name',
             title: 'District',
             mutator: this.evDistMutator.bind(this),
         }) ;
     
         cols.push({
+            width: 100,
             field: 'start_date',
             title: 'Date'
         })
@@ -79,11 +90,13 @@ class SelectEventView extends TabulatorView {
         this.table_ = new Tabulator(this.table_div_,
             {
                 data:args[0],
-                layout:"fitColumns",
+                layout:"fitDataStretch",
                 resizableColumnFit:true,
+                resizableColumnGuide:true,
                 columns:cols
             });
-    
+        
         this.table_.on("cellDblClick", this.loadBAEvent.bind(this)) ;
+        this.table_.on("tableBuilt", this.tableComplete.bind(this)) ;
     }
 }

@@ -1,0 +1,187 @@
+.single-team-top {
+    height: 100%;
+    width: 100%;
+    display: flex ;
+    flex-direction: column;
+}
+
+.single-team-team-selector-div {
+    border: 2px solid black ;
+    border-radius: 25px;
+    margin: 5px 20px 5px 20px;
+    text-align: center;
+    background: lightblue
+}
+
+.single-team-team-selector {
+    margin-top: 5px;
+    margin-bottom:5px ;
+    font-size: 36px;
+    width: 66%;
+    display: block;
+    margin: 0 auto ;
+}
+
+.single-team-report-div {
+    margin: 5px 20px 5px 20px;
+    border: 2px solid black ;
+    border-radius: 25px;
+    background-color: lightgray;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    background-image: url('../../images/paper.jpg');
+    background-repeat: no-repeat;
+    background-attachment: fixed; 
+    background-size: 100% 100%;
+}
+
+.single-team-report-title {
+    font-weight: bolder;
+    font-size: 64px ;
+    text-align: center;
+}
+
+.single-team-report-data-div {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px ;
+    margin-bottom: 20px;
+}
+
+.single-team-report-matches-div {
+    margin-top: 20px ;
+    margin-bottom: 20px;   
+    display:flex;
+    flex-direction: column;
+}
+
+.single-team-report-data-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 36px;
+    width: 100%;
+}
+
+.single-team-report-matches-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 36px;
+    display: block;
+    width: 100%;
+}
+
+.single-team-report-matches-table {
+    font-size: 16px;
+    width: fit-content;
+    margin: 0 auto ;
+    border: 2px solid ;
+}
+
+.single-team-matches-red-cell {
+    font-size: 22px ;
+    background-color: rgb(217, 68, 68);
+    padding-left: 20px;
+    padding-right: 20px;
+    cursor:pointer ;
+}
+
+.single-team-matches-red-highlight-cell {
+    font-size: 22px ;
+    background-color: rgb(217, 68, 68);
+    font-weight: bolder ;
+    text-decoration: underline;
+    padding-left: 20px;
+    padding-right: 20px;
+    cursor:pointer ;
+}
+
+.single-team-matches-blue-cell {
+    font-size: 22px ;
+    background-color: lightblue;
+    padding-left: 20px;
+    padding-right: 20px;
+    cursor:pointer ;
+}
+
+.single-team-matches-won-lost {
+    font-size: 22px ;
+    font-weight: bolder ;
+    padding-left: 20px;
+    padding-right: 20px;
+    cursor:pointer ;
+    background-color: white;
+}
+
+.single-team-matches-blue-highlight-cell {
+    font-size: 22px ;
+    background-color: lightblue;   
+    font-weight: bolder ;
+    text-decoration: underline;
+    padding-left: 20px;
+    padding-right: 20px;
+    cursor:pointer ;
+}
+
+.single-team-matches-title-cell {
+    background-color: white;
+}
+
+.single-team-field-div {
+    display:flex;
+    flex-direction: row;    
+    border: 2px solid black ;
+    border-radius: 25px;
+    margin: 5px 20px 5px 20px;
+    text-align: center;
+    background: lightblue
+}
+
+.single-team-team-field-selector {
+    margin: 10px 10px 10px 10px
+}
+
+.single-team-match-field-selector {
+    margin: 10px 10px 10px 10px
+}
+
+.single-team-report-data-table {
+    font-size: 16px;
+    width: fit-content;
+    margin: 0 auto ;
+    border: 2px solid ;
+}
+
+.single-team-report-data-cell {
+    font-size: 28px;
+    padding-left: 10px ;
+    padding-right: 10px ;
+}
+
+.single-team-report-data-row-odd {
+    background-color: burlywood;
+}
+
+.single-team-report-data-row-even {
+    background-color: lightgreen;
+}
+
+.single-team-report-data-header {
+    font-size: 22px;
+    font-weight: bolder;
+    background-color: white;
+}
+
+.single-team-matches-header {
+    background-color: white;
+    font-size: 22px;
+    font-weight: bolder ;
+}
+
+.single-team-matches-record {
+    background-color: white;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bolder;
+    border: 2px solid black;
+}

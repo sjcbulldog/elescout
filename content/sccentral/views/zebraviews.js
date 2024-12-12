@@ -455,24 +455,7 @@ class ZebraView extends XeroView {
 	}
 
 	teamCompareFunction(a, b) {
-		let anum ;
-		let bnum ;
-
-		if (typeof a === 'string' && a.startsWith('frc')) {
-			anum = +a.substring(3) ;
-		}
-		else {
-			anum = +a ;
-		}
-
-		if (typeof b === 'string' && b.startsWith('frc')) {
-			bnum = +b.substring(3) ;
-		}
-		else {
-			bnum = +b ;
-		}
-
-		return anum - bnum ;
+		return this.keyToNumber(a) - this.keyToNumber(b) ;
 	}
 
 	getAllTeams() {
@@ -873,10 +856,7 @@ class ZebraView extends XeroView {
 		this.ctx_.arc(cpt.x, cpt.y, radius, 0.0, 2 * Math.PI) ;
 		this.ctx_.stroke() ;
 
-		let text = isteam ? one.match : one.team_key ;
-		if (text.startsWith('frc')) {
-			text = text.substring(3) ;
-		}
+		let text = this.stripKeyString(isteam ? one.match : one.team_key) ;
 		this.ctx_.textAlign = 'center' ;
 		this.ctx_.textBaseline = 'middle' ;
 		if (!isteam) {

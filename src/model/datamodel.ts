@@ -135,15 +135,6 @@ export abstract class DataModel extends EventEmitter {
         return ret ;
     }
     
-    public static extractNumberFromKey(key: string) : number {
-        let ret = -1 ;
-
-        if (key.startsWith('frc')) {
-            ret = +key.substring(3) ;
-        }
-        return ret ;
-    }
-
     public close() : boolean {
         let ret: boolean = true ;
 

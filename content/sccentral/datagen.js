@@ -39,4 +39,5 @@ document.addEventListener('keydown', function(event) {
     ddown = false ;
     fdown = false ;
   }
+
 });

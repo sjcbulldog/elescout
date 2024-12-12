@@ -16,6 +16,8 @@ const viewMap = new Map([
   ['teamgraph', TeamGraphView],
   ['zebraview', ZebraView],
   ['picklist', PickListView],
+  ['singleteam', SingleTeamView],
+  ['zebrastatus', ZebraStatusView],
 ]) ;
 
 async function updateMainWindow(mtype, args) {
@@ -57,7 +59,6 @@ function updateView(args) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-
     statusCreate() ;
 
     // Query the element
@@ -124,3 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 window.scoutingAPI.receive("update-main-window-view", (args)=>updateView(args)) ;
+
+window.addEventListener('error', (e) => {
+  window.scoutingAPI.send('client-log', { type: 'error', message: 'window reported an error', args: JSON.stringify(e) }) ;
+}) ;

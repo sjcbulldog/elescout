@@ -8,10 +8,10 @@ class PickListView extends TabulatorView {
     static PickNotesFieldName = 'picknotes' ;
 
     static DefaultFields = [
-        { field: this.RankFieldName, title: 'Rank' },
-        { field: this.NickNameFieldName, title: 'Name' },
-        { field: this.TeamNumberFieldName, title: 'Number' },
-        { field: this.PickNotesFieldName, title: 'Notes' }
+        { field: PickListView.RankFieldName, title: 'Rank' },
+        { field: PickListView.NickNameFieldName, title: 'Name' },
+        { field: PickListView.TeamNumberFieldName, title: 'Number' },
+        { field: PickListView.PickNotesFieldName, title: 'Notes' }
     ];
 
     constructor(div,viewtype) {
@@ -22,6 +22,12 @@ class PickListView extends TabulatorView {
         this.team_fields_ = [] ;
         this.match_fields_ = [] ;
 
+        this.team_fields_loaded_ = false ;
+        this.match_fields_loaded_ = false ;
+
+        this.picklist_name_ = '' ;
+        this.change_ranking_ = true ;
+
         this.createInitialWindow() ;
 
         this.registerCallback('send-picklist-list', this.receivePicklistList.bind(this)) ;
@@ -30,8 +36,8 @@ class PickListView extends TabulatorView {
         this.registerCallback('send-picklist-col-data', this.receivePicklistColData.bind(this));
         this.registerCallback('send-team-field-list', this.receiveTeamFieldList.bind(this));
         this.registerCallback('send-match-field-list', this.receiveMatchFieldList.bind(this));
+        this.registerCallback('send-picklist-notes', this.receiveNotes.bind(this)) ;
 
-        this.scoutingAPI('get-picklist-list') ;
         this.scoutingAPI('get-team-field-list');
         this.scoutingAPI('get-match-field-list');
     }
@@ -105,10 +111,23 @@ class PickListView extends TabulatorView {
         this.top_.append(this.picklist_top_) ;
     }
 
+    sendPicklistData() {
+        this.scoutingAPI('get-picklist-data', this.getCurrentPicklistName()) ;
+        this.scoutingAPI('get-picklist-columns', this.getCurrentPicklistName()) ;
+        this.scoutingAPI('get-picklist-notes', this.getCurrentPicklistName()) ;
+    }
+
     selectedPicklistChanged() {
+        //
+        // This stores the data to the picklist with the name given by the
+        // value this.picklist_name_ ;
+        //
         this.updateTeamData() ;
-        this.scoutingAPI('get-picklist-data', this.picklist_info_existing_.value) ;
-        this.scoutingAPI('get-picklist-columns', this.picklist_info_existing_.value) ;
+
+        //
+        // Now, ask for picklist data based on what is selected in the picklist selector
+        //
+        this.sendPicklistData() ;
     }
 
     createPicklist() {
@@ -119,7 +138,7 @@ class PickListView extends TabulatorView {
     }
 
     deletePicklist() {
-        let name = this.picklist_info_existing_.value ;
+        let name = this.getCurrentPicklistName() ;
         this.clear(this.table_top_) ;
         this.scoutingAPI('delete-picklist', name) ;
     }
@@ -150,9 +169,19 @@ class PickListView extends TabulatorView {
         this.populatePicklistNames(arg[0].list) ;
         if (arg[0].default) {
             this.picklist_info_existing_.value = arg[0].default ;
-            this.scoutingAPI('get-picklist-data', this.picklist_info_existing_.value) ;
-            this.scoutingAPI('get-picklist-columns', this.picklist_info_existing_.value) ;
+            this.sendPicklistData() ;
         }
+    }
+
+    receiveNotes(arg) {
+        this.updatingNotesFromMain_ = true ;
+        let obj = arg[0] ;
+        if (obj.notes) {
+            for(let one of obj.notes) {
+                this.setValue(PickListView.PickNotesFieldName, one.teamnumber, one.picknotes) ;
+            }
+        }
+        this.updatingNotesFromMain_ = false ;
     }
 
     receivePicklistData(arg) {
@@ -184,14 +213,70 @@ class PickListView extends TabulatorView {
                 columns: this.generateColDesc(),
                 movableColumns: true,
                 movableRows: true,
+                rowHeader:{headerSort:false, resizable: false, minWidth:30, width:30, rowHandle:true, formatter:"handle"},
             });
 
+
+
         this.scoutingAPI('client-log', { type: 'debug', message: 'created table in client software - instance serial ' + this.instance_ }) ;
-    
+
+        this.table_.on("dataSorted", this.dataSorted.bind(this)) ;
         this.table_.on("rowMoved", this.teamMoved.bind(this));
         this.table_.on("columnMoved", this.colMoved.bind(this)) ;
         this.table_.on("columnResized", this.sendColumnConfiguration.bind(this)) ;
+        this.table_.on("cellEdited", this.sendNotes.bind(this)) ;
         this.table_top_.append(this.table_div_) ;
+    }
+
+    dataSorted(sorters, rows) {
+        if (sorters.length > 1) {
+            this.change_ranking_ = false ;
+        } else if (sorters.length === 0) {
+            this.change_ranking_ = true ;
+        } else {
+            if (sorters[0].field !== 'rank') {
+                this.change_ranking_ = false ;
+            }
+            else {
+                this.change_ranking_ = true ;
+            }
+        }
+    }
+
+    getCurrentPicklistName() {
+        return this.picklist_info_existing_.value ;
+    }
+
+    sendNotes(cell) {
+        //
+        // This event triggers when any cell is changed, not just based on user editing, unlike what is implied by
+        // the name of the event.  Therfore, if we are updating cells based on getting data from the main process
+        // we don't trigger an update.
+        //
+        if (!this.table_ || this.updatingNotesFromMain_ || cell.getField() !== PickListView.PickNotesFieldName) {
+            return ;
+        }
+
+        let teamnumobj = this.getColumnFromId(PickListView.TeamNumberFieldName) ;
+        let notesobj = this.getColumnFromId(PickListView.PickNotesFieldName) ;
+
+        let data = [] ;
+        for(let row of this.table_.getRows()) {
+            let team = row.getCell(teamnumobj).getValue() ;
+            let notes = row.getCell(notesobj).getValue() ;
+            let one = {
+                teamnumber: team,
+                picknotes: notes
+            } ;
+            data.push(one) ;
+        }
+
+        let obj = {
+            name: this.getCurrentPicklistName(),
+            notes: data
+        }
+
+        this.scoutingAPI('update-picklist-notes', obj) ;
     }
 
     setValue(field, team, value) {
@@ -269,21 +354,32 @@ class PickListView extends TabulatorView {
         this.columns_picklist_name_ = obj.name ;
 
         for(let col of obj.columns) {
-            if (this.isIgnoredField(col.name)) {
-                this.setColumnWidth(col.name, col.width) ;
-            }
-            else {
+            if (!this.isIgnoredField(col.name)) {
                 this.addPickListCol(col) ;
             }
+        }
+
+        for(let col of obj.columns) {
+            this.setColumnWidth(col.name, col.width) ;
+        }
+    }
+
+    checkPicklist() {
+        if (this.team_fields_loaded_ && this.match_fields_loaded_) {
+            this.scoutingAPI('get-picklist-list') ;
         }
     }
 
     receiveTeamFieldList(args) {
+        this.team_fields_loaded_ = true ;
         this.team_fields_ = args[0] ;
+        this.checkPicklist() ;
     }
 
     receiveMatchFieldList(args) {
+        this.match_fields_loaded_ = true ;
         this.match_fields_ = args[0] ;
+        this.checkPicklist() ;
     }
 
     colMoved() {
@@ -301,7 +397,7 @@ class PickListView extends TabulatorView {
 
     getTeamNumberFromRank(rank) {
         for(let row of this.table_.getRows()) {
-            let cell = row.getCell(RankFieldName) ;
+            let cell = row.getCell(PickListView.RankFieldName) ;
             if (cell.getData().rank === rank) {
                 return cell.getData().teamnumber ;
             }
@@ -333,14 +429,20 @@ class PickListView extends TabulatorView {
         this.scoutingAPI('update-picklist-data', obj) ;
     }
 
-    teamMoved() {
-        let rank = 1 ;
-        for(let row of this.table_.getRows()) {
-            let cell = row.getCell(RankFieldName) ;
-            cell.setValue(rank++, false) ;
-        }
+    teamMoved(row) {
+        if (this.change_ranking_) {
+            let rank = 1 ;
+            for(let row of this.table_.getRows()) {
+                let rankcell = row.getCell(PickListView.RankFieldName) ;
+                let namecell = row.getCell(PickListView.NickNameFieldName) ;
+                console.log('cell ') ;
+                console.log('  --  ' + rankcell.getValue()) ;
+                console.log('  --  ' + namecell.getValue()) ;
+                rankcell.setValue(rank++, false) ;
+            }
 
-        this.updateTeamData() ;
+            this.updateTeamData() ;
+        }
     }
 
     getColumnFromId(id) {
@@ -403,7 +505,7 @@ class PickListView extends TabulatorView {
         }
 
         let coldata = {
-            name: this.picklist_name_,
+            name: this.getCurrentPicklistName(),
             cols: coldescs
         }
         this.scoutingAPI('update-picklist-columns', coldata) ;
@@ -503,12 +605,27 @@ class PickListView extends TabulatorView {
             let desc = {
                 field: field.field,
                 title: field.title,
-                headerMenu: this.picklistMenu.bind(this),
             }
+
             let coldesc = this.findColumnByName(field.field) ;
             if (coldesc && coldesc.width) {
                 desc['width'] = coldesc.width ;
             }
+
+            if (field.field === PickListView.RankFieldName) {
+                //
+                // This is the only field that has a menu
+                //
+                desc['headerMenu'] = this.picklistMenu.bind(this) ;
+            }
+
+            if (field.field === PickListView.PickNotesFieldName) {
+                //
+                // This is the only field that is editable
+                //
+                desc['editor'] = 'input' ;
+            }
+
             cols.push(desc) ;
         }
         return cols;

@@ -8,7 +8,6 @@ let status_title = undefined ;
 function statusCreate() {
     status_top = document.createElement('div') ;
     status_top.id = "status" ;
-    status_top.style.bo
     $("#righttop").append(status_top) ;
 
     status_content = document.createElement('div') ;

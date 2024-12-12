@@ -66,7 +66,7 @@ class StatusView extends TabulatorView {
         this.table_ = new Tabulator(this.table_div_,
             {
                 data: data,
-                layout: "fitColumns",
+                layout: "fitDataFill",
                 resizableColumnFit: true,
                 columns: this.createColDesc(),
                 movableColumns: true,
@@ -84,7 +84,7 @@ class TeamStatusView extends StatusView {
     
     getInitialSort() {
         return [
-            {column:"team_number", dir:"asc"}, //then sort by this second
+            {column:"number", dir:"asc"}, //then sort by this second
         ]
     }
 

@@ -56,7 +56,13 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'update-preferences',
         'update-picklist-columns',
         'update-picklist-data',
-        'client-log'
+        'update-picklist-notes',
+        'get-picklist-notes',
+        'client-log',
+        'get-single-team-data',
+        'update-single-team-data',
+        'get-single-team-fields',
+        'get-zebra-status'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.send(channel, data);
@@ -104,7 +110,11 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-picklist-list',
         'send-picklist-columns',
         'send-picklist-col-data',
-        'send-preferences'
+        'send-picklist-notes',
+        'send-preferences',
+        'send-single-team-data',
+        'send-single-team-fields',
+        'send-zebra-status'
       ];
       if (validChannels.includes(channel)) {
           ipcRenderer.on(channel, (event, ...args) => func(...args));

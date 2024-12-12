@@ -5,7 +5,6 @@ class SelectTablet extends XeroView
     constructor(div, type, args) {
         super(div, type) ;
 
-        this.top_ = div ;
         this.startup_div_ = document.createElement('div') ;
         this.top_.append(this.startup_div_) ;
 

@@ -41,7 +41,7 @@ class XeroMouseRegion {
 // image based scouting section.
 //
 class XeroImageSection extends XeroBaseSection {
-    constructor(info, json, color, reversed) {
+    constructor(parent, info, json, color, reversed) {
         super(json.name, true, document.createElement('canvas')) ;
         this.canvas_ = this.top_ ;                 // The canvas HTML elements
         this.canvas_.classList.add('form-canvas') ;
@@ -53,12 +53,24 @@ class XeroImageSection extends XeroBaseSection {
         this.values_ = [] ;
         this.reverse_ = reversed ;
         this.color_ = color ;
+        this.last_parent_height_ = 0 ;
+        this.last_parent_width_ = 0 ;
 
         for(let item of json.items) {
             this.tags_.push(item.tag) ;
         }
 
         this.canvas_.addEventListener('mousedown', this.mousePress.bind(this)) ;
+
+        //
+        // Detect if the canvas changes size and re-compute the coordinates of the
+        // various controls for mouse interaction.  We also redraw to ensure that the
+        // desired aspect ration is maintained.
+        //
+        this.observer_ = new ResizeObserver(entries => {
+            this.canvasResized() ;
+        }) ;
+        this.observer_.observe(this.canvas_) ;
     }
 
     getValues() {
@@ -91,6 +103,19 @@ class XeroImageSection extends XeroBaseSection {
         }
 
         return obj ;
+    }
+
+    canvasResized() {
+        if (this.canvas_.parentElement) {
+            if (this.canvas_.parentElement.offsetWidth !== this.last_parent_width_ || this.canvas_.parentElement.offsetHeight !== this.last_parent_height_) {
+                this.regions_ = [] ;
+                this.sizesInited_ = false ;
+                this.drawImageSection() ;
+
+                this.last_parent_width_ = this.canvas_.parentElement.offsetWidth ;
+                this.last_parent_height_ = this.canvas_.parentElement.offsetHeight ;
+            }
+        }
     }
 
     computeScaleFactor() {

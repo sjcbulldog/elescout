@@ -152,12 +152,12 @@ class FormView extends XeroView {
         return this.bardiv_ ;
     }
 
-    formViewCreateSection(section, color, reversed) {
+    formViewCreateSection(parent, section, color, reversed) {
         let secobj ;
 
         if (section.image) {
             let info = this.findImage(section.image) ;
-            secobj = new XeroImageSection(info, section, color, reversed) ;
+            secobj = new XeroImageSection(parent, info, section, color, reversed) ;
         }
         else {
             secobj = new XeroControlSection(section, color) ;
@@ -189,7 +189,7 @@ class FormView extends XeroView {
         // Create the sections
         //
         for(let section of form.sections) {
-            let secobj = this.formViewCreateSection(section, color, reversed) ;
+            let secobj = this.formViewCreateSection(this.formtop_, section, color, reversed) ;
             for(let tag of secobj.tags_) {
                 this.nameToSectionMap_.set(tag, secobj) ;
             }

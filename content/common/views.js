@@ -109,12 +109,22 @@ class XeroSelector {
 }
 
 class CallbackMgr {
+    static verbose = false ;
+
     constructor() {
         this.callbacks_ = new Map();
         this.registeredReceive = [] ;
     }
 
+    logMessage(type, message, args) {
+        if (CallbackMgr.verbose || type === 'error' || type === 'warning') {
+            window.scoutingAPI.send('client-log', { type: 'silly', message: message, args: args }) ;
+        }
+    }
+
     registerCallback(name, func) {
+        this.logMessage('silly', 'CallbackMgr.registerCallback - ' + name) ;
+
         if (!this.registeredReceive.includes(name)) {
             window.scoutingAPI.receive(name, (args) => { XeroView.callback_mgr_.dispatchCallback(name, args); });
             this.registeredReceive.push(name) ;
@@ -130,6 +140,7 @@ class CallbackMgr {
     }
 
     unregisterCallback(name, func) {
+        this.logMessage('silly', 'CallbackMgr.unregisterCallback - ' + name) ;
         if (this.callbacks_.has(name)) {
             let cblist = this.callbacks_.get(name);
             const index = cblist.indexOf(func);
@@ -144,9 +155,13 @@ class CallbackMgr {
     }
 
     dispatchCallback(name, arg) {
+        this.logMessage('silly', 'CallbackMgr.dispatch - ' + name) ;
         if (this.callbacks_.has(name)) {
             let cblist = this.callbacks_.get(name);
+            let count = 1 ;
+
             for (let cb of cblist) {
+                this.logMessage('silly', '    CallbackMgr.dispatch - ' + name + ', which ' + count++) ;
                 cb(arg);
             }
         }
@@ -163,6 +178,24 @@ class XeroView {
         this.top_ = div;
         this.viewtype_ = viewtype ;
         this.callbacks_ = [];
+    }
+
+    keyToNumber(key) {
+        return +this.stripKeyString(key) ;
+    }
+
+    stripKeyString(key) {
+        let ret = key ;
+
+        if (key.startsWith('frc')) {
+            ret = key.substring(3) ;
+        }
+
+        return ret ;
+    }
+
+    logMessage(type, message, args) {
+        window.scoutingAPI.send('client-log', { type: type, message: message, args: args }) ;
     }
 
     registerCallback(name, func) {
@@ -205,12 +238,6 @@ class XeroView {
         this.preview_div_.id = "info";
         this.top_.append(this.preview_div_) ;
     }
-}
-
-class TabulatorView extends XeroView {
-    constructor(div, mtype) {
-        super(div, mtype);
-    }
 
     mapMatchType(mtype) {
         let ret= -1 ;
@@ -226,6 +253,47 @@ class TabulatorView extends XeroView {
         }
 
         return ret;
+    }
+
+    sortCompFunBA(a, b) {
+        let ret = 0;
+
+        let atype = this.mapMatchType(a.comp_level);
+        let btype = this.mapMatchType(b.comp_level);
+
+        if (atype < btype) {
+            ret = -1;
+        }
+        else if (atype > btype) {
+            ret = 1;
+        }
+        else {
+            if (a.match_number < b.match_number) {
+                ret = -1;
+            }
+            else if (a.match_number > b.match_number) {
+                ret = 1;
+            }
+            else {
+                if (a.set_number < b.set_number) {
+                    ret = -1;
+                }
+                else if (a.set_number > b.set_number) {
+                    ret = 1;
+                }
+                else {
+                    ret = 0;
+                }
+            }
+        }
+        return ret;
+    }
+
+}
+
+class TabulatorView extends XeroView {
+    constructor(div, mtype) {
+        super(div, mtype);
     }
 
     sortCompFun(a, b, aRow, bRow, col, dir, sorterParams) {

@@ -5,6 +5,7 @@ import * as fs from 'fs' ;
 import * as path from 'path' ;
 import * as sqlite3 from 'sqlite3' ;
 import * as uuid from 'uuid' ;
+import { format } from '@fast-csv/format';
 import { Tablet } from './tablet';
 import { BlueAlliance } from '../extnet/ba';
 import { TeamTablet } from './teamtablet';
@@ -17,6 +18,7 @@ import { BAEvent, BAMatch, BATeam } from '../extnet/badata';
 import { StatBotics } from '../extnet/statbotics';
 import { DataGenerator } from './datagen';
 import { FieldAndType } from '../model/datamodel';
+import { SCBase } from '../apps/scbase';
 
 export interface ProjectOneColCfg {
     name: string,
@@ -30,10 +32,22 @@ export interface ProjColConfig
     frozenColumnCount: number,
 } ;
 
+export interface ProjPicklistNotes
+{
+    teamnumber: number,
+    picknotes: string
+}
+
+export interface ProjPicklistColumn {
+    name: string,
+    width: number
+}
+
 export interface PickList {
     name: string ;
     teams: number[] ;
-    columns: string[] ;
+    columns: ProjPicklistColumn[] ;
+    notes: ProjPicklistNotes[];
 }
 
 export interface NamedGraphDataRequest {
@@ -69,6 +83,8 @@ export class ProjectInfo {
     public team_graph_data_: NamedGraphDataRequest[] ;  // Stored graphs defined by the user
     public picklist_ : PickList[] = [] ;                // Pick list, a list of team number
     public last_picklist_? : string ;                   // The last picklist used
+    public single_team_match: string[] = [] ;
+    public single_team_team: string[] = [] ;
 
     constructor() {
         this.locked_ = false ;
@@ -90,6 +106,8 @@ export class ProjectInfo {
 }
 
 export class Project {
+    private static readonly keepLotsOfBackups = true ;
+
     private static readonly event_file_name : string  = "event.json" ;
     private static readonly team_db_file_name: string = "teamdb" ;
     private static readonly match_db_file_name: string = "matchdb" ;
@@ -268,7 +286,11 @@ export class Project {
             let gendata: DataGenerator = new DataGenerator(this.info_.teamform_);
             let results = gendata.generateData(teams) ;
             if (results) {
-                this.teamDB.processScoutingResults(results) ;
+                let obj = {
+                    purpose: "team",
+                    results: results
+                } ;
+                this.processResults(obj) ;
             }
         }
 
@@ -288,7 +310,11 @@ export class Project {
             let gendata: DataGenerator = new DataGenerator(this.info_.matchform_);
             let results = gendata.generateData(matches) ;
             if (results) {
-                this.matchDB.processScoutingResults(results) ;
+                let obj = {
+                    purpose: "match",
+                    results: results
+                } ;
+                this.processResults(obj) ;
             }
         }
     }
@@ -773,7 +799,8 @@ export class Project {
         let picklist = {
             name: name,
             teams: tnum,
-            columns: []
+            columns: [],
+            notes: []
         }
         this.info_.picklist_.push(picklist) ;
         this.writeEventFile();
@@ -788,10 +815,18 @@ export class Project {
         return undefined ;
     }
 
-    public setPicklistCols(name: string, cols: string[]) {
+    public setPicklistCols(name: string, cols: ProjPicklistColumn[]) {
         let picklist = this.findPicklistByName(name) ;
         if (picklist) {
             picklist.columns = cols ;
+        }
+        this.writeEventFile() ;
+    }
+
+    public setPicklistNotes(name: string, notes: ProjPicklistNotes[]) {
+        let picklist = this.findPicklistByName(name) ;
+        if (picklist) {
+            picklist.notes = notes ;
         }
         this.writeEventFile() ;
     }
@@ -801,6 +836,12 @@ export class Project {
         if (picklist) {
             picklist.teams = teams ;
         }
+        this.writeEventFile() ;
+    }
+
+    public setSingleTeamFields(team: string[], match: string[]) {
+        this.info_.single_team_match = match ;
+        this.info_.single_team_team = team ;
         this.writeEventFile() ;
     }
 
@@ -832,43 +873,64 @@ export class Project {
 
     private writeEventFile() : Error | undefined {
         let ret: Error | undefined = undefined ;
+        let errst = false ;
 
         let projfile = path.join(this.location_, Project.event_file_name) ;        
         this.logger_.info('Writing project file [' + this.serial_++ + '] ' + projfile) ;
 
-        try {
-            if (fs.existsSync(projfile)) {
-                let i = 10 ;
-                let fullname = path.join(this.location_, 'event-' + i + '.json') ;
-                if (fs.existsSync(fullname)) {
+        if (fs.existsSync(projfile) && Project.keepLotsOfBackups) {
+            this.logger_.debug('Performing backup file sequence ....');
+            let i = 10 ;
+            let fullname = path.join(this.location_, 'event-' + i + '.json') ;
+            if (fs.existsSync(fullname)) {
+                this.logger_.debug('    removing file \'' + fullname + '\'') ;
+                try {
                     fs.rmSync(fullname) ;
                 }
-                i-- ;
+                catch(err) {
+                    this.logger_.error('    error removing file \'' + fullname + '\'', err) ;
+                    errst = true ;
+                }
+            }
+            i-- ;
 
+            if (!errst) {
                 while (i > 0) {
                     fullname = path.join(this.location_, 'event-' + i + '.json') ;
                     let newname = path.join(this.location_, 'event-' + ( i + 1) + '.json') ;
                     if (fs.existsSync(fullname)) {
-                        fs.renameSync(fullname, newname) ;
+                        try {
+                            this.logger_.debug('    renaming file \'' + fullname + '\' -> \'' + newname + '\'') ;
+                            fs.renameSync(fullname, newname) ;
+                        }
+                        catch(err) {
+                            this.logger_.error('    error renaming file \'' + fullname + '\' -> \'' + newname + '\'') ;
+                        }
                     }
                     i-- ;
                 }
 
-                fullname = path.join(this.location_, 'event-1.json') ;
-                fs.renameSync(projfile, fullname) ;
-            }
-
-            const jsonString = JSON.stringify(this.info_, null, 2);
-            fs.writeFile(projfile, jsonString, (err) => {
-                if (err) {
-                    fs.rmSync(projfile) ;   
-                    ret = err ;
+                try {
+                    fullname = path.join(this.location_, 'event-1.json') ;
+                    this.logger_.debug('    renaming file \'' + projfile + '\' -> \'' + fullname + '\'') ;
+                    fs.renameSync(projfile, fullname) ;
                 }
-            });
+                catch(err) {
+                    this.logger_.error('    error renaming file \'' + projfile + '\' -> \'' + fullname + '\'') ;
+                }
+            }
+            else {
+                this.logger_.warning('could not execute rolling backup strategy due to an error')
+            }
+        }
+
+        const jsonString = JSON.stringify(this.info_, null, 2);
+        try {
+            this.logger_.debug('    writing project data to file \'' + projfile + '\'') ;
+            fs.writeFileSync(projfile, jsonString) ;
         }
         catch(err) {
-            this.logger_.error('    Error project file [' + (this.serial_- 1) + '] ' + projfile) ;
-            return err as Error ;
+            ret = err as Error ;
         }
         
         this.logger_.info('    Finished project file [' + (this.serial_- 1) + '] ' + projfile) ;
@@ -906,6 +968,38 @@ export class Project {
         }
 
         this.writeEventFile() ;
+    }
+
+    private doesMatchContainTeam(match: BAMatch, team: number) {
+        for(let i = 0 ; i < 3 ; i++) {
+            let num: number ;
+
+            num = SCBase.keyToTeamNumber(match.alliances.red.team_keys[i]) ;
+            if (num === team) {
+                return true ;
+            }
+
+            num = SCBase.keyToTeamNumber(match.alliances.blue.team_keys[i]) ;
+            if (num === team) {
+                return true ;
+            }
+        }
+
+        return false;
+    }
+
+    public getMatchResults(teamnumber: number) {
+        let ret: BAMatch[] = [] ;
+
+        if (this.info_.matches_) {
+            for(let m of this.info_.matches_) {
+                if (this.doesMatchContainTeam(m, teamnumber)) {
+                    ret.push(m) ;
+                }
+            }
+        }
+
+        return ret ;
     }
 
     public storeGraph(desc: NamedGraphDataRequest) {
@@ -951,6 +1045,178 @@ export class Project {
 
 		return ret ;
 	}
+
+	private getDataType(field: string, data: any[]) : string {
+		let ret: string = typeof (data[0][field]) ;
+        let isnull = true ;
+
+        for(let d of data) {
+            if (d[field] !== null) {
+                isnull = false ;
+                break ;
+            }
+        }
+
+        if (isnull) {
+            ret = 'null' ;
+        }
+        else {
+            for(let d of data) {
+                if (typeof d[field] !== ret) {
+                    return 'string' ;
+                }
+            }
+        }
+
+		return ret;
+	}
+
+    private getMatchData(field: string, team: number) : Promise<any> {
+		let ret = new Promise<any>(async (resolve, reject) => {
+			let teamkey = 'frc' + team ;
+			let query = 'select ' + field + ' from ' + MatchDataModel.MatchTableName + ' where team_key = "' + teamkey + '" ;' ;
+			this.matchDB.all(query)
+				.then((data: any[]) => {
+					if (data.length !== 0) {
+						let dt = this.getDataType(field, data) ;
+						if (dt === 'string') {
+							let vmap = new Map() ;
+							for(let v of data) {
+								let val = v[field] ;
+								if (!vmap.has(val)) {
+									vmap.set(val, 0) ;
+								}
+
+								let current = vmap.get(val) ;
+								vmap.set(val, current + 1) ;
+							}
+
+							let total = 0 ;
+							for(let v of vmap.values()) {
+								total += v ;
+							}
+
+							let ret = '' ;
+							for(let v of vmap.keys()) {
+								let pcnt = Math.round(vmap.get(v) / total * 10000) / 100 ;
+								if (ret.length > 0) {
+									ret += '/' ;
+								}
+								ret += v + ' ' + pcnt + '%' ;
+							}
+
+							resolve(ret);
+						}
+						else if (dt === 'number') {
+							let total = 0.0 ;
+							for(let v of data) {
+								total += v[field] ;
+							}
+							resolve(total / data.length) ;
+						}
+                        else if (dt === 'null') {
+                            resolve('No Data') ;
+                        }
+					}
+					else {
+						resolve(null) ;
+					}
+				})
+				.catch((err) => {
+					resolve(NaN);
+				}) ;
+		}) ;
+
+		return ret ;
+	}	
+
+	private getTeamData(field: string, team: number) : Promise<number> {
+		let ret = new Promise<number>(async (resolve, reject) => {
+			let query = 'select ' + field + ' from ' + TeamDataModel.TeamTableName + ' where team_number = ' + team + ' ;' ;
+			this.teamDB.all(query)
+				.then((data) => {
+					let rec = data[0] as any ;
+					let v = rec[field] ;
+					resolve(v) ;
+				})
+				.catch((err) => {
+					resolve(NaN);
+				}) ;
+		}) ;
+
+		return ret ;
+	}
+    
+	public getData(field: string, team: number) : Promise<number> {
+		let ret = new Promise<number>(async (resolve, reject) => {
+			let tcols = await this.teamDB.getColumnNames(TeamDataModel.TeamTableName) ;
+			if (tcols.includes(field)) {
+				let v = await this.getTeamData(field, team) ;
+				resolve(v) ;
+			}
+
+			let mcols = await this.matchDB.getColumnNames(MatchDataModel.MatchTableName) ;
+			if (mcols.includes(field)) {
+				let v = await this.getMatchData(field, team) ;
+				resolve(v) ;
+			}
+		}) ;
+		return ret;
+	}
+
+    private getNotesFromPicklist(picklist: PickList, team: number) : string {
+        for(let notes of picklist.notes) {
+            if (notes.teamnumber === team) {
+                return notes.picknotes ;
+            }
+        }
+
+        return '' ;
+    }
+
+    public async exportPicklist(name: string, filename: string) : Promise<void> {
+        interface MyObject {
+			[key: string]: any; // Allows any property with a string key
+		}
+
+        let ret = new Promise<void>(async (resolve, reject) => {
+            let picklist = this.findPicklistByName(name) ;
+            if (picklist) {
+                let cols = ['rank', 'teamnumber', 'nickname', 'picknotes'] ;
+                for(let coldesc of picklist.columns) {
+                    cols.push(coldesc.name) ;
+                }
+                
+                const csvStream = format({ headers: cols, }) ; 
+                const outputStream = fs.createWriteStream(filename);
+                csvStream.pipe(outputStream).on('end', () => { 
+                    csvStream.end() ;
+                }) ;
+
+                let rank = 1 ;
+                for(let team of picklist.teams) {
+                    let teamobj = this.findTeamByNumber(team) ;
+                    let record : MyObject = {
+                        'rank' : rank++,
+                        'teamnumber' : team,
+                        'nickname' : teamobj?.nickname,
+                        'notes' : this.getNotesFromPicklist(picklist, team),
+                    };
+
+                    for(let col of picklist.columns) {
+                        if (col.name !== 'rank' && col.name != 'picknotes' && col.name != 'nickname' && col.name != 'teamnumber') {
+                            let data = await this.getData(col.name, team) ;
+                            record[col.name] = data ;
+                        }
+                    }
+                    csvStream.write(record) ;
+                }
+                csvStream.end();
+                resolve() ;
+            }
+        }) ;
+        return ret;
+    }
 
 
     //#region loading data from external sources

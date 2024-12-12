@@ -2,6 +2,7 @@ import * as sqlite3 from 'sqlite3' ;
 import { DataModel, DataRecord, ValueType } from "./datamodel";
 import winston from 'winston';
 import { BARankings, BATeam } from '../extnet/badata';
+import { SCBase } from '../apps/scbase';
 
 interface scoutvalue {
     tag: string,
@@ -105,7 +106,7 @@ export class TeamDataModel extends DataModel {
         dr.addfield('losses', ranking.record.losses);
         dr.addfield('ties', ranking.record.ties) ;
         dr.addfield('team_key', ranking.team_key) ;
-        dr.addfield('team_number', DataModel.extractNumberFromKey(ranking.team_key)) ;
+        dr.addfield('team_number', SCBase.keyToTeamNumber(ranking.team_key)) ;
         return dr ;
     }
 

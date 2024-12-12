@@ -30,9 +30,30 @@ interface PickListColData {
 	data: number[]
 };
 
+interface ZebraStatus {
+	comp_level: string,
+	set_number: number,
+	match_number: number,
+	red1: number,
+	redst1: boolean
+	red2: number,
+	redst2: boolean
+	red3: number,
+	redst3: boolean
+	blue1: number,
+	bluest1: boolean
+	blue2: number,
+	bluest2: boolean
+	blue3: number,
+	bluest3: boolean
+
+}
+
 export class SCCentral extends SCBase {
 	private static readonly attribution: string =
-		"Icons from Flaticon.com (https://www.flaticon.com/)";
+		"Icons from Flaticon.com (https://www.flaticon.com/)\n" + 
+		"Images from Freepik.com (https://www.freepik.com/)" ;
+
 	private static readonly recentFilesSetting: string = "recent-files";
 
 	private static readonly matchStatusFields: string[] = [
@@ -72,8 +93,9 @@ export class SCCentral extends SCBase {
 	private static readonly viewHelp: string = "view-help";
 	private static readonly viewAbout: string = "view-about";
 	private static readonly viewZebraData: string = "view-zebra-data";
-	private static readonly viewZebraTeam: string = "view-zebra-team";
+	private static readonly viewZebraStatus: string = "view-zebra-status";
 	private static readonly viewTeamGraph: string = "view-team-graph";
+	private static readonly viewSingleTeamSummary: string = 'view-single-team-summary' ;
 
 	private project_?: Project = undefined;
 	private ba_?: BlueAlliance = undefined;
@@ -306,7 +328,7 @@ export class SCCentral extends SCBase {
 		optionmenu.submenu!.append(this.reverseImage_) ;
 		ret.append(optionmenu);
 
-		let loadmenu: MenuItem = new MenuItem({
+		let datamenu: MenuItem = new MenuItem({
 			type: "submenu",
 			label: "Data",
 			submenu: new Menu(),
@@ -320,7 +342,7 @@ export class SCCentral extends SCBase {
 				this.importBlueAllianceStatboticsData();
 			},
 		});
-		loadmenu.submenu?.append(downloadMatchData);
+		datamenu.submenu?.append(downloadMatchData);
 		this.menuitems_.set("data/loadmatchdata", downloadMatchData);
 
 		let downloadZebraData: MenuItem = new MenuItem({
@@ -331,10 +353,10 @@ export class SCCentral extends SCBase {
 				this.importZebraTagData();
 			},
 		});
-		loadmenu.submenu?.append(downloadZebraData);
+		datamenu.submenu?.append(downloadZebraData);
 		this.menuitems_.set("data/zebra", downloadZebraData);
 
-		loadmenu.submenu?.append(new MenuItem({ type: "separator" }));
+		datamenu.submenu?.append(new MenuItem({ type: "separator" }));
 
 		let exportTeamData: MenuItem = new MenuItem({
 			type: "normal",
@@ -344,7 +366,7 @@ export class SCCentral extends SCBase {
 				this.doExportData(TeamDataModel.TeamTableName);
 			},
 		});
-		loadmenu.submenu?.append(exportTeamData);
+		datamenu.submenu?.append(exportTeamData);
 		this.menuitems_.set("data/exportteam", exportTeamData);
 
 		let exportMatchData: MenuItem = new MenuItem({
@@ -355,10 +377,21 @@ export class SCCentral extends SCBase {
 				this.doExportData(MatchDataModel.MatchTableName);
 			},
 		});
-		loadmenu.submenu?.append(exportMatchData);
+		datamenu.submenu?.append(exportMatchData);
 		this.menuitems_.set("data/exportmatch", exportMatchData);
+	
+		let exportPicklistData = new MenuItem({
+			type: "normal",
+			label: "Export All Picklist Data",
+			enabled: false,
+			click: () => {
+				this.doExportPicklist();
+			},
+		});
+		datamenu.submenu?.append(exportPicklistData);
+		this.menuitems_.set("data/exportpicklist", exportPicklistData);
 
-		ret.append(loadmenu);
+		ret.append(datamenu);
 
 		let viewmenu: MenuItem = new MenuItem({
 			type: "submenu",
@@ -410,6 +443,7 @@ export class SCCentral extends SCBase {
 			"data/exportmatch",
 			"data/exportteam",
 			"data/loadmatchdata",
+			"data/exportpicklist",
 			"data/zebra",
 			"file/close",
 		];
@@ -1133,11 +1167,6 @@ export class SCCentral extends SCBase {
 				command: SCCentral.viewInit,
 				title: "Event Info",
 			});
-			treedata.push({
-				type: "item",
-				command: SCCentral.viewPicklist,
-				title: "Picklist",
-			});
 			treedata.push({ type: "separator", title: "Teams" });
 			treedata.push({
 				type: "item",
@@ -1176,8 +1205,38 @@ export class SCCentral extends SCBase {
 				});
 			}
 
+
+			if (this.project_.info.zebra_tag_data_) {
+				treedata.push({ type: "separator", title: "Zebra Tag" });
+
+				treedata.push({
+					type: "item",
+					command: SCCentral.viewZebraStatus,
+					title: "Status",
+				});
+
+				treedata.push({
+					type: "item",
+					command: SCCentral.viewZebraData,
+					title: "Plots",
+				});
+			}
+
 			treedata.push({ type: "separator", title: "Analysis" });
+			
 			if (this.project_.info.locked_) {
+				treedata.push({
+					type: "item",
+					command: SCCentral.viewPicklist,
+					title: "Picklist",
+				});
+
+				treedata.push({
+					type: "item",
+					command: SCCentral.viewSingleTeamSummary,
+					title: "Single Team",
+				});				
+				
 				treedata.push({
 					type: "item",
 					command: SCCentral.viewTeamGraph,
@@ -1185,13 +1244,7 @@ export class SCCentral extends SCBase {
 				});
 			}
 
-			if (this.project_.info.zebra_tag_data_) {
-				treedata.push({
-					type: "item",
-					command: SCCentral.viewZebraData,
-					title: "Zebra Data",
-				});
-			}
+
 		}
 
 		this.sendToRenderer("send-nav-data", treedata);
@@ -1285,8 +1338,10 @@ export class SCCentral extends SCBase {
 			this.setView("teamgraph");
 		} else if (cmd === SCCentral.viewZebraData) {
 			this.setView("zebraview");
-		} else if (cmd === SCCentral.viewZebraTeam) {
-			this.setView("zebrateamview");
+		} else if (cmd === SCCentral.viewZebraStatus) {
+			this.setView("zebrastatus");
+		} else if (cmd === SCCentral.viewSingleTeamSummary) {
+			this.setView("singleteam") ;
 		}
 	}
 
@@ -2208,17 +2263,19 @@ export class SCCentral extends SCBase {
 	}
 
 	public generateRandomData() {
-		if (this.project_) {
-			this.project_!.generateRandomData();
-			dialog.showMessageBox(this.win_, {
-				title: "Generated Random Form Data",
-				message: "Generated Random Form Data",
-			});
-		} else {
-			dialog.showMessageBox(this.win_, {
-				title: "Random Data Error",
-				message: "You can only generate data for an opened project",
-			});
+		if (this.lastview_ && this.lastview_ === 'info') {
+			if (this.project_) {
+				this.project_!.generateRandomData();
+				dialog.showMessageBox(this.win_, {
+					title: "Generated Random Form Data",
+					message: "Generated Random Form Data",
+				});
+			} else {
+				dialog.showMessageBox(this.win_, {
+					title: "Random Data Error",
+					message: "You can only generate data for an opened project",
+				});
+			}
 		}
 	}
 
@@ -2441,6 +2498,37 @@ export class SCCentral extends SCBase {
 		}
 	}
 
+	private async doExportPicklist() {
+		if (this.project_) {
+			if (this.project_.info.picklist_.length > 0) {
+				for(let picklist of this.project_?.info.picklist_) {
+					let name = '' ;
+					let regex = /[A-Za-z0-9_]/;
+					for(let ch of picklist.name) {
+						if (!ch.match(regex)) {
+							name += '_' ;
+						}
+						else {
+							name += ch ;
+						}
+					}
+					let filename = path.join(this.project_.location, 'picklist-' + name + '.csv') ;
+					await this.project_!.exportPicklist(picklist.name, filename) ;
+				}
+				dialog.showMessageBox(this.win_, {
+					title: 'Export Picklist As CSV',
+					message: 'All picklists have been exported into the directory \'' + this.project_.location + '\'',
+				}) ;
+			}
+			else {
+				dialog.showMessageBox(this.win_, {
+					title: 'Export Picklist As CSV',
+					message: 'There are not picklist defined'
+				}) ;
+			}
+		}
+	}
+
 	public deletePicklist(name: string) {
 		if (this.project_) {
 			let picklist = this.project_.findPicklistByName(name) ;
@@ -2542,114 +2630,12 @@ export class SCCentral extends SCBase {
         this.sendToRenderer('send-picklist-data', obj) ;
 	}
 
-	private getTeamData(field: string, team: number) : Promise<number> {
-		let ret = new Promise<number>(async (resolve, reject) => {
-			let query = 'select ' + field + ' from ' + TeamDataModel.TeamTableName + ' where team_number = ' + team + ' ;' ;
-			this.project_!.teamDB.all(query)
-				.then((data) => {
-					let rec = data[0] as any ;
-					let v = rec[field] ;
-					resolve(v) ;
-				})
-				.catch((err) => {
-					resolve(NaN);
-				}) ;
-		}) ;
-
-		return ret ;
-	}
-
-	private getDataType(field: string, data: any[]) : string {
-		let ret: string = typeof (data[0][field]) ;
-
-		for(let d of data) {
-			if (typeof d[field] !== ret) {
-				return 'string' ;
-			}
-		}
-
-		return ret;
-	}
-
-	private getMatchData(field: string, team: number) : Promise<any> {
-		let ret = new Promise<any>(async (resolve, reject) => {
-			let teamkey = 'frc' + team ;
-			let query = 'select ' + field + ' from ' + MatchDataModel.MatchTableName + ' where team_key = "' + teamkey + '" ;' ;
-			this.project_!.matchDB.all(query)
-				.then((data: any[]) => {
-					if (data.length !== 0) {
-						let dt = this.getDataType(field, data) ;
-						if (dt === 'string') {
-							let vmap = new Map() ;
-							for(let v of data) {
-								let val = v[field] ;
-								if (!vmap.has(val)) {
-									vmap.set(val, 0) ;
-								}
-
-								let current = vmap.get(val) ;
-								vmap.set(val, current + 1) ;
-							}
-
-							let total = 0 ;
-							for(let v of vmap.values()) {
-								total += v ;
-							}
-
-							let ret = '' ;
-							for(let v of vmap.keys()) {
-								let pcnt = Math.round(vmap.get(v) / total * 10000) / 100 ;
-								if (ret.length > 0) {
-									ret += '/' ;
-								}
-								ret += v + ' ' + pcnt + '%' ;
-							}
-
-							resolve(ret);
-						}
-						else if (dt === 'number') {
-							let total = 0.0 ;
-							for(let v of data) {
-								total += v[field] ;
-							}
-							resolve(total / data.length) ;
-						}
-					}
-					else {
-						resolve(null) ;
-					}
-				})
-				.catch((err) => {
-					resolve(NaN);
-				}) ;
-		}) ;
-
-		return ret ;
-	}	
-
-	private getData(field: string, team: number) : Promise<number> {
-		let ret = new Promise<number>(async (resolve, reject) => {
-			let tcols = await this.project_!.teamDB.getColumnNames(TeamDataModel.TeamTableName) ;
-			if (tcols.includes(field)) {
-				let v = await this.getTeamData(field, team) ;
-				resolve(v) ;
-			}
-
-			let mcols = await this.project_!.matchDB.getColumnNames(MatchDataModel.MatchTableName) ;
-			if (mcols.includes(field)) {
-				let v = await this.getMatchData(field, team) ;
-				resolve(v) ;
-			}
-		}) ;
-		return ret;
-	}
-
 	public async sendPicklistColData(field: string) {
 		let values: number[] = [];
 		let teams: number[] = [] ;
 
 		for(let t of this.project_!.info.teams_!) {
-			let v = await this.getData(field, t.team_number) ;
+			let v = await this.project_!.getData(field, t.team_number) ;
 			values.push(v) ;
 			teams.push(t.team_number) ;
 		}
@@ -2668,5 +2654,139 @@ export class SCCentral extends SCBase {
 
 	public updatePicklistData(obj: any) {
 		this.project_!.setPicklistData(obj.name, obj.teams) ;
+	}
+
+	public async sendPicklistNotes(name: string) {
+		if (this.project_) {
+			let picklist = this.project_?.findPicklistByName(name) ;
+			if (picklist) {
+				let data = {
+					name: name,
+					notes: picklist.notes
+				}
+				this.sendToRenderer('send-picklist-notes', data) ;
+			}
+		}
+	}
+
+	public updatePicklistNotes(obj: any) {
+		this.project_!.setPicklistNotes(obj.name, obj.notes) ;
+	}
+
+	private async getSingleTeamIndividualData(team: number) : Promise<any> {
+		interface MyObject {
+			[key: string]: any; // Allows any property with a string key
+		}
+
+		let ret = new Promise<any>(async (resolve, reject) => {
+			let values : MyObject = {} ;
+			for(let field of [...this.project_!.info.single_team_match, ... this.project_!.info.single_team_team]) {
+				let v = await this.project_!.getData(field, team) ;
+				values[field] = v ;
+			}
+			resolve(values) ;
+		}) ;
+
+		return ret;
+	}
+
+	public async getSingleTeamData(obj: any) {
+		interface MyObject {
+			[key: string]: any; // Allows any property with a string key
+		}
+		let retdata : MyObject = {} ;
+
+		if (this.project_) {
+			retdata.matches = this.project_.getMatchResults(obj) ;
+			retdata.teamdata = await this.getSingleTeamIndividualData(obj) ;
+		}
+
+		this.sendToRenderer('send-single-team-data', retdata) ;
+	}
+
+	public updateSingleTeamData(obj: any) {
+		this.project_!.setSingleTeamFields(obj.team, obj.match) ;
+		this.getSingleTeamData(obj) ;
+	}
+
+	public getSingleTeamFields() {
+		let obj = {
+			team: this.project_!.info.single_team_team,
+			match: this.project_!.info.single_team_match
+		} ;
+		this.sendToRenderer('send-single-team-fields', obj) ;
+	}
+
+	private findZebraData(comp: string, setno: number, matchno: number) : any | undefined {
+		for(let zdata of this.project_!.info.zebra_tag_data_) {
+			if (zdata && zdata.comp_level === comp && zdata.match_number === matchno && zdata.set_number === setno) {
+				return zdata ;
+			}
+		}
+
+		return undefined ;
+	}
+
+	private getDataStatus(alliances: any[], tkey: string) : boolean {
+		let ret = false ;
+
+		for(let data of alliances) {
+			if (data.team_key === tkey) {
+				//
+				// So the team is in the zebra data, but sometimes the data is all null
+				//
+				if (data.xs.length !== data.ys.length) {
+					break ;
+				}
+
+				for(let i = 0 ; i < data.xs.length ; i++) {
+					if (data.xs[i] === null || data.ys[i] === null) {
+						break ;
+					}
+				}
+				ret = true ;
+				break ;
+			}
+		}
+		return ret ;
+	}
+
+	public getZebraStatus() {
+		let data : ZebraStatus[] = [] ;
+		if (this.project_ && this.project_.info.matches_) {
+			for(let m of this.project_!.info.matches_!) {
+				let zdata = this.findZebraData(m.comp_level, m.set_number, m.match_number) ;
+				let obj: ZebraStatus = {
+					comp_level: m.comp_level,
+					set_number: m.set_number,
+					match_number: m.match_number,
+					red1: this.keyToTeamNumber(m.alliances.red.team_keys[0]),
+					redst1: false,
+					red2: this.keyToTeamNumber(m.alliances.red.team_keys[1]),
+					redst2: false,
+					red3: this.keyToTeamNumber(m.alliances.red.team_keys[2]),
+					redst3: false,
+					blue1: this.keyToTeamNumber(m.alliances.blue.team_keys[0]),
+					bluest1: false,
+					blue2: this.keyToTeamNumber(m.alliances.blue.team_keys[1]),
+					bluest2: false,
+					blue3: this.keyToTeamNumber(m.alliances.blue.team_keys[2]),
+					bluest3: false
+				} ;
+
+				if (zdata) {
+					obj.redst1 = this.getDataStatus(zdata.alliances.red, m.alliances.red.team_keys[0]) ;
+					obj.redst2 = this.getDataStatus(zdata.alliances.red, m.alliances.red.team_keys[1]) ;
+					obj.redst3 = this.getDataStatus(zdata.alliances.red, m.alliances.red.team_keys[2]) ;
+					obj.bluest1 = this.getDataStatus(zdata.alliances.blue, m.alliances.blue.team_keys[0]) ;
+					obj.bluest2 = this.getDataStatus(zdata.alliances.blue, m.alliances.blue.team_keys[1]) ;
+					obj.bluest3 = this.getDataStatus(zdata.alliances.blue, m.alliances.blue.team_keys[2]) ;
+				}
+
+				data.push(obj) ;
+			}
+		}
+
+		this.sendToRenderer('send-zebra-status', data) ;
 	}
 }
