@@ -5,7 +5,7 @@ class GraphBaseView extends XeroView {
   }
 }
 
-class TeamGraphView extends GraphBaseView {
+class GraphView extends GraphBaseView {
   constructor(div, viewtype) {
     super(div, viewtype);
 
@@ -25,6 +25,9 @@ class TeamGraphView extends GraphBaseView {
 
     this.createBasePage();
 
+    //
+    // Get all of the status data that is needed
+    //
     this.scoutingAPI('get-team-list');
     this.scoutingAPI('get-team-field-list');
     this.scoutingAPI('get-match-field-list');
@@ -72,18 +75,23 @@ class TeamGraphView extends GraphBaseView {
     this.select_div_.append(this.select_div_two_);
 
     this.team_selector_ = new XeroSelector('Teams', false);
+    this.team_selector_.detail.className = 'field-select-detail' ;
     this.select_div_one_.append(this.team_selector_.detail);
 
     this.team_field_selector_left_ = new XeroSelector('Left Team Fields', false);
+    this.team_field_selector_left_.detail.className = 'field-select-detail' ;
     this.select_div_one_.append(this.team_field_selector_left_.detail);
 
     this.match_field_selector_left_ = new XeroSelector('Left Match Fields', false);
+    this.match_field_selector_left_.detail.className = 'field-select-detail' ;
     this.select_div_one_.append(this.match_field_selector_left_.detail);
 
     this.team_field_selector_right_ = new XeroSelector('Right Team Fields', false);
+    this.team_field_selector_right_.detail.className = 'field-select-detail' ;
     this.select_div_one_.append(this.team_field_selector_right_.detail);
 
     this.match_field_selector_right_ = new XeroSelector('Right Match Fields', false);
+    this.match_field_selector_right_.detail.className = 'field-select-detail' ;
     this.select_div_one_.append(this.match_field_selector_right_.detail);
 
     this.select_match_label_ = document.createElement('label');
@@ -134,10 +142,17 @@ class TeamGraphView extends GraphBaseView {
   deleteStoredGraph() {
     let name = this.select_stored_.value ;
     if (name.length > 0) {
+      //
+      // This will delete the graph in the main process, which in turn will send the
+      // up to date graph list back to the renderer.
+      //
       this.scoutingAPI('delete-stored-graph', name);
     }
   }
 
+  //
+  // The selected match changed
+  //
   selectedMatchChanged() {
     var m = this.select_match_.options[this.select_match_.selectedIndex].value ;
     if (m === '---') {
@@ -161,17 +176,27 @@ class TeamGraphView extends GraphBaseView {
     }
   }
 
+  //
+  // The graph configuration changed, update the view to reflect the newly selected
+  // graph configuration.
+  //
   selectedStoredChanged() {
-    let value = this.select_stored_.value ;
+    let value = this.select_stored_.value ;   // The name of the new configuration
 
     if (value.length > 0) {
       for(let sel of this.stored_graphs_) {
         if (sel.name === value) {
+          this.team_field_selector_left_.unselectAll() ;
           this.team_field_selector_left_.selectItems(sel.data.leftteam) ;
+          this.match_field_selector_left_.unselectAll() ;
           this.match_field_selector_left_.selectItems(sel.data.leftmatch) ;
+          this.team_field_selector_right_.unselectAll() ;
           this.team_field_selector_right_.selectItems(sel.data.rightteam) ;
+          this.match_field_selector_right_.unselectAll() ;
           this.match_field_selector_right_.selectItems(sel.data.rightmatch) ;
           this.save_name_.value = sel.name ;
+          this.somethingChanged() ;
+          break ;
         }
       }
     }
@@ -224,7 +249,32 @@ class TeamGraphView extends GraphBaseView {
     return true;
   }
 
-  somethingChanged() {
+  saveCurrentGraph() {
+    let grobj = {
+      name: this.save_name_.value,
+      teams: this.team_selector_.getSelectedItems(),
+      data: {
+        leftteam: this.team_field_selector_left_.getSelectedItems(),
+        leftmatch: this.match_field_selector_left_.getSelectedItems(),
+        rightteam: this.team_field_selector_right_.getSelectedItems(),
+        rightmatch: this.match_field_selector_right_.getSelectedItems(),
+      }
+    };
+    this.scoutingAPI('save-team-graph-setup', grobj);
+  }
+
+  somethingChanged(save) {
+    //
+    // Something changed in the graph configuration, if save it true
+    // it was a field setting and we save the new graph configuration
+    //
+    if (save) {
+      this.saveCurrentGraph() ;
+    }
+
+    //
+    // Now, ask for the data for the new configuration.
+    //
     let obj = {
       teams: this.team_selector_.getSelectedItems(),
       data: {
@@ -236,9 +286,16 @@ class TeamGraphView extends GraphBaseView {
     };
 
     if (this.isGraphValid(obj)) {
+      //
+      // We only ask for new data if the configuration is complete enough to
+      // display data.
+      //
       this.scoutingAPI('get-team-graph-data', obj);
     }
     else {
+      //
+      // There is nothing to display, if an existing chart exists, destroy it
+      //
       if (this.current_chart_) {
         this.current_chart_.destroy();
       }
@@ -285,16 +342,16 @@ class TeamGraphView extends GraphBaseView {
   }
 
   receiveTeamList(list) {
-    this.team_selector_.addDataToSelectors(list[0], this.somethingChanged.bind(this))
+    this.team_selector_.addDataToSelectors(list[0], this.somethingChanged.bind(this, false))
   }
 
   receiveTeamFieldList(list) {
-    this.team_field_selector_left_.addDataToSelectors(list[0], this.somethingChanged.bind(this));
-    this.team_field_selector_right_.addDataToSelectors(list[0], this.somethingChanged.bind(this));
+    this.team_field_selector_left_.addDataToSelectors(list[0], this.somethingChanged.bind(this, true));
+    this.team_field_selector_right_.addDataToSelectors(list[0], this.somethingChanged.bind(this, true));
   }
 
   receiveMatchFieldList(list) {
-    this.match_field_selector_left_.addDataToSelectors(list[0], this.somethingChanged.bind(this));
-    this.match_field_selector_right_.addDataToSelectors(list[0], this.somethingChanged.bind(this));
+    this.match_field_selector_left_.addDataToSelectors(list[0], this.somethingChanged.bind(this, true));
+    this.match_field_selector_right_.addDataToSelectors(list[0], this.somethingChanged.bind(this, true));
   }
 }

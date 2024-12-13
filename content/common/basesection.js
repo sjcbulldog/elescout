@@ -11,7 +11,7 @@ class XeroBaseSection {
         return [] ;
     }
 
-    setValue(name, value) {
+    setValue(name, type, value) {
     }
 
     static formViewNormalizeName(name) { 

@@ -1,6 +1,8 @@
 //
 // A scouting project
 //
+
+// #region imports
 import * as fs from 'fs' ;
 import * as path from 'path' ;
 import * as sqlite3 from 'sqlite3' ;
@@ -19,6 +21,11 @@ import { StatBotics } from '../extnet/statbotics';
 import { DataGenerator } from './datagen';
 import { FieldAndType } from '../model/datamodel';
 import { SCBase } from '../apps/scbase';
+import { ScoutingData } from '../comms/resultsifc';
+
+// #endregion
+
+// #region interfaces used by the project
 
 export interface ProjectOneColCfg {
     name: string,
@@ -61,6 +68,9 @@ export interface NamedGraphDataRequest {
     };
   }
 
+// #endregion
+
+// #region information stored in project file
 export class ProjectInfo {
     public frcev_? : BAEvent ;                          // Information defining the blue alliance event, null for non-BA events
     public uuid_? : string ;                            // The UUID for this event, will be sent to tablets via sync
@@ -83,8 +93,10 @@ export class ProjectInfo {
     public team_graph_data_: NamedGraphDataRequest[] ;  // Stored graphs defined by the user
     public picklist_ : PickList[] = [] ;                // Pick list, a list of team number
     public last_picklist_? : string ;                   // The last picklist used
-    public single_team_match: string[] = [] ;
-    public single_team_team: string[] = [] ;
+    public single_team_match_: string[] = [] ;          // The match fields for the single team summary
+    public single_team_team_: string[] = [] ;           // The team feields for the single team summary
+    public sync_data_ : ScoutingData[] = [] ;           // The scouting results from sync operation, we hold on to this to 
+                                                        // send it backs
 
     constructor() {
         this.locked_ = false ;
@@ -105,9 +117,10 @@ export class ProjectInfo {
     }
 }
 
+// #endregion
+
 export class Project {
     private static readonly keepLotsOfBackups = true ;
-
     private static readonly event_file_name : string  = "event.json" ;
     private static readonly team_db_file_name: string = "teamdb" ;
     private static readonly match_db_file_name: string = "matchdb" ;
@@ -138,48 +151,6 @@ export class Project {
         this.matchdb_.on('column-added', this.matchColumnAdded.bind(this));
     }
 
-    public setLastPicklistUsed(name: string) {
-        if (!this.info_.last_picklist_ || this.info_.last_picklist_ !== name) {
-            this.info_.last_picklist_ = name ;
-            this.writeEventFile() ;
-        }
-    }
-
-    private teamColumnAdded(colname: string) {
-        this.logger_.silly('added new column \'' + colname + '\' to team database') ;
-
-        if (!this.info_.teamdb_col_config_) {
-            this.info_.teamdb_col_config_ = {
-                frozenColumnCount: 0,
-                columns:[]
-            };
-        }
-        
-        let colcfg = {
-            name: colname,
-            width: -1,
-            hidden: false
-        } ;
-        this.info_.teamdb_col_config_?.columns.push(colcfg) ;
-    }
-
-    private matchColumnAdded(colname: string) {
-        this.logger_.silly('added new column \'' + colname + '\' to match database') ;
-
-        if (!this.info_.matchdb_col_config_) {
-            this.info_.matchdb_col_config_ = {
-                frozenColumnCount: 0,
-                columns:[]
-            };
-        }
-
-        let colcfg = {
-            name: colname,
-            width: -1,
-            hidden: false
-        } ;
-        this.info_.matchdb_col_config_?.columns.push(colcfg) ;
-    }
 
     public init() : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
@@ -216,6 +187,29 @@ export class Project {
         this.writeEventFile() ;
     }
 
+    //
+    // For a given field, either team or match, and a given team, get the
+    // value of the field.  For team fields, it is the data stored for that
+    // field.  For match fields, the data is processes over all matches to get
+    // an average.
+    //   
+	public getData(field: string, team: number) : Promise<number> {
+		let ret = new Promise<number>(async (resolve, reject) => {
+			let tcols = await this.teamDB.getColumnNames(TeamDataModel.TeamTableName) ;
+			if (tcols.includes(field)) {
+				let v = await this.getTeamData(field, team) ;
+				resolve(v) ;
+			}
+
+			let mcols = await this.matchDB.getColumnNames(MatchDataModel.MatchTableName) ;
+			if (mcols.includes(field)) {
+				let v = await this.getMatchData(field, team) ;
+				resolve(v) ;
+			}
+		}) ;
+		return ret;
+	}
+
     public findMatchByKey(key: string) : BAMatch | undefined {
         let ret: BAMatch | undefined ;
 
@@ -241,7 +235,7 @@ export class Project {
         return false ;
     }
 
-    public async processResults(obj: any) {
+    public async processResults(obj: ScoutingData) {
         if (obj.purpose) {
             if (obj.purpose === 'match') {
                 let status = await this.matchDB.processScoutingResults(obj.results) ;
@@ -279,6 +273,10 @@ export class Project {
         return this.location_ ;
     }
 
+    private getTableForTeam(team: string) {
+        
+    }
+
     public generateRandomData() {
         if (this.info_.teamform_ && this.info_.teams_) {
             let teams = this.info_!.teams_!.map((v)=> { return 'st-' + v.team_number}) ;
@@ -288,7 +286,8 @@ export class Project {
             if (results) {
                 let obj = {
                     purpose: "team",
-                    results: results
+                    results: results,
+                    tablet: '',
                 } ;
                 this.processResults(obj) ;
             }
@@ -312,7 +311,8 @@ export class Project {
             if (results) {
                 let obj = {
                     purpose: "match",
-                    results: results
+                    results: results,
+                    tablet: '',
                 } ;
                 this.processResults(obj) ;
             }
@@ -840,8 +840,8 @@ export class Project {
     }
 
     public setSingleTeamFields(team: string[], match: string[]) {
-        this.info_.single_team_match = match ;
-        this.info_.single_team_team = team ;
+        this.info_.single_team_match_ = match ;
+        this.info_.single_team_team_ = team ;
         this.writeEventFile() ;
     }
 
@@ -1002,25 +1002,38 @@ export class Project {
         return ret ;
     }
 
+    public findGraphByName(name: string) : NamedGraphDataRequest | undefined {
+        for(let gr of this.info.team_graph_data_) {
+            if (gr.name === name) {
+                return gr ;
+            }
+        }
+
+        return undefined ;
+    }
+
     public storeGraph(desc: NamedGraphDataRequest) {
         let index = -1 ;
 
-        let i = 0 ;
-        for(let gr of this.info_.team_graph_data_) {
-            if (gr.name === desc.name) {
-                index = i ;
-                break ;
+        if (desc.name.length > 0) {
+            let i = 0 ;
+            for(let gr of this.info_.team_graph_data_) {
+                if (gr.name === desc.name) {
+                    index = i ;
+                    break ;
+                }
+
+                i++ ;
             }
 
-            i++ ;
+            if (index !== -1) {
+                this.info_.team_graph_data_[index] = desc ;
+            }
+            else {
+                this.info_.team_graph_data_.push(desc) ;
+            }
+            this.writeEventFile() ;
         }
-
-        if (index !== -1) {
-            this.info_.team_graph_data_.splice(index, 1) ;
-        }
-
-        this.info_.team_graph_data_.push(desc) ;
-        this.writeEventFile() ;
     }
 
 	public getFormItemNames(filename: string) : FieldAndType[] | Error {
@@ -1146,33 +1159,45 @@ export class Project {
 
 		return ret ;
 	}
+
     
-	public getData(field: string, team: number) : Promise<number> {
-		let ret = new Promise<number>(async (resolve, reject) => {
-			let tcols = await this.teamDB.getColumnNames(TeamDataModel.TeamTableName) ;
-			if (tcols.includes(field)) {
-				let v = await this.getTeamData(field, team) ;
-				resolve(v) ;
-			}
+    private teamColumnAdded(colname: string) {
+        this.logger_.silly('added new column \'' + colname + '\' to team database') ;
 
-			let mcols = await this.matchDB.getColumnNames(MatchDataModel.MatchTableName) ;
-			if (mcols.includes(field)) {
-				let v = await this.getMatchData(field, team) ;
-				resolve(v) ;
-			}
-		}) ;
-		return ret;
-	}
+        if (!this.info_.teamdb_col_config_) {
+            this.info_.teamdb_col_config_ = {
+                frozenColumnCount: 0,
+                columns:[]
+            };
+        }
+        
+        let colcfg = {
+            name: colname,
+            width: -1,
+            hidden: false
+        } ;
+        this.info_.teamdb_col_config_?.columns.push(colcfg) ;
+    }
 
-    private getNotesFromPicklist(picklist: PickList, team: number) : string {
-        for(let notes of picklist.notes) {
-            if (notes.teamnumber === team) {
-                return notes.picknotes ;
-            }
+    private matchColumnAdded(colname: string) {
+        this.logger_.silly('added new column \'' + colname + '\' to match database') ;
+
+        if (!this.info_.matchdb_col_config_) {
+            this.info_.matchdb_col_config_ = {
+                frozenColumnCount: 0,
+                columns:[]
+            };
         }
 
-        return '' ;
+        let colcfg = {
+            name: colname,
+            width: -1,
+            hidden: false
+        } ;
+        this.info_.matchdb_col_config_?.columns.push(colcfg) ;
     }
+
+    // #region picklist methods
 
     public async exportPicklist(name: string, filename: string) : Promise<void> {
         interface MyObject {
@@ -1218,6 +1243,24 @@ export class Project {
         return ret;
     }
 
+    public setLastPicklistUsed(name: string) {
+        if (!this.info_.last_picklist_ || this.info_.last_picklist_ !== name) {
+            this.info_.last_picklist_ = name ;
+            this.writeEventFile() ;
+        }
+    }
+
+
+    private getNotesFromPicklist(picklist: PickList, team: number) : string {
+        for(let notes of picklist.notes) {
+            if (notes.teamnumber === team) {
+                return notes.picknotes ;
+            }
+        }
+
+        return '' ;
+    }    
+    //#endregion
 
     //#region loading data from external sources
 

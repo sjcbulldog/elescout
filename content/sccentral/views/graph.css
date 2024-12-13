@@ -4,6 +4,7 @@
   border-color: black;
   border-width: 2px;
   border-style: solid;
+  margin: 10px 20px 10px 5px;
 }
 
 #graph-team-select-one-div {
@@ -30,6 +31,10 @@
     margin-left: 10px;
     margin-right: 10px;
     font-size: 18px;
+}
+
+.field-select-detail {
+  margin: 10px 10px 10px 10px ;
 }
 
 HTML CSSResult Skip Results Iframe

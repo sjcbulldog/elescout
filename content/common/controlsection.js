@@ -216,6 +216,13 @@ class XeroControlSection extends XeroBaseSection {
         this.returnResultRecursively(this.top_, result) ;
         return result ;
     }
+
+    setValue(tag, type, value) {
+        let elem = this.findElemByTag(this.top_, tag) ;
+        if (elem) {
+            this.setXeroValue(elem, type, value) ;
+        }
+    }
     
     findElemByTag(elem, tag) {
         if (elem.xerotag === tag) {
@@ -232,20 +239,20 @@ class XeroControlSection extends XeroBaseSection {
         return undefined ;
     }
     
-    setXeroValue(elem, one) {
-        if (one.value) {
-            elem.xerovalue = one.value ;
-            if (one.type === 'text') {
-                elem.value = one.value ;
+    setXeroValue(elem, type, value) {
+        if (value) {
+            elem.xerovalue = value ;
+            if (type === 'text') {
+                elem.value = value ;
             }
-            else if (one.type === 'updown') {
-                elem.innerText = one.value ;
+            else if (type === 'updown') {
+                elem.innerText = value ;
             }
-            else if (one.type === 'boolean') {
-                elem.checked = one.value ;
+            else if (type === 'boolean') {
+                elem.checked = value ;
             }
-            else if (one.type === 'choice') {
-                elem.value = one.value ;
+            else if (type === 'choice') {
+                elem.value = value ;
             }
         }
     }

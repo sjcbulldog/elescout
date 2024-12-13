@@ -1,4 +1,4 @@
-class AssignTablets extends XeroView {
+class AssignTabletsView extends XeroView {
     static tabletTeam = "team";
     static tabletMatch = "match";
 
@@ -125,13 +125,13 @@ class AssignTablets extends XeroView {
     dropmatch(ev) {
         ev.preventDefault();
         let tabname = ev.dataTransfer.getData("text");
-        this.setTabletToType(tabname, AssignTablets.tabletMatch);
+        this.setTabletToType(tabname, AssignTabletsView.tabletMatch);
     }
 
     dropteam(ev) {
         ev.preventDefault();
         let tabname = ev.dataTransfer.getData("text");
-        this.setTabletToType(tabname, AssignTablets.tabletTeam);
+        this.setTabletToType(tabname, AssignTabletsView.tabletTeam);
     }
 
     saveData() {
@@ -148,7 +148,7 @@ class AssignTablets extends XeroView {
         for (let t of this.teamtablets_.childNodes) {
             let obj = {
                 name: t.innerText,
-                purpose: AssignTablets.tabletTeam
+                purpose: AssignTabletsView.tabletTeam
             }
             this.frctablets_.push(obj);
         }
@@ -156,7 +156,7 @@ class AssignTablets extends XeroView {
         for (let t of this.matchtablets_.childNodes) {
             let obj = {
                 name: t.innerText,
-                purpose: AssignTablets.tabletMatch
+                purpose: AssignTabletsView.tabletMatch
             }
             this.frctablets_.push(obj);
         }
@@ -182,10 +182,10 @@ class AssignTablets extends XeroView {
         this.frctablets_ = [];
         for (let i = 1; i <= 7; i++) {
             if (i === 7) {
-                purpose = AssignTablets.tabletTeam;
+                purpose = AssignTabletsView.tabletTeam;
             }
             else {
-                purpose = AssignTablets.tabletMatch;
+                purpose = AssignTabletsView.tabletMatch;
             }
 
             let tab = {
@@ -207,11 +207,11 @@ class AssignTablets extends XeroView {
             p.innerText = tablet.name;
             p.className = "assign-tablets-list-item";
 
-            if (tablet.purpose === AssignTablets.tabletTeam) {
+            if (tablet.purpose === AssignTabletsView.tabletTeam) {
                 this.teamtablets_.append(p) ;
                 p.contentEditable = true;
             }
-            else if (tablet.purpose === AssignTablets.tabletMatch) {
+            else if (tablet.purpose === AssignTabletsView.tabletMatch) {
                 this.matchtablets_.append(p) ;
                 p.contentEditable = true;
             }

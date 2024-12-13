@@ -9,6 +9,7 @@ import { PacketType } from "../sync/packettypes";
 import { MatchTablet } from "../project/matchtablet";
 import { TeamTablet } from "../project/teamtablet";
 import { FormInfo } from "../comms/formifc";
+import { OneScoutField, OneScoutResult, ScoutingData } from "../comms/resultsifc";
 
 export class MatchInfo {
     public type_? : string ;
@@ -33,7 +34,7 @@ export class SCScoutInfo {
     public matchform_? : any ;
     public teamlist_? : TeamTablet[] ;
     public matchlist_? : MatchTablet[] ;
-    public results_ : any[] ;
+    public results_ : OneScoutResult[] ;
 
     constructor() {
         this.results_ = [] ;
@@ -273,7 +274,7 @@ export class SCScout extends SCBase {
     }
 
     public provideResults(res: any) {
-        this.addResults(this.current_scout_!, res) ;
+        this.addResults(this.current_scout_!, res as OneScoutField[]) ;
         this.writeEventFile() ;
         this.logger_.silly('provideResults:' + this.current_scout_, res) ;
 
@@ -315,9 +316,9 @@ export class SCScout extends SCBase {
         }
 
         this.sendToRenderer('send-form', ret) ;
-        let data: any = this.getResults(this.current_scout_!) ;
+        let data: OneScoutResult | undefined = this.getResults(this.current_scout_!) ;
         if (data) {
-            this.sendToRenderer('send-initial-values', data) ;
+            this.sendToRenderer('send-initial-values', data.data) ;
         }
     }
 
@@ -346,42 +347,36 @@ export class SCScout extends SCBase {
         }
     }
 
-    private getIndex(scout: string) : number {
-        let ret: number = -1 ;
-
-        if (this.info_.results_) {
-            for(let i = 0 ; i < this.info_.results_.length ; i += 2) {
-                let str: string = this.info_.results_[i] ;
-                if (str === scout) {
-                    ret = i + 1 ;
-                    break ;
-                }
+    private getResults(scout: string) : OneScoutResult | undefined {
+        for(let result of this.info_.results_) {
+            if (result.item === scout) {
+                return result ;
             }
-        }  
-
-        return ret ;
+        }
+        return undefined ;
     }
 
-    private getResults(scout: string) : any {
-        let ret = undefined ;
-        let index = this.getIndex(scout) ;
-
-        if (index != -1) {
-            ret = this.info_.results_![index] ;
+    private deleteResults(scout: string) {
+        for(let i = 0 ; i < this.info_.results_.length ; i++) {
+            if (this.info_.results_[i].item && this.info_.results_[i].item === scout) {
+                this.info_.results_.splice(i, 1) ;
+                break ;
+            }
         }
-
-        return ret ;
     }
     
-    private addResults(scout: string, result: any) {
-        let index = this.getIndex(scout) ;
-        if (index === -1) {
-            this.info_.results_?.push(scout) ;
-            this.info_.results_?.push(result) ;
-        }   
-        else {
-            this.info_.results_![index] = result ;
-        }     
+    private addResults(scout: string, result: OneScoutField[]) {
+
+        let resobj : OneScoutResult = {
+            item: scout,
+            data: result
+        } ;
+
+        //
+        // Optionally delete result if it already exists, we are providing new data.
+        //
+        this.deleteResults(scout) ;
+        this.info_.results_.push(resobj) ;
     }
 
     private syncClient(conn: SyncClient) {
@@ -514,8 +509,9 @@ export class SCScout extends SCBase {
     }
 
     private sendScoutingData() {
-        let obj = {
-            purpose: this.info_.purpose_,
+        let obj : ScoutingData = {
+            tablet: this.info_.tablet_!,
+            purpose: this.info_.purpose_!,
             results: this.info_.results_
         } ;
 

@@ -13,6 +13,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { StatBotics } from "../extnet/statbotics";
 import { FormInfo } from "../comms/formifc";
+import { GraphData, GraphDataset } from "../comms/graphifc";
+import { ScoutingData } from "../comms/resultsifc";
 
 interface GraphDataRequest {
 	teams: number[];
@@ -356,6 +358,17 @@ export class SCCentral extends SCBase {
 		datamenu.submenu?.append(downloadZebraData);
 		this.menuitems_.set("data/zebra", downloadZebraData);
 
+		let importGraphDefns: MenuItem = new MenuItem({
+			type: "normal",
+			label: "Import Graph Definitions",
+			enabled: false,
+			click: () => {
+				this.importGraphDefinitions();
+			},
+		});
+		datamenu.submenu?.append(importGraphDefns);
+		this.menuitems_.set("data/graphdefn", importGraphDefns);		
+
 		datamenu.submenu?.append(new MenuItem({ type: "separator" }));
 
 		let exportTeamData: MenuItem = new MenuItem({
@@ -445,6 +458,7 @@ export class SCCentral extends SCBase {
 			"data/loadmatchdata",
 			"data/exportpicklist",
 			"data/zebra",
+			"data/graphdefn",
 			"file/close",
 		];
 		for (let item of items) {
@@ -453,7 +467,7 @@ export class SCCentral extends SCBase {
 	}
 
 	private doExportData(table: string) {
-		var path = dialog.showSaveDialog({
+		var fpath = dialog.showSaveDialog({
 			title: "Select CSV Output File",
 			message: "Select file for CSV output for table '" + table + "'",
 			filters: [
@@ -465,7 +479,7 @@ export class SCCentral extends SCBase {
 			properties: ["showOverwriteConfirmation"],
 		});
 
-		path.then((pathname) => {
+		fpath.then((pathname) => {
 			if (!pathname.canceled) {
 				if (table === TeamDataModel.TeamTableName) {
 					this.project_?.teamDB.exportToCSV(pathname.filePath, table);
@@ -797,7 +811,6 @@ export class SCCentral extends SCBase {
 					label: data,
 					data: dvals,
 					yAxisID: yaxis,
-					borderWidth: 2,
 				};
 				resolve(dset);
 			} catch (err) {
@@ -1010,6 +1023,62 @@ export class SCCentral extends SCBase {
 				"Event with key '" + args[0] + "' was not found.<br>No event was loaded"
 			);
 		}
+	}
+
+	private async importGraphsDefnFromFile(filename: string) {
+		try {
+			let proj: Project = await Project.openEvent(this.logger_, filename, this.year_!) ;
+			let omitted: string = '' ;
+			let count = 0 ;
+
+			for(let gr of proj.info.team_graph_data_) {
+				if (gr.name.length > 0) {
+					if (!this.project_!.findGraphByName(gr.name)) {
+						this.project_!.storeGraph(gr) ;
+						count++ ;
+					}
+					else {
+						if (omitted.length > 0) {
+							omitted += ', ' ;
+						}
+						omitted += gr.name ;
+					}
+				}
+			}
+
+			let msg = 'Imported ' + count + ' graphs' ;
+			if (omitted.length > 0) {
+				msg += ' - omitted graphs ' + omitted + ' as these already exist.' ;
+			}
+			dialog.showMessageBoxSync(this.win_, {
+				title: 'Import Graph Definitions',
+				message: msg
+			}) ;
+		}
+		catch(err) {
+			let errobj = err as Error ;
+			dialog.showMessageBoxSync(this.win_, {
+				title: 'Error reading project file',
+				message: 'count not ready project file - ' + errobj.message
+			}) ;
+		}
+	}
+
+	private importGraphDefinitions() {
+		dialog.showOpenDialog(this.win_, {
+			title: 'Open event.json file for event',
+			filters: [
+				{ name: 'JSON Files', extensions: ['json'] },
+				{ name: 'All Files', extensions: ['*']}
+			],
+			properties: [
+				'openFile',
+			]
+		}).then(result => {	
+			if (!result.canceled) {
+				this.importGraphsDefnFromFile(result.filePaths[0]) ;
+			}
+		}) ;
 	}
 
 	private importZebraTagData() {
@@ -1328,7 +1397,7 @@ export class SCCentral extends SCBase {
 					"Scouting schedule not generated yet"
 				);
 			} else {
-				this.setView("matchstatus");
+				this.setView('matchstatus');
 			}
 		} else if (cmd === SCCentral.viewMatchDB) {
 			this.setView("matchdb");
@@ -2179,11 +2248,11 @@ export class SCCentral extends SCBase {
 			}
 		} else if (p.type_ === PacketType.ProvideResults) {
 			try {
-				let obj = JSON.parse(p.payloadAsString());
+				let obj : ScoutingData = JSON.parse(p.payloadAsString()) as ScoutingData ;
 				this.project_!.processResults(obj);
 				resp = new PacketObj(PacketType.ReceivedResults);
 
-				if (this.project_!.isTabletTeam(p.payloadAsString())) {
+				if (this.project_!.isTabletTeam(obj.tablet)) {
 					this.setView("teamstatus");
 				} else {
 					this.setView("matchstatus");
@@ -2295,7 +2364,7 @@ export class SCCentral extends SCBase {
 	public getTeamList() {
 		let ret: number[] = [];
 		for(let team of this.project_?.info.teams_!) {
-				ret.push(team.team_number);
+			ret.push(team.team_number);
 		}
 
 		ret.sort((a, b) => (a - b)) ;
@@ -2387,17 +2456,22 @@ export class SCCentral extends SCBase {
 	//
 	public async sendTeamGraphData(request: GraphDataRequest) {
 		if (this.project_) {
-			let labels: any[] = [];
-			let datasets: any[] = [];
+			let labels: Array<Array<string>> = [];
+			let datasets: GraphDataset[] = [];
 
 			for (let team of request.teams) {
 				let t = this.project_.findTeamByNumber(team) ;
+
+				let oneteam: string[] = [] ;
 				if (t) {
-					labels.push([team.toString(), t.nickname]) ;
+					oneteam.push(team.toString()) ;
+					oneteam.push(t.nickname) ;
 				}
 				else {
-					labels.push(team.toString()) ;
+					oneteam.push(team.toString());
 				}
+				
+				labels.push(oneteam) ;
 			}
 
 			for (let tdset of request.data.leftteam) {
@@ -2428,7 +2502,7 @@ export class SCCentral extends SCBase {
 				}
 			}
 
-			let grdata = {
+			let grdata : GraphData = {
 				labels: labels,
 				datasets: datasets,
 			};
@@ -2680,7 +2754,7 @@ export class SCCentral extends SCBase {
 
 		let ret = new Promise<any>(async (resolve, reject) => {
 			let values : MyObject = {} ;
-			for(let field of [...this.project_!.info.single_team_match, ... this.project_!.info.single_team_team]) {
+			for(let field of [...this.project_!.info.single_team_match_, ... this.project_!.info.single_team_team_]) {
 				let v = await this.project_!.getData(field, team) ;
 				values[field] = v ;
 			}
@@ -2711,8 +2785,8 @@ export class SCCentral extends SCBase {
 
 	public getSingleTeamFields() {
 		let obj = {
-			team: this.project_!.info.single_team_team,
-			match: this.project_!.info.single_team_match
+			team: this.project_!.info.single_team_team_,
+			match: this.project_!.info.single_team_match_
 		} ;
 		this.sendToRenderer('send-single-team-fields', obj) ;
 	}

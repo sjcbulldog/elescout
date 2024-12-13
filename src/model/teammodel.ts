@@ -250,11 +250,8 @@ export class TeamDataModel extends DataModel {
         let ret = new Promise<number[]>(async (resolve, reject) => {
             let ret: number[] = [] ;
             let records: DataRecord[] = [] ;
-            let index = 0;
-            while (index < data.length) {
-                let team = data[index++] ;
-                let sc = data[index++] ;
-                let dr = this.convertScoutDataToRecord(team, sc) ;
+            for(let record of data) {
+                let dr = this.convertScoutDataToRecord(record.item, record.data) ;
                 ret.push(dr.value('team_number')! as number);
                 records.push(dr) ;
             }
