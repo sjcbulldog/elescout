@@ -238,7 +238,7 @@ export class Project {
     public async processResults(obj: ScoutingData) {
         if (obj.purpose) {
             if (obj.purpose === 'match') {
-                let status = await this.matchDB.processScoutingResults(obj.results) ;
+                let status = await this.matchDB.processScoutingResults(obj) ;
                 for(let st of status) {
                     if (!this.info_.scouted_match_.includes(st)) {
                         this.info_.scouted_match_.push(st) ;
@@ -246,7 +246,7 @@ export class Project {
                 }
             }
             else {
-                let teams = await this.teamDB.processScoutingResults(obj.results) ;
+                let teams = await this.teamDB.processScoutingResults(obj) ;
                 for (let st of teams) {
                     if (!this.info_.scouted_team_.includes(st)) {
                         this.info_.scouted_team_.push(st) ;

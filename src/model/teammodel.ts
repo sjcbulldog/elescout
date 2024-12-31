@@ -3,6 +3,7 @@ import { DataModel, DataRecord, ValueType } from "./datamodel";
 import winston from 'winston';
 import { BARankings, BATeam } from '../extnet/badata';
 import { SCBase } from '../apps/scbase';
+import { ScoutingData } from '../comms/resultsifc';
 
 interface scoutvalue {
     tag: string,
@@ -246,11 +247,11 @@ export class TeamDataModel extends DataModel {
         return dr ;
     }
 
-    public async processScoutingResults(data: any[]) : Promise<number[]> {
+    public async processScoutingResults(data: ScoutingData) : Promise<number[]> {
         let ret = new Promise<number[]>(async (resolve, reject) => {
             let ret: number[] = [] ;
             let records: DataRecord[] = [] ;
-            for(let record of data) {
+            for(let record of data.results) {
                 let dr = this.convertScoutDataToRecord(record.item, record.data) ;
                 ret.push(dr.value('team_number')! as number);
                 records.push(dr) ;

@@ -2,6 +2,7 @@ import * as sqlite3 from 'sqlite3' ;
 import { DataModel, DataRecord, ValueType } from "./datamodel";
 import winston from 'winston';
 import { BAMatch } from '../extnet/badata';
+import { ScoutingData } from '../comms/resultsifc';
 
 export class MatchDataModel extends DataModel {
     static readonly MatchTableName: string = 'matches' ;
@@ -184,7 +185,6 @@ export class MatchDataModel extends DataModel {
         return ret; 
     }
 
-
     // sm-qm-1-1-8 is sm- TYPE - set_number - match_number
     private parseMatchString(str: string) : any | undefined {
         let ret ;
@@ -220,21 +220,16 @@ export class MatchDataModel extends DataModel {
         return dr ;
     }
 
-    private static allKeys = ['comp_level', 'match_number', 'set_number', 'team_key'] ;
-
-    public async processScoutingResults(data: any[]) : Promise<string[]> {
+    public async processScoutingResults(data: ScoutingData) : Promise<string[]> {
         let ret = new Promise<string[]>(async (resolve, reject) => {
             let ret: string[] = [] ;
             let records: DataRecord[] = [] ;
-            let index = 0;
-            while (index < data.length) {
-                let team = data[index++] ;
-                let sc = data[index++] ;
-                let dr = this.convertScoutDataToRecord(team, sc) ;
-                ret.push(team) ;
+            for(let record of data.results) {
+                let dr = this.convertScoutDataToRecord(record.item, record.data) ;
+                ret.push(record.item!) ;
                 records.push(dr) ;
             }
-            await this.addColsAndData(MatchDataModel.MatchTableName, MatchDataModel.allKeys, records) ;
+            await this.addColsAndData(MatchDataModel.MatchTableName, ['team_number'], records) ;
             resolve(ret) ;
         }) ;
         return ret ;
