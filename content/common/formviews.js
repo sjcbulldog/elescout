@@ -61,7 +61,6 @@ class FormView extends XeroView {
             this.alltop_.append(this.formViewJsonToForm(obj.form.json, color, reversed)) ;
             this.top_.append(this.alltop_) ;
             this.formViewSelect(this.sectnames_[0]) ;
-
         }
     }
 

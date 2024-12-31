@@ -56,7 +56,6 @@ export class SCScout extends SCBase {
     private conn_?: SyncClient ;
     private current_scout_? : string ;
     private alliance_? : string ;
-    private next_scout_? : string ;
     private want_cmd_ : boolean = false ;
     private next_cmd_? : string ;
     private reversed_ : boolean = false ;
@@ -222,13 +221,11 @@ export class SCScout extends SCBase {
             // Get the result from the existing displayed
             // team and store the result in the info for the team
             //
-            this.next_scout_ = team ;
             this.sendToRenderer('request-results') ;
         }
         else {
             this.sendToRenderer('send-nav-highlight', team) ;
             this.current_scout_ = team;
-            this.next_scout_ = undefined ;
             this.setView('formview', 'team') ;
         }
     }
@@ -239,13 +236,11 @@ export class SCScout extends SCBase {
             // Get the result from the existing displayed
             // match and store the result in the info for the match
             //
-            this.next_scout_ = match ;
             this.sendToRenderer('request-results') ;
         }
         else {
             this.sendToRenderer('send-nav-highlight', match) ;
             this.current_scout_ = match ;
-            this.next_scout_ = undefined ;
             this.alliance_ = this.getAllianceFromMatch(match) ;
             if (!this.alliance_) {
                 dialog.showMessageBox(this.win_, {
@@ -625,6 +620,21 @@ export class SCScout extends SCBase {
             role: 'viewMenu'
         }) ;
         ret.append(viewmenu) ;
+
+        let helpmenu: MenuItem = new MenuItem( {
+            type: 'submenu',
+            label: 'Help',
+            submenu: new Menu(),
+        }) ;
+
+        let aboutitem: MenuItem = new MenuItem( {
+            type: 'normal',
+            label: 'About',
+            click: () => { this.showAbout() }
+        }) ;
+        helpmenu.submenu?.append(aboutitem) ;
+
+        ret.append(helpmenu) ;
 
         return ret;
     }    

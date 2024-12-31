@@ -74,4 +74,4 @@ function mouseRelease(e) {
 document.addEventListener('mousedown', mousePress) ;
 document.addEventListener('mouseup', mouseRelease) ;
 document.addEventListener('touchstart', mousePress) ;
-document.addEventListener('touchenv', mouseRelease) ;
+document.addEventListener('touchend', mouseRelease) ;

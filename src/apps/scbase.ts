@@ -30,6 +30,9 @@ export interface XeroVersion {
 
 export abstract class SCBase {
   private static readonly appdirName = ".xeroscout";
+  private static readonly attribution: string =
+        "Icons from Flaticon.com (https://www.flaticon.com/)\n" + 
+        "Images from Freepik.com (https://www.freepik.com/)" ;
 
   protected typestr_: string;
   protected win_: BrowserWindow;
@@ -132,6 +135,33 @@ export abstract class SCBase {
     }
 
     return ret;
+  }
+ 
+	protected versionToString(v: XeroVersion) {
+		return v.major + "." + v.minor + "." + v.patch;
+	}
+
+  protected showAbout() {
+    let msg = "";
+    msg +=
+      "Welcome to XeroScout Generation 2, an electron based scouting system.\n\n";
+    msg += "Versions:\n";
+    msg +=
+      "     XeroScout 2: " +
+      this.versionToString(this.getVersion("application")) +
+      "\n";
+    msg +=
+      "     Electron: " +
+      this.versionToString(this.getVersion("electron")) +
+      "\n";
+    msg += "     Node: " + this.versionToString(this.getVersion("node")) + "\n";
+    msg += "\n\n" + SCBase.attribution;
+    let options = {
+      // type: 'info',
+      title: "XeroScout 2",
+      message: msg,
+    };
+    dialog.showMessageBoxSync(this.win_, options);
   }
 
   public setSetting(name: string, value: any) {

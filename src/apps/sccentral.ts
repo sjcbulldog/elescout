@@ -52,10 +52,6 @@ interface ZebraStatus {
 }
 
 export class SCCentral extends SCBase {
-	private static readonly attribution: string =
-		"Icons from Flaticon.com (https://www.flaticon.com/)\n" + 
-		"Images from Freepik.com (https://www.freepik.com/)" ;
-
 	private static readonly recentFilesSetting: string = "recent-files";
 
 	private static readonly matchStatusFields: string[] = [
@@ -2072,33 +2068,6 @@ export class SCCentral extends SCBase {
 			this.sendNavData();
 			this.setView("empty");
 		}
-	}
-
-	private versionToString(v: XeroVersion) {
-		return v.major + "." + v.minor + "." + v.patch;
-	}
-
-	private showAbout() {
-		let msg = "";
-		msg +=
-			"Welcome to XeroScout Generation 2, an electron based scouting system.\n\n";
-		msg += "Versions:\n";
-		msg +=
-			"     XeroScout 2: " +
-			this.versionToString(this.getVersion("application")) +
-			"\n";
-		msg +=
-			"     Electron: " +
-			this.versionToString(this.getVersion("electron")) +
-			"\n";
-		msg += "     Node: " + this.versionToString(this.getVersion("node")) + "\n";
-		msg += "\n\n" + SCCentral.attribution;
-		let options = {
-			// type: 'info',
-			title: "XeroScout 2",
-			message: msg,
-		};
-		dialog.showMessageBoxSync(this.win_, options);
 	}
 
 	private openEvent(year: number) {
