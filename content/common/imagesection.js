@@ -356,7 +356,11 @@ class XeroImageSection extends XeroBaseSection {
         tpos = this.fieldToCanvasPt(tpos) ;
         tsize = this.fieldToCanvasSize(tsize) ;
 
-        this.doText(this.ctx_, tpos, tsize, value.value.toString(), font) ;
+        let prefix = '' ;
+        if (ctrl.prefix) {
+            prefix = ctrl.prefix ;
+        }
+        this.doText(this.ctx_, tpos, tsize, prefix + value.value.toString(), font) ;
     }
 
     drawUpDownControlOne(ctrl, color) {
@@ -458,6 +462,18 @@ class XeroImageSection extends XeroBaseSection {
             this.ctx_.lineTo(pos.x + size.width, pos.y) ;
             this.ctx_.stroke() ;
         }
+
+        if (ctrl.label && ctrl.label.text && ctrl.label.x && ctrl.label.y && ctrl.label.width && ctrl.label.height && ctrl.label.font) {
+            let label = ctrl.label ;
+            let tpos = new XeroPoint(label.x, label.y) ;
+            let tsize = new XeroSize(label.width, label.height) ;
+            let font = ctrl.label.font ;
+
+            tpos = this.fieldToCanvasPt(tpos) ;
+            tsize = this.fieldToCanvasSize(tsize) ;
+
+            this.doText(this.ctx_, tpos, tsize, label.text, font) ;
+        }
     }
 
     drawControl(ctrl, color) {
@@ -491,7 +507,6 @@ class XeroImageSection extends XeroBaseSection {
             this.ctx_.scale(-1, 1) ;
             this.reverse_updated_ = true ;
         }
-
 
         this.drawImageOnCanvas() ;
         for(let item of this.json_.items) {
