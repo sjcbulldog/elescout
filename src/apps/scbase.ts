@@ -180,11 +180,17 @@ export abstract class SCBase {
     settings.unset(name);
   }
 
-  public static stripKeyString(key: string) {
-    let ret = key ;
+  public static stripKeyString(key: string | number) : string {
+    let ret : string ;
 
-    if (key.startsWith('frc')) {
-      ret = key.substring(3) ;
+    if (typeof key === 'number') {
+      ret = key.toString() ;
+    }
+    else {
+      ret = key ;
+      if (key.startsWith('frc')) {
+        ret = key.substring(3) ;
+      }
     }
     return ret ;
   }

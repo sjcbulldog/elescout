@@ -142,7 +142,7 @@ export class SCScout extends SCBase {
         ofinterest.sort((a, b) => { return this.sortCompFun(a, b) ;}) ;
 
         for(let t of ofinterest) {
-            let numstr: string = SCBase.stripKeyString(t.teamkey) ;
+            let numstr: string = SCBase.stripKeyString(t.teamkey.toString()) ;
             let mtype:string = t.comp_level ;
             
             let cmd: string = 'sm-' + t.comp_level + '-' + t.set_number + '-' + t.match_number + '-' + t.teamkey ;
