@@ -56,6 +56,12 @@ export abstract class DataModel extends EventEmitter {
         this.logger_ = logger ;
     }
 
+    public remove() : void {
+        if (fs.existsSync(this.dbname_)) {
+            fs.unlinkSync(this.dbname_) ;
+        }
+    }
+
     public getData(table: string, field: string, fvalues: any[], data: string[]) : Promise<any[]> {
         let ret = new Promise<any[]>(async (resolve, reject) => {
             let query = 'SELECT ' ;

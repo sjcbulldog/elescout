@@ -327,6 +327,8 @@ export class Project {
                     await this.matchDB.processBAData(this.info_.matches_, false) ;
                 }
                 catch(err) {
+                    this.teamDB.remove() ;
+                    this.matchDB.remove() ;
                     reject(err) ;
                 }
 
@@ -339,6 +341,8 @@ export class Project {
                             resolve() ;
                         })
                         .catch((err) => {
+                            this.teamDB.remove() ;
+                            this.matchDB.remove() ;
                             this.info_.teamassignments_ = undefined ;
                             this.info_.matchassignements_ = undefined ;                            
                             reject(err) ;
@@ -349,6 +353,9 @@ export class Project {
                     this.info_.matchassignements_ = undefined ;
                     reject(new Error('could not generate tablet schedule for scouting')) ;
                 }
+            }
+            else {
+                reject(new Error('event is not ready to be locked, missing matches, teams, forms, or table assignments')) ;
             }
         }) ;
 

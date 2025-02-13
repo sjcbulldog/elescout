@@ -1361,7 +1361,7 @@ export class SCCentral extends SCBase {
 					this.setView("info");
 					this.sendNavData();
 					this.sendToRenderer('set-status-text', 'Error: ' + errobj.message) ;
-					this.sendToRenderer("set-status-close-button-visible", true);					
+					this.sendToRenderer("set-status-close-button-visible", true) ;	
 				}) ;
 		} else if (cmd === SCCentral.editTeams) {
 			this.setView("edit-teams");
@@ -1714,6 +1714,10 @@ export class SCCentral extends SCBase {
 		);
 	}
 
+	private validateTag(tag: string): boolean {
+		return /^[a-zA-Z][a-zA-Z0-9_]*$/.test(tag);
+	}
+
 	private validateItem(
 		filename: string,
 		sectno: number,
@@ -1790,6 +1794,16 @@ export class SCCentral extends SCBase {
 				sectno,
 				itemno,
 				"the field 'tag' is defined, but is not a string"
+			);
+			return false;
+		}
+
+		if (!this.validateTag(item.tag)) {
+			this.showItemError(
+				filename,
+				sectno,
+				itemno,
+				"the field 'tag' has a value '" + item.tag + "'which is not valid, must start with a letter and be composed of letters, numbers, and underscores"
 			);
 			return false;
 		}
