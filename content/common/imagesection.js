@@ -245,6 +245,12 @@ class XeroImageSection extends XeroBaseSection {
         this.drawImageSection() ;
     }
 
+    choiceControlCallback(name, which) {
+        let v = this.getValue(name) ;
+        this.setValue(name, v.type, which) ;
+        this.drawImageSection() ;
+    }
+
     doRect(ctx, pos, size, color, width) {
         ctx.strokeStyle = color ;
         ctx.lineWidth = width ;
@@ -397,6 +403,64 @@ class XeroImageSection extends XeroBaseSection {
         this.doText(this.ctx_, pos2, size2, value.value.toString()) ;
     }
 
+    drawChoiceControl(ctrl, color) {
+        let value = this.getValue(ctrl.tag) ;
+        if (!value) {
+            value = this.setValue(ctrl.tag, 'number', 1) ;
+        }
+        
+        for(let choice of ctrl.choices) {
+            let ccolor = ctrl.color ;
+            let box = choice[color] ;
+            if (choice.color) {
+                ccolor = choice.color ;
+            }
+
+            //
+            // The point given is the center of the boolean box, so we find
+            // the upper left hand corner to draw the box
+            //
+            let cornerx = box.position.x - box.size.width / 2 ;
+            let cornery = box.position.y + box.size.height / 2 ;
+
+            //
+            // Get the position in canvas coordinates
+            //
+            let pos = this.fieldToCanvasPt(new XeroPoint(cornerx, cornery)) ;
+
+            //
+            // Get the size in canvas coordinates
+            //
+            let size = this.fieldToCanvasSize(new XeroSize(box.size.width, box.size.height)) ;
+
+            //
+            // Setup region to look for mouse down events
+            //
+            if (!this.containsMouseRegion(ctrl.tag)) {
+                this.mouseClickRegisterRegion(pos, size, ctrl.tag, choice.value, this.choiceControlCallback.bind(this)) ;
+            }
+
+            //
+            // Draw the basic box
+            //
+            this.ctx_.lineWidth = 5.0 ;
+            this.ctx_.strokeStyle = ccolor ;
+            this.ctx_.strokeRect(pos.x, pos.y, size.width, size.height) ;      
+            
+            if (value.value === choice.value) {
+                this.ctx_.beginPath() ;
+                this.ctx_.moveTo(pos.x, pos.y) ;
+                this.ctx_.lineTo(pos.x + size.width, pos.y + size.height) ;
+                this.ctx_.stroke() ;
+    
+                this.ctx_.beginPath() ;
+                this.ctx_.moveTo(pos.x, pos.y + size.height) ;
+                this.ctx_.lineTo(pos.x + size.width, pos.y) ;
+                this.ctx_.stroke() ;                
+            }
+        }
+    }
+
     drawBooleanControl(ctrl, color) {
         let value = this.getValue(ctrl.tag) ;
         if (!value) {
@@ -487,6 +551,9 @@ class XeroImageSection extends XeroBaseSection {
             else {
                 this.drawUpDownControlOne(ctrl, color) ;
             }
+        }
+        else if (ctrl.type === 'multi') {
+            this.drawChoiceControl(ctrl, color) ;
         }
     }
 

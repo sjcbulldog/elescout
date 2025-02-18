@@ -1718,12 +1718,11 @@ export class SCCentral extends SCBase {
 		return /^[a-zA-Z][a-zA-Z0-9_]*$/.test(tag);
 	}
 
-	private validateItem(
-		filename: string,
-		sectno: number,
-		itemno: number,
-		item: any
-	): boolean {
+	private validateImageItem(filename: string, sectno: number, itemno: number, item: any): boolean {
+		return true ;
+	}
+
+	private validateItem(filename: string, sectno: number, itemno: number, item: any): boolean {
 		if (!item.name) {
 			this.showItemError(
 				filename,
@@ -1919,6 +1918,8 @@ export class SCCentral extends SCBase {
 	}
 
 	private validateSection(filename: string, num: number, sect: any): boolean {
+		let isImage = false ;
+
 		if (!sect.name) {
 			this.showSectError(filename, num, "the field 'name' is not defined");
 			return false;
@@ -1931,6 +1932,18 @@ export class SCCentral extends SCBase {
 				"the field 'name' is defined, but is not a string"
 			);
 			return false;
+		}
+
+		if (sect.image) {
+			if (typeof sect.image !== "string") {
+				this.showSectError(
+					filename,
+					num,
+					"the field 'image' is defined, but is not a string"
+				);
+				return false;				
+			}
+			isImage = true ;
 		}
 
 		if (!sect.items) {
@@ -1949,8 +1962,15 @@ export class SCCentral extends SCBase {
 
 		let itemnum = 1;
 		for (let item of sect.items) {
-			if (!this.validateItem(filename, num, itemnum, item)) {
-				return false;
+			if (isImage) {
+				if (!this.validateImageItem(filename, num, itemnum, item)) {
+					return false;
+				}								
+			}
+			else {
+				if (!this.validateItem(filename, num, itemnum, item)) {
+					return false;
+				}
 			}
 			itemnum++;
 		}

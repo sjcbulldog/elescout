@@ -3,6 +3,7 @@ import { DataModel, DataRecord, ValueType } from "./datamodel";
 import winston from 'winston';
 import { BAMatch } from '../extnet/badata';
 import { ScoutingData } from '../comms/resultsifc';
+import { SCBase } from '../apps/scbase';
 
 export class MatchDataModel extends DataModel {
     static readonly MatchTableName: string = 'matches' ;
@@ -229,7 +230,7 @@ export class MatchDataModel extends DataModel {
                 ret.push(record.item!) ;
                 records.push(dr) ;
             }
-            await this.addColsAndData(MatchDataModel.MatchTableName, ['team_number'], records) ;
+            await this.addColsAndData(MatchDataModel.MatchTableName, ['comp_level', 'set_number', 'match_number', 'team_key'], records) ;
             resolve(ret) ;
         }) ;
         return ret ;

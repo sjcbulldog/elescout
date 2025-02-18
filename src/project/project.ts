@@ -282,14 +282,10 @@ export class Project {
             let teams = this.info_!.teams_!.map((v)=> { return 'st-' + v.team_number}) ;
 
             let gendata: DataGenerator = new DataGenerator(this.info_.teamform_);
-            let results = gendata.generateData(teams) ;
+            let results : ScoutingData | null = gendata.generateData(teams) ;
             if (results) {
-                let obj = {
-                    purpose: "team",
-                    results: results,
-                    tablet: '',
-                } ;
-                this.processResults(obj) ;
+                results.purpose = "team" ;
+                this.processResults(results) ;
             }
         }
 
@@ -307,14 +303,10 @@ export class Project {
             }
 
             let gendata: DataGenerator = new DataGenerator(this.info_.matchform_);
-            let results = gendata.generateData(matches) ;
+            let results : ScoutingData | null  = gendata.generateData(matches) ;
             if (results) {
-                let obj = {
-                    purpose: "match",
-                    results: results,
-                    tablet: '',
-                } ;
-                this.processResults(obj) ;
+                results.purpose = "match" ;
+                this.processResults(results) ;
             }
         }
     }

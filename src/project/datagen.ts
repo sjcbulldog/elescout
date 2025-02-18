@@ -1,4 +1,5 @@
 import * as fs from 'fs' ;
+import { OneScoutResult, ScoutingData } from '../comms/resultsifc';
 
 export class DataGenerator
 {
@@ -24,19 +25,25 @@ export class DataGenerator
         this.formpath_ = formpath;
     }
 
-    public generateData(ids: string[]) : any {
+    public generateData(ids: string[]) : ScoutingData | null {
         let results = [] ;
         if (!this.parseForm()) {
             return null ;
         }
 
+        let resarr = [] ;
         for(let id of ids) {
             let obj = this.generateDataForForm() ;
-            results.push(id) ;
-            results.push(obj) ;
+            resarr.push({
+                item: id,
+                data: obj
+            }) ;
         }
-
-        return results ;
+        return {
+            tablet: "",
+            purpose: "",
+            results: resarr
+        } ;
     }
 
     protected generateDataForForm() : any {
@@ -56,7 +63,6 @@ export class DataGenerator
         return Math.floor(Math.random() * max);
     }
 
-
     private generateItemValue(item: any) : any {
         let value = undefined ;
 
@@ -67,6 +73,10 @@ export class DataGenerator
         else if (item.type === 'choice') {
             let i = this.getRandomInt(item.choices.length) ;
             value = item.choices[i] ;
+        }
+        else if (item.type === 'multi') {
+            let i = this.getRandomInt(item.choices.length) ;
+            value = item.choices[i].value ;
         }
         else if (item.type === 'boolean') {
             value = true ;
