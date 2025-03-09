@@ -312,11 +312,15 @@ export class Project {
     }
 
     public async lockEvent() : Promise<void> {
+        this.info_.matches_ = undefined ;
+
         let ret = new Promise<void>(async (resolve, reject) => {
-            if (this.info_.matches_ && this.info_.teams_ && this.info_.teamform_ && this.info_.matchform_ && this.areTabletsValid()) {
+            if (this.info_.teams_ && this.info_.teamform_ && this.info_.matchform_ && this.areTabletsValid()) {
                 try {
                     await this.teamDB.processBAData(this.info_.teams_) ;
-                    await this.matchDB.processBAData(this.info_.matches_, false) ;
+                    if (this.info_.matches_) {
+                        await this.matchDB.processBAData(this.info_.matches_, false) ;
+                    }
                 }
                 catch(err) {
                     this.teamDB.remove() ;
@@ -700,10 +704,12 @@ export class Project {
     }
 
     private generateTabletSchedule() : boolean {
-        let teamtab: Tablet[] = this.getTabletsForPurpose(Project.tabletTeam) ;
-        let matchtab: Tablet[] = this.getTabletsForPurpose(Project.tabletMatch) ;
+        return this.generateMatchTabletSchedule() && this.generateTeamTabletSchedule() ;
+    }
 
-        if (teamtab.length < 1 || !this.info_.teams_ || matchtab.length < 6 || !this.info_.matches_) {
+    private generateTeamTabletSchedule() : boolean {
+        let teamtab: Tablet[] = this.getTabletsForPurpose(Project.tabletTeam) ;
+        if (teamtab.length < 1 || !this.info_.teams_) {
             return false;
         }
 
@@ -718,11 +724,29 @@ export class Project {
             }
         }
 
+        if (this.info_.matches_) {
+            this.generateMatchTabletSchedule() ;
+        }
+
+        return true ;
+    }
+
+    public generateMatchTabletSchedule() : boolean {
+        if (!this.info_.matches_) {
+            return true;
+        }
+
+        let matchtab: Tablet[] = this.getTabletsForPurpose(Project.tabletMatch) ;
+
+        if (!this.info_.matches_ || matchtab.length < 6) {
+            return false ;
+        }
+
         let ma:MatchTablet ;
-        index = 0 ;
+        let index = 0 ;
         this.info_.matchassignements_ = [] ;
 
-        for(let m of this.info_.matches_) {
+        for(let m of this.info_.matches_!) {
             ma = new MatchTablet(m.comp_level, m.match_number, m.set_number, 'red', m.alliances.red.team_keys[0], matchtab[index].name) ;
             index++ ;
             if (index >= matchtab.length) {
@@ -1282,6 +1306,8 @@ export class Project {
                 }
                 else {
                     this.info_.matches_ = matches ;
+                    this.generateMatchTabletSchedule() ;
+                    
                     if (results) {
                         if (callback) {
                             callback('Inserting ' + type + ' into XeroScout2 database ... ');

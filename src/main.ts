@@ -47,7 +47,6 @@ export let scappbase : SCBase | undefined = undefined ;
 
 function createWindow() : void {
     const args = process.argv;
-    let year = 2024 ;
 
     let content = path.join(process.cwd(), 'content') ;
     let icon = path.join(content, 'images', 'tardis.ico') ;

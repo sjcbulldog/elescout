@@ -304,7 +304,7 @@ class InfoView extends XeroView {
         cell.className = "info-table-cell";
         row.append(cell);
     
-        if (info.matches_ && info.teams_ && info.teamform_ && info.matchform_ && !info.locked_) {
+        if (info.teams_ && info.teamform_ && info.matchform_ && !info.locked_) {
             let button = document.createElement('button');
             cell.append(button);
     

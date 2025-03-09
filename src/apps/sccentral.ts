@@ -2237,17 +2237,8 @@ export class SCCentral extends SCBase {
 				let str = JSON.stringify(this.project_?.info.matchassignements_);
 				resp = new PacketObj(PacketType.ProvideMatchList, Buffer.from(str));
 			} else {
-				resp = new PacketObj(
-					PacketType.Error,
-					Buffer.from(
-						"internal error #3 - no match list has been generated for a locked event",
-						"utf-8"
-					)
-				);
-				dialog.showErrorBox(
-					"Internal Error #3",
-					"No match list has been generated for a locked event"
-				);
+				let str = JSON.stringify([]) ;
+				resp = new PacketObj(PacketType.ProvideMatchList, Buffer.from(str));
 			}
 		} else if (p.type_ === PacketType.ProvideResults) {
 			try {
