@@ -7,11 +7,13 @@ class SingleTeamView extends XeroView {
         this.team_ = null ;
 
         this.createBaseDisplay() ;
+        
         this.registerCallback('send-single-team-data', this.formCallback.bind(this));
         this.registerCallback('send-team-data', this.receiveTeamData.bind(this));
         this.registerCallback('send-team-field-list', this.receiveTeamFieldList.bind(this));
         this.registerCallback('send-match-field-list', this.receiveMatchFieldList.bind(this));
         this.registerCallback('send-single-team-fields', this.receiveSingleTeamFields.bind(this));
+        this.registerCallback('send-single-team-formulas', this.receiveFormulaFieldList.bind(this)) ;
 
         this.team_fields_ = false ;
         this.match_fields_ = false ;
@@ -19,7 +21,7 @@ class SingleTeamView extends XeroView {
         this.scoutingAPI('get-team-data') ;
         this.scoutingAPI('get-team-field-list');
         this.scoutingAPI('get-match-field-list');
-
+        this.scoutingAPI('get-single-team-formulas') ;
     }
 
     createTeamSelector(parent) {
@@ -98,6 +100,10 @@ class SingleTeamView extends XeroView {
         this.match_field_selector_ = new XeroSelector('Match Fields', false);
         this.match_field_selector_.detail.className = 'single-team-match-field-selector' ;
         this.field_sel_div_.append(this.match_field_selector_.detail);
+
+        this.formula_field_selector_ = new XeroSelector('Formulas', false);
+        this.formula_field_selector_.detail.className = 'single-team-formula-selector' ;
+        this.field_sel_div_.append(this.formula_field_selector_.detail);        
     }
 
     createBaseDisplay() {
@@ -228,6 +234,10 @@ class SingleTeamView extends XeroView {
         this.team_report_matches_table_.append(tr) ;    
 
         for(let m of matches) {
+            if (m.actual_time == null) {
+                continue ;
+            }
+
             let isRed = false ;
             tr = document.createElement('tr') ;
 
@@ -417,9 +427,12 @@ class SingleTeamView extends XeroView {
     somethingChanged() {
         let mfields = this.match_field_selector_.getSelectedItems() ;
         let tfields = this.team_field_selector_.getSelectedItems() ;
+        let ffields = this.formula_field_selector_.getSelectedItems() ;
         let obj = {
             match: mfields,
-            team: tfields
+            team: tfields,
+            formulas: ffields,
+            num: this.team_.team_number
         } ;
         this.scoutingAPI('update-single-team-data', obj) ;
     }
@@ -441,7 +454,7 @@ class SingleTeamView extends XeroView {
     }
 
     checkFieldList() {
-        if (this.team_fields_ && this.meatch_fields_) {
+        if (this.team_fields_ && this.meatch_fields_ && this.formula_fields_) {
             this.scoutingAPI('get-single-team-fields') ;
         }
     }
@@ -461,6 +474,13 @@ class SingleTeamView extends XeroView {
     receiveSingleTeamFields(list) {
         this.team_field_selector_.selectItems(list[0].team) ;
         this.match_field_selector_.selectItems(list[0].match) ;
+        this.formula_field_selector_.selectItems(list[0].formulas) ;
         this.selectedTeamChanged() ;
+    }
+    
+    receiveFormulaFieldList(list) {
+        this.formula_field_selector_.addDataToSelectors(list[0], this.somethingChanged.bind(this));
+        this.formula_fields_ = true ;
+        this.checkFieldList() ;
     }
 }

@@ -22,14 +22,6 @@ const moveBarrierLeft = function(e) {
     let newLeftWidth = leftWidth + dx;
 
     leftSide.style.width = newLeftWidth + 'px';
-
-    console.log('moveBarrierRight') ;
-    console.log('  resize_left_orig_width = ' + resize_left_orig_width);
-    console.log('  leftScale = ' + leftScale);
-    console.log('  leftWidth = ' + leftWidth);
-    console.log('  parentWidth = ' + parentWidth);
-    console.log('  newLeftWidth = ' + newLeftWidth);
-    console.log('  leftSide.style.width = ' + leftSide.style.width);
 }
 
 const moveBarrierRight = function(e) {
@@ -48,14 +40,6 @@ const moveBarrierRight = function(e) {
     const newLeftWidth = leftWidth + dx;
 
     leftSide.style.width = newLeftWidth + 'px';
-
-    console.log('moveBarrierRight') ;
-    console.log('  resize_left_orig_width = ' + resize_left_orig_width);
-    console.log('  leftScale = ' + leftScale);
-    console.log('  leftWidth = ' + leftWidth);
-    console.log('  parentWidth = ' + parentWidth);
-    console.log('  newLeftWidth = ' + newLeftWidth);
-    console.log('  leftSide.style.width = ' + leftSide.style.width);
 }
 
 function resizeCreate() {
@@ -111,13 +95,6 @@ function resizeShow() {
     resize_top.style.zIndex = 1 ;
 
     resize_win_visible = true ;
-
-    console.log('resizeShow') ;
-    console.log('  display = ' + resize_top.style.display) ;
-    console.log('  rect = ' + JSON.stringify(rect)) ;
-    console.log('  resizerect = ' + JSON.stringify(resizerect)) ;
-    console.log('  loff = ' + loff) ;
-    console.log('  toff = ' + toff) ;
 }
 
 function resizeHide() {

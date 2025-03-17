@@ -93,6 +93,7 @@ class TeamStatusView extends StatusView {
             {
                 field: 'number',
                 title: 'Number',
+                sorter: 'number',
                 headerVertical: this.hdrvert_,
             },
             {

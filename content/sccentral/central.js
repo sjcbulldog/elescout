@@ -18,6 +18,9 @@ const viewMap = new Map([
   ['picklist', PickListView],
   ['singleteam', SingleTeamView],
   ['zebrastatus', ZebraStatusView],
+  ['formulas', FormulaView],
+  ['multiview', MultiView],
+  ['spiderview', SpiderView],
 ]) ;
 
 async function updateMainWindow(mtype, args) {

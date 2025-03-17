@@ -8,7 +8,7 @@ class PickListView extends TabulatorView {
     static PickNotesFieldName = 'picknotes' ;
 
     static DefaultFields = [
-        { field: PickListView.RankFieldName, title: 'Rank' },
+        { field: PickListView.RankFieldName, title: 'Pick Order' },
         { field: PickListView.NickNameFieldName, title: 'Name' },
         { field: PickListView.TeamNumberFieldName, title: 'Number' },
         { field: PickListView.PickNotesFieldName, title: 'Notes' }
@@ -36,10 +36,12 @@ class PickListView extends TabulatorView {
         this.registerCallback('send-picklist-col-data', this.receivePicklistColData.bind(this));
         this.registerCallback('send-team-field-list', this.receiveTeamFieldList.bind(this));
         this.registerCallback('send-match-field-list', this.receiveMatchFieldList.bind(this));
+        this.registerCallback('send-formulas', this.receiveFormulas.bind(this)) ;
         this.registerCallback('send-picklist-notes', this.receiveNotes.bind(this)) ;
 
         this.scoutingAPI('get-team-field-list');
         this.scoutingAPI('get-match-field-list');
+        this.scoutingAPI('get-formulas') ;
     }
 
     close() {
@@ -365,7 +367,7 @@ class PickListView extends TabulatorView {
     }
 
     checkPicklist() {
-        if (this.team_fields_loaded_ && this.match_fields_loaded_) {
+        if (this.team_fields_loaded_ && this.match_fields_loaded_ && this.formulas_loaded_) {
             this.scoutingAPI('get-picklist-list') ;
         }
     }
@@ -379,6 +381,15 @@ class PickListView extends TabulatorView {
     receiveMatchFieldList(args) {
         this.match_fields_loaded_ = true ;
         this.match_fields_ = args[0] ;
+        this.checkPicklist() ;
+    }
+
+    receiveFormulas(args) {
+        this.formulas_loaded_ = true ;
+        this.formulas_ = [] ;
+        for(let formula of args[0]) {
+            this.formulas_.push(formula.name) ;
+        }
         this.checkPicklist() ;
     }
 
@@ -435,9 +446,6 @@ class PickListView extends TabulatorView {
             for(let row of this.table_.getRows()) {
                 let rankcell = row.getCell(PickListView.RankFieldName) ;
                 let namecell = row.getCell(PickListView.NickNameFieldName) ;
-                console.log('cell ') ;
-                console.log('  --  ' + rankcell.getValue()) ;
-                console.log('  --  ' + namecell.getValue()) ;
                 rankcell.setValue(rank++, false) ;
             }
 
@@ -573,7 +581,10 @@ class PickListView extends TabulatorView {
         var menu = [];
         var columns = this.table_.getColumns();
 
-        for (let field of [...this.team_fields_, ...this.match_fields_]) {
+        let fieldlist = [...this.team_fields_, ...this.match_fields_, ...this.formulas_] ;
+        fieldlist.sort() ;
+
+        for (let field of fieldlist) {
             //create checkbox element using font awesome icons
             let icon = document.createElement("i");
             icon.innerHTML = (this.findColumnIndexByName(field) !== -1) ? '&check;' : ' ';

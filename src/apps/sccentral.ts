@@ -1,6 +1,6 @@
 import { SCBase, XeroAppType, XeroVersion } from "./scbase";
 import { BlueAlliance } from "../extnet/ba";
-import { NamedGraphDataRequest, Project } from "../project/project";
+import { NamedGraphDataRequest, Project, TabletData } from "../project/project";
 import { BrowserWindow, dialog, Menu, MenuItem, shell } from "electron";
 import { TCPSyncServer } from "../sync/tcpserver";
 import { PacketObj } from "../sync/packetobj";
@@ -29,7 +29,7 @@ interface GraphDataRequest {
 interface PickListColData {
 	field: string,
 	teams: number[],
-	data: number[]
+	data: (number|string)[]
 };
 
 interface ZebraStatus {
@@ -93,6 +93,9 @@ export class SCCentral extends SCBase {
 	private static readonly viewZebraData: string = "view-zebra-data";
 	private static readonly viewZebraStatus: string = "view-zebra-status";
 	private static readonly viewTeamGraph: string = "view-team-graph";
+	private static readonly viewFormulas: string = "view-formulas";
+	private static readonly viewMultiView: string = "view-multi-view";
+	private static readonly viewSpider: string = "view-spider" ;
 	private static readonly viewSingleTeamSummary: string = 'view-single-team-summary' ;
 
 	private project_?: Project = undefined;
@@ -332,16 +335,27 @@ export class SCCentral extends SCBase {
 			submenu: new Menu(),
 		});
 
-		let downloadMatchData: MenuItem = new MenuItem({
+		let downloadBAData: MenuItem = new MenuItem({
 			type: "normal",
-			label: "Import Data From Blue Alliance/Statbotics",
+			label: "Import Data From Blue Alliance",
 			enabled: false,
 			click: () => {
-				this.importBlueAllianceStatboticsData();
+				this.importBlueAllianceData();
 			},
 		});
-		datamenu.submenu?.append(downloadMatchData);
-		this.menuitems_.set("data/loadmatchdata", downloadMatchData);
+		datamenu.submenu?.append(downloadBAData);
+		this.menuitems_.set("data/loadbadata", downloadBAData);
+
+		let downloadSTData: MenuItem = new MenuItem({
+			type: "normal",
+			label: "Import Data From Statbotics",
+			enabled: false,
+			click: () => {
+				this.importStatboticsData();
+			},
+		});
+		datamenu.submenu?.append(downloadSTData);
+		this.menuitems_.set("data/loadstdata", downloadSTData);
 
 		let downloadZebraData: MenuItem = new MenuItem({
 			type: "normal",
@@ -400,6 +414,18 @@ export class SCCentral extends SCBase {
 		datamenu.submenu?.append(exportPicklistData);
 		this.menuitems_.set("data/exportpicklist", exportPicklistData);
 
+		datamenu.submenu?.append(new MenuItem({ type: "separator" }));
+		let importFormulas = new MenuItem({
+			type: "normal",
+			label: "Import Formulas",
+			enabled: false,
+			click: () => {
+				this.importFormulasFromFile();
+			},
+		});
+		datamenu.submenu?.append(importFormulas);
+		this.menuitems_.set("data/importformulas", importFormulas);
+
 		ret.append(datamenu);
 
 		let viewmenu: MenuItem = new MenuItem({
@@ -451,11 +477,13 @@ export class SCCentral extends SCBase {
 		let items: string[] = [
 			"data/exportmatch",
 			"data/exportteam",
-			"data/loadmatchdata",
+			"data/loadbadata",
+			"data/loadstdata",
 			"data/exportpicklist",
 			"data/zebra",
 			"data/graphdefn",
 			"file/close",
+			"data/importformulas",
 		];
 		for (let item of items) {
 			this.enableMenuItem(item, hasEvent);
@@ -504,7 +532,7 @@ export class SCCentral extends SCBase {
 		}
 		else if (arg === 'team') {
 			if (this.project_!.info.teamform_) {
-				filename = this.project_!.info.teamform_! ;
+				filename = path.join(this.project_!.location, this.project_!.info.teamform_!) ;
 				title = 'Team Form' ;
 			}
 			else {
@@ -514,7 +542,7 @@ export class SCCentral extends SCBase {
 		}
 		else if (arg === 'match') {
 			if (this.project_!.info.matchform_) {
-				filename = this.project_!.info.matchform_! ;
+				filename = path.join(this.project_!.location, this.project_!.info.matchform_!) ;
 				title = 'Match Form' ;
 			}
 			else {
@@ -750,10 +778,10 @@ export class SCCentral extends SCBase {
 				name_: this.project_.info.frcev_
 					? this.project_.info.frcev_.name
 					: this.project_.info.name_,
-				teamform_: this.shortenString(this.project_.info.teamform_),
-				teamformfull_: this.project_.info.teamform_,
-				matchform_: this.shortenString(this.project_.info.matchform_),
-				matchformfull_: this.project_.info.matchform_,
+				teamform_: this.project_.info.teamform_,
+				teamformfull_: this.project_.info.teamform_ ? path.join(this.project_!.location, this.project_.info.teamform_!) : undefined,
+				matchform_: this.project_.info.matchform_,
+				matchformfull_: this.project_.info.matchform_? path.join(this.project_!.location, this.project_.info.matchform_!) : undefined,
 				tablets_: this.project_.info.tablets_,
 				tablets_valid_: this.project_.areTabletsValid(),
 				teams_: this.project_.info.teams_,
@@ -765,13 +793,35 @@ export class SCCentral extends SCBase {
 		}
 	}
 
+	public addFormula(data: any[]) : void {
+		this.project_!.addFormula(data[0], data[1]) ;
+	}	
+
+	public renameFormula(data: any[]) : void {
+		let args = data[0] ;
+		this.project_!.renameFormula(args[0], args[1]) ;
+	}	
+
+	public updateFormula(data: any[]) : void {
+		let args = data[0] ;
+		this.project_!.addFormula(args[0], args[1]) ;
+	}	
+
+	public deleteFormula(data: any[]) : void {
+		this.project_!.deleteFormula(data[0]) ;
+	}
+
+	public sendFormulas() : void {
+		this.sendToRenderer('send-formulas', this.project_!.info.formulas_) ;
+	}
+
 	public sendTabletData(): void {
 		if (this.project_) {
 			this.sendToRenderer("send-tablet-data", this.project_.info.tablets_);
 		}
 	}
 
-	public setTabletData(data: any[]) {
+	public setTabletData(data: TabletData[]) {
 		if (this.project_) {
 			this.project_.setTabletData(data);
 			this.setView('info') ;
@@ -976,7 +1026,17 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	public async loadBaEventData(args: any[]): Promise<void> {
+	public async loadBaEventDataError(): Promise<void> {
+		this.sendToRenderer("set-status-title", "Blue Alliance Error");
+		this.sendToRenderer(
+			"set-status-html",
+			"Error importing data - invalid request from renderer - internal error"
+		);
+		this.sendToRenderer("set-status-close-button-visible", true);
+		this.setView("info");
+	}
+
+	public async loadBaEventData(key: string): Promise<void> {
 		if (!this.isBAAvailable()) {
 			dialog.showErrorBox(
 				"Load Blue Alliance Event",
@@ -985,7 +1045,7 @@ export class SCCentral extends SCBase {
 			return;
 		}
 
-		let fev: BAEvent | undefined = this.getEventFromKey(args[0]);
+		let fev: BAEvent | undefined = this.getEventFromKey(key);
 		if (fev) {
 			this.sendToRenderer("set-status-title","Loading event '" + fev.name + "'");
 			this.msg_ = "";
@@ -1005,7 +1065,7 @@ export class SCCentral extends SCBase {
 			} catch (err) {
 				let errobj = err as Error;
 				this.sendToRenderer("set-status-visible", true);
-				this.sendToRenderer("set-status-title", "Error Importing Match Data");
+				this.sendToRenderer("set-status-title", "Blue Alliance Error");
 				this.sendToRenderer(
 					"set-status-html",
 					"Error importing data - " + errobj.message
@@ -1014,10 +1074,13 @@ export class SCCentral extends SCBase {
 				this.setView("info");
 			}
 		} else {
-			dialog.showErrorBox(
-				"Load Blue Alliance Event",
-				"Event with key '" + args[0] + "' was not found.<br>No event was loaded"
+			this.sendToRenderer("set-status-title", "Blue Alliance Error");
+			this.sendToRenderer(
+				"set-status-html",
+				"Error importing data - no event with key '" + key + "' was found"
 			);
+			this.sendToRenderer("set-status-close-button-visible", true);
+			this.setView("info");
 		}
 	}
 
@@ -1135,7 +1198,7 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	private importBlueAllianceStatboticsData() {
+	private importBlueAllianceData() {
 		if (!this.project_) {
 			let html = "Must create or open a project to import data.";
 			this.sendToRenderer("set-status-visible", true);
@@ -1166,8 +1229,62 @@ export class SCCentral extends SCBase {
 				"set-status-html",
 				"Requesting match data from the Blue Alliance ..."
 			);
-			this.project_!.loadExternalData(
+			this.project_!.loadExternalBAData(
 				this.ba_!,
+				fev,
+				(text) => {
+					this.appendStatusText(text);
+				}
+			)
+			.then(() => {
+				this.appendStatusText("All data loaded");
+				this.sendToRenderer("set-status-close-button-visible", true);
+			})
+			.catch((err) => {
+				this.appendStatusText("<br><br>Error loading data - " + err.message);
+				this.sendToRenderer("set-status-close-button-visible", true);
+			});
+		} else {
+			let html = "The event is not a blue alliance event";
+			this.sendToRenderer("set-status-visible", true);
+			this.sendToRenderer("set-status-title", "Load Match Data");
+			this.sendToRenderer("set-status-html", html);
+			this.sendToRenderer("set-status-close-button-visible", true);
+		}
+	}	
+
+	private importStatboticsData() {
+		if (!this.project_) {
+			let html = "Must create or open a project to import data.";
+			this.sendToRenderer("set-status-visible", true);
+			this.sendToRenderer("set-status-title", "Error Importing Match Data");
+			this.sendToRenderer("set-status-html", html);
+			this.sendToRenderer("set-status-close-button-visible", true);
+			return;
+		}
+
+		if (!this.isBAAvailable()) {
+			let html = "The Blue Alliance site is not available.";
+			this.sendToRenderer("set-status-visible", true);
+			this.sendToRenderer("set-status-title", "Error Importing Match Data");
+			this.sendToRenderer("set-status-html", html);
+			this.sendToRenderer("set-status-close-button-visible", true);
+			return;
+		}
+
+		let fev: BAEvent | undefined = this.project_?.info.frcev_;
+		if (fev) {
+			this.sendToRenderer("set-status-visible", true);
+			this.sendToRenderer(
+				"set-status-title",
+				"Loading match data for event '" + fev.name + "'"
+			);
+			this.msg_ = "";
+			this.sendToRenderer(
+				"set-status-html",
+				"Requesting match data from the Blue Alliance ..."
+			);
+			this.project_!.loadExternalSTData(
 				this.statbotics_!,
 				fev,
 				(text) => {
@@ -1301,11 +1418,29 @@ export class SCCentral extends SCBase {
 					command: SCCentral.viewSingleTeamSummary,
 					title: "Single Team",
 				});				
+
+				treedata.push({
+					type: "item",
+					command: SCCentral.viewMultiView,
+					title: "Multi View",
+				});
 				
 				treedata.push({
 					type: "item",
 					command: SCCentral.viewTeamGraph,
 					title: "Team Graph",
+				});
+
+				treedata.push({
+					type: "item",
+					command: SCCentral.viewSpider,
+					title: "Spider Graph",
+				});
+
+				treedata.push({
+					type: "item",
+					command: SCCentral.viewFormulas,
+					title: "Formulas",
 				});
 			}
 
@@ -1401,6 +1536,12 @@ export class SCCentral extends SCBase {
 			this.setView("teamdb");
 		} else if (cmd === SCCentral.viewTeamGraph) {
 			this.setView("teamgraph");
+		} else if (cmd === SCCentral.viewFormulas) {
+			this.setView("formulas") ;
+		} else if (cmd === SCCentral.viewMultiView) {
+			this.setView("multiview") ;
+		} else if (cmd === SCCentral.viewSpider) {
+			this.setView("spiderview") ;
 		} else if (cmd === SCCentral.viewZebraData) {
 			this.setView("zebraview");
 		} else if (cmd === SCCentral.viewZebraStatus) {
@@ -1719,6 +1860,20 @@ export class SCCentral extends SCBase {
 	}
 
 	private validateImageItem(filename: string, sectno: number, itemno: number, item: any): boolean {
+		if (item.type === 'multi') {
+			if (item.datatype) {
+				if (typeof item.datatype !== 'string') {
+					this.showItemError(filename, sectno, itemno, "the field 'datatype' is defined but is not a string") ;
+					return false ;
+				}
+
+				let dt = item.datatype.toLowerCase() ;
+				if (dt !== 'integer' && dt !== 'real') {
+					this.showItemError(filename, sectno, itemno, "the field 'datatype' must be 'integer' or 'real'") ;
+					return false ;
+				}
+			}
+		}
 		return true ;
 	}
 
@@ -2183,7 +2338,8 @@ export class SCCentral extends SCBase {
 			resp = new PacketObj(PacketType.ProvideTablets, data);
 		} else if (p.type_ === PacketType.RequestTeamForm) {
 			if (this.project_?.info.teamform_) {
-				let jsonstr = fs.readFileSync(this.project_.info.teamform_).toString();
+				let file = path.join(this.project_.location, this.project_.info.teamform_!);
+				let jsonstr = fs.readFileSync(file).toString();
 				resp = new PacketObj(
 					PacketType.ProvideTeamForm,
 					Buffer.from(jsonstr, "utf8")
@@ -2200,7 +2356,8 @@ export class SCCentral extends SCBase {
 			}
 		} else if (p.type_ === PacketType.RequestMatchForm) {
 			if (this.project_?.info.matchform_) {
-				let jsonstr = fs.readFileSync(this.project_.info.matchform_).toString();
+				let file = path.join(this.project_.location, this.project_.info.matchform_!);
+				let jsonstr = fs.readFileSync(file).toString();
 				resp = new PacketObj(
 					PacketType.ProvideMatchForm,
 					Buffer.from(jsonstr, "utf8")
@@ -2365,6 +2522,51 @@ export class SCCentral extends SCBase {
 		this.sendToRenderer('send-team-list', ret) ;
 	}
 
+	public getMultiTeamList() {
+		if (!this.project_?.info.multi_team_list_) {
+			this.sendToRenderer('send-multi-selected-teams', undefined) ;
+		}
+		else {
+			this.sendToRenderer('send-multi-selected-teams', ...this.project_?.info.multi_team_list_) ;
+		}
+	}	
+
+	public setMultiTeamList(list: number[]) {
+		this.project_!.setMultiTeamList(list) ;
+	}		
+
+	public async getMultiTeamData(list: number[], numericonly?: boolean) {
+		let data = [] ;
+
+		if (numericonly === undefined) {
+			numericonly = false ;
+		}
+
+		for(let team of list) {
+			let teamdata = await this.getSingleTeamIndividualData(team, numericonly) ;
+			teamdata['team_number'] = team ;
+			data.push(teamdata) ;
+		}
+
+		let columns : string[] = [] ;
+
+		// We want to force the team number to be first
+		columns.push('team_number') ;
+
+		for(let key of Object.keys(data[0])) {	
+			if (key !== 'team_number') {
+				columns.push(key) ;
+			}
+		}
+
+		let ret = {
+			columns: columns,
+			data: data
+		}
+
+		this.sendToRenderer('send-multi-team-data', ret) ;
+	}
+
 	public async getTeamFieldList() {
 		let balist = ['ba_opr', 'ba_dpr'] ;
 
@@ -2390,6 +2592,18 @@ export class SCCentral extends SCBase {
 		}
 
 		this.sendToRenderer('send-team-field-list', cols) ;
+	}
+
+	public getSingleTeamFormulas() {
+		let ret = [] ;
+
+		if (this.project_!.info.formulas_) {
+			for(let one of this.project_!.info.formulas_) {
+				ret.push(one.name) ;
+			}
+		}
+		
+		this.sendToRenderer('send-single-team-formulas', ret) ;
 	}
 
 	public async getMatchFieldList() {
@@ -2699,7 +2913,7 @@ export class SCCentral extends SCBase {
 	}
 
 	public async sendPicklistColData(field: string) {
-		let values: number[] = [];
+		let values: (number|string)[] = [];
 		let teams: number[] = [] ;
 
 		for(let t of this.project_!.info.teams_!) {
@@ -2741,16 +2955,27 @@ export class SCCentral extends SCBase {
 		this.project_!.setPicklistNotes(obj.name, obj.notes) ;
 	}
 
-	private async getSingleTeamIndividualData(team: number) : Promise<any> {
+	private async getSingleTeamIndividualData(team: number, numericonly: boolean) : Promise<any> {
 		interface MyObject {
 			[key: string]: any; // Allows any property with a string key
 		}
 
 		let ret = new Promise<any>(async (resolve, reject) => {
 			let values : MyObject = {} ;
-			for(let field of [...this.project_!.info.single_team_match_, ... this.project_!.info.single_team_team_]) {
-				let v = await this.project_!.getData(field, team) ;
-				values[field] = v ;
+			for(let field of [...this.project_!.info.single_team_match_, ... this.project_!.info.single_team_team_, ...this.project_!.info.single_team_formulas]) {
+				try {
+					let v = await this.project_!.getData(field, team) ;
+					if (typeof v === 'number' || !numericonly) {
+						values[field] = v ;
+					}
+				}
+				catch(err) {
+					if (this.project_!.info.single_team_formulas.includes(field)) {
+						let index = this.project_!.info.single_team_formulas.indexOf(field) ;
+						this.project_!.info.single_team_formulas.splice(index, 1) ;
+					}
+					values[field] = 'No Such Formula' ;
+				}
 			}
 			resolve(values) ;
 		}) ;
@@ -2766,21 +2991,22 @@ export class SCCentral extends SCBase {
 
 		if (this.project_) {
 			retdata.matches = this.project_.getMatchResults(obj) ;
-			retdata.teamdata = await this.getSingleTeamIndividualData(obj) ;
+			retdata.teamdata = await this.getSingleTeamIndividualData(obj, false) ;
 		}
 
 		this.sendToRenderer('send-single-team-data', retdata) ;
 	}
 
 	public updateSingleTeamData(obj: any) {
-		this.project_!.setSingleTeamFields(obj.team, obj.match) ;
-		this.getSingleTeamData(obj) ;
+		this.project_!.setSingleTeamFields(obj.team, obj.match, obj.formulas) ;
+		this.getSingleTeamData(obj.num) ;
 	}
 
 	public getSingleTeamFields() {
 		let obj = {
 			team: this.project_!.info.single_team_team_,
-			match: this.project_!.info.single_team_match_
+			match: this.project_!.info.single_team_match_,
+			formulas: this.project_!.info.single_team_formulas
 		} ;
 		this.sendToRenderer('send-single-team-fields', obj) ;
 	}
@@ -2856,5 +3082,34 @@ export class SCCentral extends SCBase {
 		}
 
 		this.sendToRenderer('send-zebra-status', data) ;
+	}
+
+	private importFormulasFromFileWithPath(path: string) {
+		try {
+			let data = fs.readFileSync(path, 'utf-8') ;
+			const obj = JSON.parse(data) ;
+			this.project_!.importFormulas(obj) ;
+		}
+		catch(err) {
+			let errobj = err as Error ;
+			dialog.showErrorBox("Coule not import formulas", errobj.message);
+		}
+	}
+
+	private importFormulasFromFile() {
+		dialog.showOpenDialog(this.win_, {
+			title: 'Import formulas from file',
+			filters: [
+				{ name: 'JSON Files', extensions: ['json'] },
+				{ name: 'All Files', extensions: ['*']}
+			],
+			properties: [
+				'openFile',
+			]
+		}).then(result => {	
+			if (!result.canceled) {
+				this.importFormulasFromFileWithPath(result.filePaths[0]) ;
+			}
+		}) ;
 	}
 }

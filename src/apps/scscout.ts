@@ -582,23 +582,30 @@ export class SCScout extends SCBase {
         }) ;
         filemenu.submenu?.insert(0, synctcpitem) ;
 
-        let resetitem: MenuItem = new MenuItem( {
-            type: 'normal',
-            label: 'Reset Tablet',
-            click: () => { this.executeCommand(SCScout.resetTablet)}
-        }) ;
-        filemenu.submenu?.insert(1, resetitem) ;
-
-        filemenu.submenu?.insert(2, new MenuItem({type: 'separator'}));
+        filemenu.submenu?.insert(1, new MenuItem({type: 'separator'}));
 
         let preferences: MenuItem = new MenuItem( {
             type: 'normal',
             label: 'Preferences',
             click: () => { this.executeCommand(SCScout.preferences)}
         }) ;
-        filemenu.submenu?.insert(3, preferences) ;        
+        filemenu.submenu?.insert(2, preferences) ;        
 
         ret.append(filemenu) ;
+
+        let resetmenu: MenuItem = new MenuItem({
+            type: 'submenu',
+            label: 'Reset',
+            submenu: new Menu()
+        }) ;
+
+        let resetitem: MenuItem = new MenuItem( {
+            type: 'normal',
+            label: 'Reset Tablet',
+            click: () => { this.executeCommand(SCScout.resetTablet)}
+        }) ;
+        resetmenu.submenu?.insert(0, resetitem) ;
+        ret.append(resetmenu);    
 
         let optionmenu: MenuItem = new MenuItem({
             type: 'submenu',

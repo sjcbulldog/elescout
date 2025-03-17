@@ -10,6 +10,7 @@ export interface FieldAndType
 {
     name: string ;
     type: string ;
+    datatype?: string ;
 } ;
 
 export class DataRecord {
@@ -571,6 +572,32 @@ export abstract class DataModel extends EventEmitter {
         }) ;
         return ret;
     }
+
+    public removeColumns(table: string, cols: string[]): Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
+            let allpromises = [] ;
+
+            for(let one of cols) {
+                let query: string = 'alter table ' + table + ' drop column ' + one + ';' ;
+                let pr = this.runQuery(query) ;
+                allpromises.push(pr) ;
+            }
+
+            Promise.all(allpromises)
+                .then(() => {
+                    for(let col of cols) {
+                        this.emit('column-added', col) ;
+                    }
+                    resolve();
+                })
+                .catch((err) => {
+                    this.logger_.error('error removing columns in table \'' + table + '\'', err) ;
+                    reject(err)
+                }) ;            
+        }) ;
+        return ret ;
+    }
+
 
     public createColumns(table: string, toadd:FieldAndType[]) : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {

@@ -4,7 +4,7 @@ import { SCBase } from "./apps/scbase";
 import { SCScout } from "./apps/scscout";
 import { SCCentral } from "./apps/sccentral";
 import { SCCoach } from "./apps/sccoach";
-import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
+import { getTreeData as getNavData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
          setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, 
          getTeamStatus, getMatchStatus, setTabletNamePurpose, 
          provideResult,
@@ -40,7 +40,16 @@ import { getTreeData, executeCommand, getInfoData, getSelectEventData, loadBaEve
          getSingleTeamData,
          updateSingleTeamData,
          getSingleTeamFields,
-         getZebraStatus} from "./ipchandlers" ;
+         getZebraStatus,
+         getSingleTeamFormulas,
+         getFormulas,
+         deleteFormula,
+         addFormula,
+         renameFormula,
+         updateFormula,
+         getMultiTeamList,
+         setMultiTeamList,
+         getMultiTeamData} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -95,8 +104,13 @@ function createWindow() : void {
 }
 
 app.on("ready", () => {
-    ipcMain.on('get-nav-data', (event, ...args) => { getTreeData('get-nav-data', ...args)});
+    ipcMain.on('get-nav-data', (event, ...args) => { getNavData('get-nav-data', ...args)});
     ipcMain.on('get-info-data', (event, ...args) => { getInfoData('get-info-data', ...args)}) ;
+    ipcMain.on('get-formulas', (event, ...args) => { getFormulas('get-formulas', ...args)}) ;
+    ipcMain.on('delete-formula', (event, ...args) => { deleteFormula('delete-formulas', ...args)}) ;
+    ipcMain.on('add-formula', (event, ...args) => { addFormula('add-formulas', ...args)}) ;
+    ipcMain.on('rename-formula', (event, ...args) => { renameFormula('rename-formulas', ...args)}) ;
+    ipcMain.on('update-formula', (event, ...args) => { updateFormula('update-formulas', ...args)}) ;
     ipcMain.on('generate-random-data', (event, ...args) => { generateRandomData('generate-random-data', ...args)}) ;
     ipcMain.on('set-event-name', (event, ...args) => { setEventName('set-event-name', ...args)}) ;
     ipcMain.on('get-event-data', (event, ...args) => { getSelectEventData('get-event-data', ...args)}) ;
@@ -120,8 +134,12 @@ app.on("ready", () => {
     ipcMain.on('get-team-graph-data', (event, ...args) => { getTeamGraphData('get-team-graph-data', ...args)}) ;
     ipcMain.on('get-zebra-data', (event, ...args) => { getZebraData('get-zebra-data', ...args)}) ;
     ipcMain.on('get-team-list', (event, ...args) => { getTeamList('get-team-list', ...args)}) ;
+    ipcMain.on('get-multi-selected-teams', (event, ...args) => { getMultiTeamList('get-multi-selected-teams', ...args)}) ;
+    ipcMain.on('set-multi-selected-teams', (event, ...args) => { setMultiTeamList('set-multi-selected-teams', ...args)}) ;
+    ipcMain.on('get-multi-team-data', (event, ...args) => { getMultiTeamData('get-multi-team-data', ...args)}) ;    
     ipcMain.on('get-team-field-list', (event, ...args) => { getTeamFieldList('get-team-field-list', ...args)}) ;
     ipcMain.on('get-match-field-list', (event, ...args) => { getMatchFieldList('get-match-field-list', ...args)}) ;
+    ipcMain.on('get-single-team-formulas', (event, ...args) => { getSingleTeamFormulas('get-single-team-formulas', ...args)}) ;
     ipcMain.on('save-team-graph-setup', (event, ...args) => { saveTeamGraphSetup('save-team-graph-setup', ...args)}) ;
     ipcMain.on('get-match-list', (event, ...args) => { getMatchList('get-match-list', ...args)}) ;
     ipcMain.on('get-stored-graph-list', (event, ...args) => { getStoredGraphList('get-stored-graph-list', ...args)}) ;

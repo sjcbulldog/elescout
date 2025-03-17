@@ -18,6 +18,11 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-zebra-data',
         'get-nav-data', 
         'get-info-data',
+        'get-formulas',
+        'delete-formula',
+        'add-formula',
+        'rename-formula',
+        'update-formula',
         'generate-random-data',
         'set-event-name',
         'get-event-data',
@@ -40,8 +45,12 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'provide-result',
         'get-team-graph-data',
         'get-team-list',
+        'get-multi-selected-teams',
+        'get-multi-team-data',
+        'set-multi-selected-teams',
         'get-team-field-list',
         'get-match-field-list',
+        'get-single-team-formulas',
         'save-team-graph-setup',
         'get-match-list',
         'get-stored-graph-list',
@@ -80,6 +89,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-nav-data', 
         'send-nav-highlight',
         'send-info-data',
+        'send-formulas',
         'send-event-data',
         'send-tablet-data',
         'send-team-data',
@@ -101,8 +111,11 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'request-results',
         'send-team-graph-data',
         'send-team-list',
+        'send-multi-team-data',
+        'send-multi-selected-teams',
         'send-team-field-list',
         'send-match-field-list',
+        'send-single-team-formulas',
         'send-match-list',
         'send-stored-graph-list',
         'tablet-title',
@@ -117,7 +130,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-zebra-status'
       ];
       if (validChannels.includes(channel)) {
-          ipcRenderer.on(channel, (event, ...args) => func(...args));
+        ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
   }
 }) ;

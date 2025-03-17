@@ -214,7 +214,7 @@ class XeroView {
     }
 
     scoutingAPI(request, ...args) {
-        window.scoutingAPI.send(request, args[0]) ;
+        window.scoutingAPI.send(request, args) ;
     }
 
     clear(elem) {

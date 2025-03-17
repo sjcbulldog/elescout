@@ -286,6 +286,11 @@ class InfoView extends XeroView {
     
         return row;
     }
+
+    readyToLock(info) {
+        return info.teams_ && info.teams_.length >= InfoView.minRequiredNumberTeams &&
+            info.matchform_ && info.teamform_ && info.tablets_ && info.tablets_valid_;
+    }
     
     addLocked(info) {
         let row = document.createElement('tr');
@@ -316,10 +321,13 @@ class InfoView extends XeroView {
     
         cell = document.createElement('td');
         if (info.locked_) {
-            cell.innerHTML = "&check;"
+            cell.innerHTML = "&#x1F512;";
             cell.style.color = "green";
         }
-        else {
+        else if (this.readyToLock(info)) {
+            cell.innerHTML = "&#x1F513;";
+            cell.style.color = "green";
+        } else {
             cell.innerHTML = "&cross;"
             cell.style.color = "red";
         }

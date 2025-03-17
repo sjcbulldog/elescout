@@ -247,10 +247,6 @@ export abstract class SCBase {
   public sendToRenderer(ev: string, ...args: any) {
     let argval: any[] = args ;
 
-    if (ev === 'send-info-data') {
-      argval = ['Arguments too long'] ;
-    }
-
     this.logger_.silly({
       message: "main -> renderer",
       args: {

@@ -22,15 +22,28 @@ import { DataGenerator } from './datagen';
 import { FieldAndType } from '../model/datamodel';
 import { SCBase } from '../apps/scbase';
 import { ScoutingData } from '../comms/resultsifc';
+import { parseExpression, ParseResult } from '@babel/parser';
+import evaluate, { registerFunction } from 'ts-expression-evaluator'
+import { Expression } from 'ts-expression-evaluator/build/main/lib/t';
 
 // #endregion
 
 // #region interfaces used by the project
 
+export interface Formula {
+    name: string,
+    formula: string
+}
+
 export interface ProjectOneColCfg {
     name: string,
     width: number,
     hidden: boolean,
+}
+
+export interface TabletData {
+    name: string,
+    purpose: string
 }
 
 export interface ProjColConfig
@@ -95,8 +108,14 @@ export class ProjectInfo {
     public last_picklist_? : string ;                   // The last picklist used
     public single_team_match_: string[] = [] ;          // The match fields for the single team summary
     public single_team_team_: string[] = [] ;           // The team feields for the single team summary
+    public single_team_formulas: string[] = [] ;        // The formulas for the single team summary, must be in the formula data below
     public sync_data_ : ScoutingData[] = [] ;           // The scouting results from sync operation, we hold on to this to 
                                                         // send it backs
+    public formulas_ : Formula[] = [] ;                 // Formulas that can be used in the single team summary 
+    public multi_team_list_ : number[] = [] ;           // The list of teams selected for the multi-team summary
+
+    public team_form_columns_ : string[] = [] ;         // The list of columns that came from the team form
+    public match_form_columns_ : string[] = [] ;        // The list of columns that came from the match form
 
     constructor() {
         this.locked_ = false ;
@@ -151,7 +170,6 @@ export class Project {
         this.matchdb_.on('column-added', this.matchColumnAdded.bind(this));
     }
 
-
     public init() : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
             this.teamdb_.init()
@@ -177,6 +195,11 @@ export class Project {
         this.info_ = new ProjectInfo() ;
     }
 
+    public setMultiTeamList(data: any) {
+        this.info.multi_team_list_ = data ;
+        this.writeEventFile() ;
+    }
+
     public setMatchColConfig(data: any) {
         this.info.matchdb_col_config_ = data ;
         this.writeEventFile() ;
@@ -187,25 +210,168 @@ export class Project {
         this.writeEventFile() ;
     }
 
+    private findFormula(name: string) : string | undefined {
+        let ret: string | undefined = undefined ;
+
+        for(let f of this.info.formulas_) {
+            if (f.name === name) {
+                ret = f.formula ;
+                break ;
+            }
+        }
+
+        return ret ;
+    }
+
+    private findFormulaIndex(name: string) : number | undefined {
+        let ret: number | undefined = undefined ;
+
+        for(let i = 0 ; i < this.info.formulas_.length; i++) {
+            if (this.info_.formulas_[i].name === name) {
+                ret = i ;
+                break ;
+            }
+        }
+
+        return ret ;
+    }
+
+    public deleteFormula(name: string) {
+        let index = this.findFormulaIndex(name) ;
+        if (index != undefined) {
+            this.info_.formulas_.splice(index, 1) ;
+            this.writeEventFile() ;
+        }
+    }
+
+    public renameFormula(oldName: string, newName: string) {
+        let index = this.findFormulaIndex(oldName) ;
+        if (index != undefined) {
+            this.info_.formulas_[index].name = newName ;
+        }
+    }
+
+    public addFormula(name: string, formula: string) {
+        let index = this.findFormulaIndex(name) ;
+        if (index != undefined) {
+            this.info_.formulas_[index].formula = formula ;
+        }
+        else {      
+            let f : Formula = {
+                name: name,
+                formula: formula
+            } ;
+
+            this.info_.formulas_.push(f) ;
+        }
+        this.writeEventFile() ;
+    }
+
+    public importFormulas(obj: any) {
+        for(let key of Object.keys(obj)) {
+            let v = obj[key] ;
+            if (typeof v === 'string') {
+                this.addFormula(key, v) ;
+            }
+        }
+
+        this.writeEventFile() ;
+    }
+
+    private searchForDependenciesRecurse(expr: Expression, deps: string[]) {
+        switch(expr.type) {
+            case 'Identifier':
+                if (!deps.includes(expr.name)) {
+                    deps.push(expr.name) ;
+                }
+                break ;
+            case 'BinaryExpression':
+                this.searchForDependenciesRecurse(expr.left as Expression, deps) ;
+                this.searchForDependenciesRecurse(expr.right, deps) ;
+                break ;
+            case 'NumericLiteral':
+            case 'StringLiteral':
+            case 'BooleanLiteral':
+            case 'ArrayExpression':
+            case 'NullLiteral':
+            case 'LogicalExpression':
+                break ;
+
+            case 'UnaryExpression':
+                this.searchForDependenciesRecurse((expr as any).argument as Expression, deps) ;
+                break ;
+        }
+    }
+
+    private searchForDependencies(expr: Expression) : string[] {
+        let ret: string[] = [] ;
+        this.searchForDependenciesRecurse(expr, ret) ;
+        return ret;
+    }
+
+	public evalFormula(name: string, team: number) : Promise<number  | string > {
+        let ret = new Promise<number | string>(async (resolve, reject) => {
+            let formula = this.findFormula(name) ;
+            let result = NaN ;
+            if (formula) {
+                let obj : any = {} ;
+                let expr = parseExpression(formula) ;
+                let deps = this.searchForDependencies(expr) ; 
+                for(let dep of deps) {
+                    try {
+                        let v = await this.getData(dep, team) ;
+                        obj[dep] = v ;
+                    }
+                    catch(err) {
+                        resolve('formula error') ;
+                    }
+                }
+                result = evaluate(formula, obj) ;
+                resolve(result) ;
+            }
+            else {
+                resolve(NaN) ;
+            }
+        }) ;
+		return ret ;
+	}
+
     //
     // For a given field, either team or match, and a given team, get the
     // value of the field.  For team fields, it is the data stored for that
     // field.  For match fields, the data is processes over all matches to get
     // an average.
     //   
-	public getData(field: string, team: number) : Promise<number> {
-		let ret = new Promise<number>(async (resolve, reject) => {
+	public getData(field: string, team: number) : Promise<number | string> {
+		let ret = new Promise<number | string>(async (resolve, reject) => {
+            let found = false ;
+
 			let tcols = await this.teamDB.getColumnNames(TeamDataModel.TeamTableName) ;
 			if (tcols.includes(field)) {
 				let v = await this.getTeamData(field, team) ;
+                found = true ;
 				resolve(v) ;
+                return ;
 			}
 
 			let mcols = await this.matchDB.getColumnNames(MatchDataModel.MatchTableName) ;
 			if (mcols.includes(field)) {
 				let v = await this.getMatchData(field, team) ;
+                found = true ;
 				resolve(v) ;
+                return ;
 			}
+
+            if (this.findFormulaIndex(field) !== undefined) {
+                let v = await this.evalFormula(field, team) ;
+                found = true ;
+                resolve(v) ;
+                return ;
+            }
+
+            if (!found) {
+                resolve('invalid field') ;
+            }
 		}) ;
 		return ret;
 	}
@@ -271,10 +437,6 @@ export class Project {
 
     public get location() : string {
         return this.location_ ;
-    }
-
-    private getTableForTeam(team: string) {
-        
     }
 
     public generateRandomData() {
@@ -358,26 +520,31 @@ export class Project {
         return ret;
     }
 
-    private xlateType(type: string) {
+    private xlateType(type: string, datatype?: string) {
         let ret = 'text' ;
 
-        switch(type) {
-            case 'boolean':
-                ret = 'INTEGER';
-                break;
+        if (datatype) {
+            ret = datatype ;
+        }
+        else {
+            switch(type) {
+                case 'boolean':
+                    ret = 'INTEGER';
+                    break;
 
-            case 'text':
-            case 'choice':
-                ret = 'TEXT' ;
-                break ;
+                case 'text':
+                case 'choice':
+                    ret = 'TEXT' ;
+                    break ;
 
-            case 'updown':
-                ret = 'REAL';
-                break; 
+                case 'updown':
+                    ret = 'REAL';
+                    break; 
 
-            default:
-                ret = 'TEXT' ;
-                break ;
+                default:
+                    ret = 'TEXT' ;
+                    break ;
+            }
         }
 
         return ret ;
@@ -389,7 +556,7 @@ export class Project {
         for(let one of fields) {
             let obj = {
                 name: one.name,
-                type: this.xlateType(one.type),
+                type: this.xlateType(one.type, one.datatype),
             };
             ret.push(obj) ;
         }
@@ -401,32 +568,70 @@ export class Project {
         let ret = new Promise<void>((resolve, reject) => {
             if (!this.info.teamform_) {
                 reject(new Error('Internal Error - team form is not set while locking event')) ;
+                return ;
             }
 
             if (!this.info.matchform_) {
                 reject(new Error('Internal Error - match form is not set while locking event')) ;
+                return ;
             }
 
             let tcols = this.getFormItemNames(this.info.teamform_!) ;
             if (tcols instanceof Error) {
                 reject(tcols) ;
+                return ;
             }
 
             let mcols = this.getFormItemNames(this.info.matchform_!) ;
             if (mcols instanceof Error) {
                 reject(mcols) ;
+                return ;
             }
 
-            this.teamDB.createColumns(TeamDataModel.TeamTableName, this.xlate(tcols as FieldAndType[]))
+            let tcolnames : string[] = [] ;
+            for(let t of tcols) {
+                tcolnames.push(t.name) ;
+            }
+
+            let mcolnames : string[] = [] ;
+            for(let m of mcols) {
+                mcolnames.push(m.name) ;
+            }
+
+            // Remove any old columns from an old team scouting form
+            this.teamDB.removeColumns(TeamDataModel.TeamTableName, this.info_.team_form_columns_)
+            .then(() => {
+                this.info_.team_form_columns_ = [] ;
+                this.writeEventFile() ;
+
+                // Remove any old
+                this.matchDB.removeColumns(MatchDataModel.MatchTableName, this.info_.match_form_columns_)
                 .then(() => {
-                    this.matchDB.createColumns(MatchDataModel.MatchTableName, this.xlate(mcols as FieldAndType[]))
+                    this.info_.match_form_columns_ = [] ;
+                    this.writeEventFile() ;
+
+                    this.teamDB.createColumns(TeamDataModel.TeamTableName, this.xlate(tcols as FieldAndType[]))
                     .then(() => {
-                        resolve() ;
-                    }) ;
+                        this.info_.team_form_columns_ = tcolnames ;
+                        this.writeEventFile() ;
+                        this.matchDB.createColumns(MatchDataModel.MatchTableName, this.xlate(mcols as FieldAndType[]))
+                        .then(() => {
+                            this.info_.match_form_columns_ = mcolnames ;
+                            this.writeEventFile() ;
+                            resolve() ;
+                        }) ;
+                    })
+                .catch((err) => {
+                    reject(err) ;
+                })                    
                 })
+                .catch((err) => {
+                    reject(err) ;
+                })
+            })
             .catch((err) => {
                 reject(err) ;
-            })
+            }) ;
         }) ;
 
         return ret;
@@ -435,15 +640,15 @@ export class Project {
     public setTeamForm(form: string) {
         let teamform: string = path.join(this.location_, "teamform") + path.extname(form) ;
         fs.copyFileSync(form, teamform) ;
-        this.info_.teamform_ = teamform ;
+        this.info_.teamform_ = path.basename(teamform) ;
         this.writeEventFile() ;
     }
 
     public setMatchForm(form: string) {
         let matchform: string = path.join(this.location_, "matchform") + path.extname(form) ;
         fs.copyFileSync(form, matchform) ;        
-        this.info_.matchform_ = matchform ;
-        this.writeEventFile() ;        
+        this.info_.matchform_ = path.basename(matchform) ;
+        this.writeEventFile() ;
     }
 
     public static async createEvent(logger: winston.Logger, dir: string, year: number) : Promise<Project> {
@@ -623,7 +828,7 @@ export class Project {
         this.writeEventFile() ;
     }
 
-    public setTabletData(data:any[]) {
+    public setTabletData(data:TabletData[]) {
         this.info.tablets_ = [] ;
         for(let tab of data) {
             let t = new Tablet(tab.name) ;
@@ -862,9 +1067,10 @@ export class Project {
         this.writeEventFile() ;
     }
 
-    public setSingleTeamFields(team: string[], match: string[]) {
+    public setSingleTeamFields(team: string[], match: string[], formulas: string[]) {
         this.info_.single_team_match_ = match ;
         this.info_.single_team_team_ = team ;
+        this.info_.single_team_formulas = formulas ;
         this.writeEventFile() ;
     }
 
@@ -886,6 +1092,34 @@ export class Project {
                 // we just add an empty picklist if it was not in the file read.
                 //
                 this.info_.picklist_ = [] ;
+            }
+
+            if (!this.info_.single_team_formulas) {
+                //
+                // Added mid-season, if the formulas are not present, add an empty list
+                // to remain backward compatible
+                //
+
+                this.info_.single_team_formulas = [] ;
+            }
+
+            if (!Array.isArray(this.info_.formulas_)) {
+                //
+                // Added mid-season, if the formulas are of the wrong format, remove them and add
+                // an empty list
+                //
+                this.info_.formulas_ = [] ;
+            }
+
+            //
+            // Update the form names to be relative to the event directory
+            //
+            if (this.info_.teamform_) {
+                this.info_.teamform_ = path.basename(this.info_.teamform_) ;
+            }
+
+            if (this.info_.matchform_) {
+                this.info_.matchform_ = path.basename(this.info_.matchform_) ;
             }
         }
         
@@ -1062,8 +1296,10 @@ export class Project {
 	public getFormItemNames(filename: string) : FieldAndType[] | Error {
 		let ret: FieldAndType[] = [] ;
 
+        let formfile = path.join(this.location_, filename) ;
+
 		try {
-			let jsonstr = fs.readFileSync(filename).toString();
+			let jsonstr = fs.readFileSync(formfile).toString();
 			let jsonobj = JSON.parse(jsonstr);
 			for(let section of jsonobj.sections) {
 				for(let item of section.items) {
@@ -1071,6 +1307,10 @@ export class Project {
                         name: item.tag,
                         type: item.type
                     } ;
+
+                    if (item.type === 'multi' && item.datatype && item.datatype === 'number') {
+                        obj.type = 'number' ;
+                    }
 					ret.push(obj) ;
 				}
 			}
@@ -1084,28 +1324,66 @@ export class Project {
 
 	private getDataType(field: string, data: any[]) : string {
 		let ret: string = typeof (data[0][field]) ;
-        let isnull = true ;
 
         for(let d of data) {
-            if (d[field] !== null) {
-                isnull = false ;
-                break ;
+            if (d[field] === null) {
+                continue ;
             }
-        }
-
-        if (isnull) {
-            ret = 'null' ;
-        }
-        else {
-            for(let d of data) {
-                if (typeof d[field] !== ret) {
-                    return 'string' ;
-                }
+            if (typeof d[field] !== ret) {
+                return 'string' ;
             }
         }
 
 		return ret;
 	}
+
+    private processStringData(data: any[], field: string) : string {
+        let vmap = new Map() ;
+        for(let v of data) {
+            if (v[field] !== null) {
+                let val = v[field] ;
+                if (!vmap.has(val)) {
+                    vmap.set(val, 0) ;
+                }
+
+                let current = vmap.get(val) ;
+                vmap.set(val, current + 1) ;
+            }
+        }
+
+        let total = 0 ;
+        for(let v of vmap.values()) {
+            total += v ;
+        }
+
+        let ret = '' ;
+        for(let v of vmap.keys()) {
+            let pcnt = Math.round(vmap.get(v) / total * 10000) / 100 ;
+            if (ret.length > 0) {
+                ret += '/' ;
+            }
+            ret += v + ' ' + pcnt + '%' ;
+        }
+
+        return ret ;
+    }
+
+    private processNumberData(data: any[], field: string) : number {
+        let total = 0.0 ;
+        let count = 0 ;
+        for(let v of data) {
+            if (v[field] !== null){
+                total += v[field] ;
+                count++ ;
+            }
+        }
+
+        if (count === 0) {
+            return NaN ;
+        }
+
+        return total / count ;
+    }
 
     private getMatchData(field: string, team: number) : Promise<any> {
 		let ret = new Promise<any>(async (resolve, reject) => {
@@ -1116,46 +1394,17 @@ export class Project {
 					if (data.length !== 0) {
 						let dt = this.getDataType(field, data) ;
 						if (dt === 'string') {
-							let vmap = new Map() ;
-							for(let v of data) {
-								let val = v[field] ;
-								if (!vmap.has(val)) {
-									vmap.set(val, 0) ;
-								}
-
-								let current = vmap.get(val) ;
-								vmap.set(val, current + 1) ;
-							}
-
-							let total = 0 ;
-							for(let v of vmap.values()) {
-								total += v ;
-							}
-
-							let ret = '' ;
-							for(let v of vmap.keys()) {
-								let pcnt = Math.round(vmap.get(v) / total * 10000) / 100 ;
-								if (ret.length > 0) {
-									ret += '/' ;
-								}
-								ret += v + ' ' + pcnt + '%' ;
-							}
-
-							resolve(ret);
+							resolve(this.processStringData(data, field)) ;
 						}
 						else if (dt === 'number') {
-							let total = 0.0 ;
-							for(let v of data) {
-								total += v[field] ;
-							}
-							resolve(total / data.length) ;
+							resolve(this.processNumberData(data, field)) ;
 						}
                         else if (dt === 'null') {
                             resolve('No Data') ;
                         }
 					}
 					else {
-						resolve(null) ;
+						resolve("No Data") ;
 					}
 				})
 				.catch((err) => {
@@ -1253,8 +1502,13 @@ export class Project {
 
                     for(let col of picklist.columns) {
                         if (col.name !== 'rank' && col.name != 'picknotes' && col.name != 'nickname' && col.name != 'teamnumber') {
-                            let data = await this.getData(col.name, team) ;
-                            record[col.name] = data ;
+                            try {
+                                let data = await this.getData(col.name, team) ;
+                                record[col.name] = data ;
+                            }
+                            catch(err) {
+                                record[col.name] = 'Error' ;
+                            }
                         }
                     }
                     csvStream.write(record) ;
@@ -1580,12 +1834,25 @@ export class Project {
         return ret;
     }
 
-    public loadExternalData(ba: BlueAlliance, sb: StatBotics, frcev: BAEvent, callback?: (result: string) => void) : Promise<number> {
+    public loadExternalBAData(ba: BlueAlliance, frcev: BAEvent, callback?: (result: string) => void) : Promise<number> {
         let ret: Promise<number> = new Promise<number>(async (resolve, reject) => {
             try {
                 await this.loadMatchData(frcev.key, ba, true, callback) ;
                 await this.loadOprDprData(frcev.key, ba, callback) ;
                 await this.loadRankingData(frcev.key, ba, callback) ;
+                resolve(0) ;
+            } 
+            catch(err) {
+                reject(err) ;
+            }
+        }) ;
+        
+        return ret;
+    }
+
+    public loadExternalSTData(sb: StatBotics, frcev: BAEvent, callback?: (result: string) => void) : Promise<number> {
+        let ret: Promise<number> = new Promise<number>(async (resolve, reject) => {
+            try {
                 await this.loadStatboticsEventData(frcev.key, sb, callback) ;
                 await this.loadStatboticsYearData(sb, callback) ;
                 resolve(0) ;
@@ -1596,7 +1863,7 @@ export class Project {
         }) ;
         
         return ret;
-    }
+    }    
 
     //#endregion
 }

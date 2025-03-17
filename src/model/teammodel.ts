@@ -113,12 +113,38 @@ export class TeamDataModel extends DataModel {
 
     private convertStatsYearToRecord(t: any) {
         let dr = new DataRecord() ;
-        dr.addfield('team_number', t.team) ;
-        dr.addfield('st_year_epanorm', t.epa.norm) ;
-        dr.addfield('st_year_epaunitless', t.epa.unitless);
-        dr.addfield('st_year_district_rank', t.epa.ranks.district.rank) ;
-        dr.addfield('st_year_country_rank', t.epa.ranks.country.rank) ;
-        dr.addfield('st_year_state_rank', t.epa.ranks.state.rank) ;
+
+        if (t.team) {
+            dr.addfield('team_number', t.team) ;
+
+            if (t.epa) {
+                if (t.epa.norm) {
+                    dr.addfield('st_year_epanorm', t.epa.norm) ;
+                }
+
+                if (t.epa.unitless) {
+                    dr.addfield('st_year_epaunitless', t.epa.unitless);
+                }
+
+                if (t.epa.ranks.district) {
+                    dr.addfield('st_year_district_rank', t.epa.ranks.district.rank) ;
+                }
+
+                if (t.epa.ranks.country.rank) {
+                    dr.addfield('st_year_country_rank', t.epa.ranks.country.rank) ;
+                }
+
+                if (t.epa.ranks.state.rank) {
+                    dr.addfield('st_year_state_rank', t.epa.ranks.state.rank) ;
+                }
+
+                if (t.epa.breakdown) {
+                    for(let key of Object.keys(t.epa.breakdown)) {
+                        dr.addfield('st_year_' + key, t.epa.breakdown[key]) ;
+                    }
+                }
+            }
+        }
         
         return dr ;
     }
@@ -126,8 +152,24 @@ export class TeamDataModel extends DataModel {
     private convertStatsEventToRecord(t: any) {
         let dr = new DataRecord() ;
         dr.addfield('team_number', t.team) ;
-        dr.addfield('st_event_epanorm', t.epa.norm) ;
-        dr.addfield('st_event_epaunitless', t.epa.unitless);
+        if (t.epa.unitless) {
+            dr.addfield('st_event_epaunitless', t.epa.unitless);
+        }
+
+        if (t.epa.norm) {
+            dr.addfield('st_event_epanorm', t.epa.norm) ;
+        }
+
+        if (t.epa.total_points) {
+            dr.addfield('st_event_totalpoints_mean', t.epa.total_points.mean) ;
+            dr.addfield('st_event_totalpoints_stddev', t.epa.total_points.sd) ;
+        }
+
+        if (t.epa.breakdown) {
+            for(let key of Object.keys(t.epa.breakdown)) {
+                dr.addfield('st_event_' + key, t.epa.breakdown[key]) ;
+            }
+        }
         
         return dr ;
     }
