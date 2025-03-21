@@ -200,12 +200,12 @@ export class Project {
         this.writeEventFile() ;
     }
 
-    public setMatchColConfig(data: any) {
+    public setMatchColConfig(data: ProjColConfig) {
         this.info.matchdb_col_config_ = data ;
         this.writeEventFile() ;
     }
 
-    public setTeamColConfig(data: any) {
+    public setTeamColConfig(data: ProjColConfig) {
         this.info.teamdb_col_config_ = data ;
         this.writeEventFile() ;
     }

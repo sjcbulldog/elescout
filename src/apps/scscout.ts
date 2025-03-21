@@ -268,8 +268,8 @@ export class SCScout extends SCBase {
         return ret;
     }
 
-    public provideResults(res: any) {
-        this.addResults(this.current_scout_!, res as OneScoutField[]) ;
+    public provideResults(res: OneScoutField[]) {
+        this.addResults(this.current_scout_!, res) ;
         this.writeEventFile() ;
         this.logger_.silly('provideResults:' + this.current_scout_, res) ;
 

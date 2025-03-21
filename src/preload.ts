@@ -74,7 +74,12 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-zebra-status'
       ];
       if (validChannels.includes(channel)) {
+        if (data) {
           ipcRenderer.send(channel, data);
+        }
+        else {
+          ipcRenderer.send(channel) ;
+        }
       }
   },
 

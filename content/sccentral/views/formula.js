@@ -35,7 +35,6 @@ class FormulaView extends XeroView {
                 let fcell = row.getCell('formula') ;
                 fcell.setValue('1') ;                
                 this.addNewEntryRow() ;
-                this.scoutingAPI('add-formula', newName, '1') ;
             }
             else {
                 let newName = cell.getValue() ;

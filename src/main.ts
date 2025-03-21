@@ -4,7 +4,7 @@ import { SCBase } from "./apps/scbase";
 import { SCScout } from "./apps/scscout";
 import { SCCentral } from "./apps/sccentral";
 import { SCCoach } from "./apps/sccoach";
-import { getTreeData as getNavData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
+import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
          setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, 
          getTeamStatus, getMatchStatus, setTabletNamePurpose, 
          provideResult,
@@ -44,7 +44,6 @@ import { getTreeData as getNavData, executeCommand, getInfoData, getSelectEventD
          getSingleTeamFormulas,
          getFormulas,
          deleteFormula,
-         addFormula,
          renameFormula,
          updateFormula,
          getMultiTeamList,
@@ -108,7 +107,6 @@ app.on("ready", () => {
     ipcMain.on('get-info-data', (event, ...args) => { getInfoData('get-info-data', ...args)}) ;
     ipcMain.on('get-formulas', (event, ...args) => { getFormulas('get-formulas', ...args)}) ;
     ipcMain.on('delete-formula', (event, ...args) => { deleteFormula('delete-formulas', ...args)}) ;
-    ipcMain.on('add-formula', (event, ...args) => { addFormula('add-formulas', ...args)}) ;
     ipcMain.on('rename-formula', (event, ...args) => { renameFormula('rename-formulas', ...args)}) ;
     ipcMain.on('update-formula', (event, ...args) => { updateFormula('update-formulas', ...args)}) ;
     ipcMain.on('generate-random-data', (event, ...args) => { generateRandomData('generate-random-data', ...args)}) ;

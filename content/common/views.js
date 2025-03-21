@@ -214,7 +214,16 @@ class XeroView {
     }
 
     scoutingAPI(request, ...args) {
-        window.scoutingAPI.send(request, args) ;
+        if (args.length > 1) {
+            window.scoutingAPI.send('client-log', { type: 'warning', message: 'invalid number of arguments to scoutingAPI', args: args }) ;
+            return ;
+        }
+        if (args.length === 0) {
+            window.scoutingAPI.send(request) ;
+        }
+        else {
+            window.scoutingAPI.send(request, args[0]) ;
+        }
     }
 
     clear(elem) {

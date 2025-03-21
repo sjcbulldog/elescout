@@ -19,6 +19,10 @@ class InfoView extends XeroView {
         return row;
     }
 
+    updateName() {
+        this.scoutingAPI('set-event-name', this.evname_.innerText.trim());
+    }
+
     addname(info) {
         let row = document.createElement('tr');
 
@@ -27,20 +31,16 @@ class InfoView extends XeroView {
         label.className = "info-table-cell";
         row.append(label);
 
-        let evname = document.createElement('td')
-        evname.className = "info-table-cell";
-        evname.innerHTML = (info.name_ ? info.name_ : 'NONE');
-        evname.addEventListener('input', function () {
-            if (evname && evname.innerText !== 'NONE') {
-                this.scoutingAPI('set-event-name', evname.innerText);
-            }
-        });
+        this.evname_ = document.createElement('td')
+        this.evname_.className = "info-table-cell";
+        this.evname_.innerHTML = (info.name_ ? info.name_ : 'NONE');
+        this.evname_.oninput = this.updateName.bind(this) ;
 
-        if (info.teams_ && !info.baky_ && !info.locked_) {
-            evname.contentEditable = true;
+        if (!info.baky_ && !info.locked_) {
+            this.evname_.contentEditable = true;
         }
 
-        row.append(evname);
+        row.append(this.evname_);
         return row;
     }
 

@@ -17,7 +17,8 @@ class SelectTablet extends XeroView
 
     selectTablet(event) {
         this.scoutingAPI("set-tablet-name-purpose", 
-            { 'name' : event.currentTarget.tabletName, 
+            { 
+              'name' : event.currentTarget.tabletName, 
               'purpose' : event.currentTarget.tabletPurpose
             }) ;
     }

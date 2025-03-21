@@ -1,6 +1,6 @@
 import { SCBase, XeroAppType, XeroVersion } from "./scbase";
 import { BlueAlliance } from "../extnet/ba";
-import { NamedGraphDataRequest, Project, TabletData } from "../project/project";
+import { NamedGraphDataRequest, ProjColConfig, Project, TabletData } from "../project/project";
 import { BrowserWindow, dialog, Menu, MenuItem, shell } from "electron";
 import { TCPSyncServer } from "../sync/tcpserver";
 import { PacketObj } from "../sync/packetobj";
@@ -16,7 +16,7 @@ import { FormInfo } from "../comms/formifc";
 import { GraphData, GraphDataset } from "../comms/graphifc";
 import { ScoutingData } from "../comms/resultsifc";
 
-interface GraphDataRequest {
+export interface GraphDataRequest {
 	teams: number[];
 	data: {
 		leftteam: string[];
@@ -26,13 +26,13 @@ interface GraphDataRequest {
 	};
 }
 
-interface PickListColData {
+export interface PickListColData {
 	field: string,
 	teams: number[],
 	data: (number|string)[]
 };
 
-interface ZebraStatus {
+export interface ZebraStatus {
 	comp_level: string,
 	set_number: number,
 	match_number: number,
@@ -793,22 +793,16 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	public addFormula(data: any[]) : void {
-		this.project_!.addFormula(data[0], data[1]) ;
+	public renameFormula(oldname: string, newname: string) : void {
+		this.project_!.renameFormula(oldname, newname) ;
 	}	
 
-	public renameFormula(data: any[]) : void {
-		let args = data[0] ;
-		this.project_!.renameFormula(args[0], args[1]) ;
+	public updateFormula(name: string, expr: string) : void {
+		this.project_!.addFormula(name, expr) ;
 	}	
 
-	public updateFormula(data: any[]) : void {
-		let args = data[0] ;
-		this.project_!.addFormula(args[0], args[1]) ;
-	}	
-
-	public deleteFormula(data: any[]) : void {
-		this.project_!.deleteFormula(data[0]) ;
+	public deleteFormula(name: string) : void {
+		this.project_!.deleteFormula(name) ;
 	}
 
 	public sendFormulas() : void {
@@ -828,11 +822,11 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	public setMatchColConfig(data: any[]) {
+	public setMatchColConfig(data: ProjColConfig) {
 		this.project_!.setMatchColConfig(data);
 	}
 
-	public setTeamColConfig(data: any[]) {
+	public setTeamColConfig(data:ProjColConfig) {
 		this.project_!.setTeamColConfig(data);
 	}
 
