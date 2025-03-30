@@ -85,7 +85,7 @@ class PickListView extends TabulatorView {
         this.picklist_info_.append(this.picklist_info_delete_) ;
 
         //
-        // An input text field to name a new picklist
+        // An input text field to name a new picklist that will be created with the button below
         //
         this.picklist_info_text_ = document.createElement('input') ;
         this.picklist_info_text_.className = 'picklist-info-text' ;
@@ -114,7 +114,7 @@ class PickListView extends TabulatorView {
     }
 
     sendPicklistData() {
-        this.scoutingAPI('get-picklist-data', this.getCurrentPicklistName()) ;
+        this.scoutingAPI('get-picklist-data', { name: this.getCurrentPicklistName(), count: Number.MAX_VALUE }) ;
         this.scoutingAPI('get-picklist-columns', this.getCurrentPicklistName()) ;
         this.scoutingAPI('get-picklist-notes', this.getCurrentPicklistName()) ;
     }
@@ -143,6 +143,7 @@ class PickListView extends TabulatorView {
         let name = this.getCurrentPicklistName() ;
         this.clear(this.table_top_) ;
         this.scoutingAPI('delete-picklist', name) ;
+        this.cols_ = [] ;
     }
 
     populatePicklistNames(names) {
@@ -217,8 +218,6 @@ class PickListView extends TabulatorView {
                 movableRows: true,
                 rowHeader:{headerSort:false, resizable: false, minWidth:30, width:30, rowHandle:true, formatter:"handle"},
             });
-
-
 
         this.scoutingAPI('client-log', { type: 'debug', message: 'created table in client software - instance serial ' + this.instance_ }) ;
 
@@ -361,14 +360,29 @@ class PickListView extends TabulatorView {
             }
         }
 
+        //
+        // Now set the column widths
+        //
         for(let col of obj.columns) {
             this.setColumnWidth(col.name, col.width) ;
+        }
+
+        //
+        // Now rearrange the column order to match the order we received
+        //
+        let prev = undefined ;
+        for(let index = 0 ; index < obj.columns.length ; index++) {
+            let col = obj.columns[index] ;
+            if (prev) {
+                this.table_.moveColumn(col.name, prev, true) ;
+            }
+            prev = col.name ;
         }
     }
 
     checkPicklist() {
         if (this.team_fields_loaded_ && this.match_fields_loaded_ && this.formulas_loaded_) {
-            this.scoutingAPI('get-picklist-list') ;
+            this.scoutingAPI('get-picklist-list', true) ;
         }
     }
 
@@ -396,14 +410,21 @@ class PickListView extends TabulatorView {
     colMoved() {
         this.cols_ = [] ;
         for(let col of this.table_.getColumns()) {
-            let one = {
-                name: col.getField(),
-                width: col.getWidth(),
+            if (col.getField()) {
+                let one = {
+                    name: col.getField(),
+                    width: col.getWidth(),
+                }
+                this.cols_.push(one);
             }
-            this.cols_.push(one);
         }
 
-        this.scoutingAPI('update-picklist-columns', this.cols_) ;
+        let coldata = {
+            name: this.getCurrentPicklistName(),
+            cols: this.cols_
+        }
+
+        this.scoutingAPI('update-picklist-columns', coldata) ;
     }
 
     getTeamNumberFromRank(rank) {
@@ -505,11 +526,13 @@ class PickListView extends TabulatorView {
     sendColumnConfiguration() {
         let coldescs = [] ;
         for(let col of this.table_.getColumns()) {
-            let coldesc = {
-                name: col.getField(),
-                width: col.getWidth()
+            if (col.getField()) {
+                let coldesc = {
+                    name: col.getField(),
+                    width: col.getWidth()
+                }
+                coldescs.push(coldesc) ;
             }
-            coldescs.push(coldesc) ;
         }
 
         let coldata = {

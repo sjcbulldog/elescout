@@ -41,7 +41,7 @@ class MultiView extends XeroView {
             if (Array.isArray(teams)) {
                 this.team_selector_.selectItems(teams) ;
                 if (teams.length > 0) {
-                    this.scoutingAPI('get-multi-team-data', teams) ;
+                    this.scoutingAPI('get-multi-team-data', { teams: teams, numericonly: false, mcount: 1000} ) ;
                 }
                 else {
                     this.clearTable() ;
@@ -53,7 +53,7 @@ class MultiView extends XeroView {
     somethingChanged() {
         let teams = this.team_selector_.getSelectedItems() ;
         this.scoutingAPI('set-multi-selected-teams', teams) ;
-        this.scoutingAPI('get-multi-team-data', teams) ;
+        this.scoutingAPI('get-multi-team-data',  { teams: teams, numericonly: false, mcount: 1000} ) ;
     }
 
     receiveTeamList(list) {

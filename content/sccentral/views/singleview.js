@@ -137,7 +137,7 @@ class SingleTeamView extends XeroView {
         this.team_ = this.findTeamByNumber(+this.team_selector_.value) ;
         if (this.team_) {
             this.team_report_title_.textContent = this.team_.team_number + ' - ' + this.team_.nickname ;
-            this.scoutingAPI('get-single-team-data', this.team_.team_number) ;
+            this.scoutingAPI('get-single-team-data', { team: this.team_.team_number, mcount: 1000 });
         }
     }
 

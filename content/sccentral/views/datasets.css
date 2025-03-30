@@ -1,0 +1,92 @@
+.dataset-single-top {
+    height: 100%;
+    width: 100%;
+    display: flex ;
+    flex-direction: column;
+}
+
+.dataset-top-sel-div {
+    display: flex;
+    flex-direction: row;
+}
+
+.dataset-selector-div {
+    display:flex;
+    flex-direction: row;    
+    border: 2px solid black ;
+    border-radius: 25px;
+    margin: 5px 20px 5px 20px;
+    text-align: center;
+    background: lightblue
+}
+
+.dataset-input {
+    width: 120px ;
+    margin-left: 10px;
+}
+
+.dataset-matches-first {
+    width: 250px ;
+    margin-left: 10px;    
+}
+
+.dataset-matches-last {
+    width: 250px ;
+    margin-left: 10px;    
+    margin-right: 20px ;
+}
+
+.dataset-selector {
+    width: 120px ;
+}
+
+.dataset-field-div {
+    display:flex;
+    flex-direction: row;    
+    border: 2px solid black ;
+    border-radius: 25px;
+    margin: 5px 20px 5px 20px;
+    text-align: center;
+    background: lightblue
+}
+
+.dataset-team-selector {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.dataset-team-field-selector {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.dataset-match-field-selector {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.dataset-formula-selector {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.dataset-match-select-type-selector {
+    margin-left: 10px;   
+}
+
+.dataset-match-select-type-display {
+    margin-left: 10px;
+    color: green;
+}
+
+.dsadd::before {
+    font-size: 18px;
+    font-weight: bolder;
+    content: "\2795";
+}
+
+.dsremove::before {
+    font-size: 18px;
+    font-weight: bolder;
+    content: "\2796";
+}

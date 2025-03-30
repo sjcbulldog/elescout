@@ -25,10 +25,16 @@ import { ScoutingData } from '../comms/resultsifc';
 import { parseExpression, ParseResult } from '@babel/parser';
 import evaluate, { registerFunction } from 'ts-expression-evaluator'
 import { Expression } from 'ts-expression-evaluator/build/main/lib/t';
+import { deleteDataSet } from '../ipchandlers';
 
 // #endregion
 
 // #region interfaces used by the project
+
+export interface SmallTeamInfo {
+    team_number : number,
+    nickname: string
+}
 
 export interface Formula {
     name: string,
@@ -79,7 +85,25 @@ export interface NamedGraphDataRequest {
       rightteam: string[];
       rightmatch: string[];
     };
-  }
+}
+
+export interface MatchSet {
+    kind: "last" | "first" | "range" | "all" ;
+    first: number ;                                 // If kind is first, this is the number of matches to use (use the first N matches)
+                                                    // If kind is last, this is not used
+                                                    // If kind is range, this is the first match to use (use between first and last matches)
+
+    last: number ;                                  // If kind is first, this is not used
+                                                    // If kind is last, this is the number of matches to use (use the last N matches)
+                                                    // If kind is range, this is the last match to use  (use between first and last matches)
+}
+
+export interface DataSet {
+    name: string ;                                  // The name of the data set
+    teams: number[] ;                               // The list of teams in the data set
+    fields: string[] ;                              // Can be team fields, match fields, or formulas
+    matches: MatchSet ;                            // The set of matches to use for the data set
+}
 
 // #endregion
 
@@ -116,6 +140,8 @@ export class ProjectInfo {
 
     public team_form_columns_ : string[] = [] ;         // The list of columns that came from the team form
     public match_form_columns_ : string[] = [] ;        // The list of columns that came from the match form
+
+    public datasets_ : DataSet[] = [] ;                 // The list of data sets that can be used for the multi-team summary
 
     constructor() {
         this.locked_ = false ;
@@ -190,6 +216,36 @@ export class Project {
         return ret;
     }
 
+    public renameDataSet(oldName: string, newName: string) : void {
+        if (this.findDataSet(newName) === -1) {
+            let index = this.findDataSet(oldName) ;
+            if (index !== -1) {
+                this.info_.datasets_[index].name = newName ;
+                this.writeEventFile() ;
+            }
+        }
+    }
+
+    public updateDataSet(ds: DataSet) : void {
+        let index = this.findDataSet(ds.name) ;
+        if (index === -1) {
+            this.info_.datasets_.push(ds) ;
+        }
+        else {
+            this.info_.datasets_[index] = ds ;
+        }
+
+        this.writeEventFile() ;
+    }
+
+    public deleteDataSet (name: string) : void {
+        let index = this.findDataSet(name) ;
+        if (index !== -1) {
+            this.info_.datasets_.splice(index, 1) ;
+            this.writeEventFile() ;
+        }
+    }
+
     public closeEvent() {
         this.writeEventFile() ;
         this.info_ = new ProjectInfo() ;
@@ -208,6 +264,18 @@ export class Project {
     public setTeamColConfig(data: ProjColConfig) {
         this.info.teamdb_col_config_ = data ;
         this.writeEventFile() ;
+    }
+
+    private findDataSet(name: string) : number {
+        let ret = -1 ;
+        for(let index = 0 ; index < this.info_.datasets_.length ; index++) {
+            if (this.info_.datasets_[index].name === name) {
+                ret = index ;
+                break ;
+            }
+        }
+
+        return ret;
     }
 
     private findFormula(name: string) : string | undefined {
@@ -757,11 +825,11 @@ export class Project {
         this.writeEventFile() ;
     }
 
-    public setTeamData(data: any[]) {
+    public setTeamData(data: SmallTeamInfo[]) {
         this.info_.teams_ = [] ;
         for(let d of data) {
             let team : BATeam = {
-                key: d.team_number,
+                key: 'frc' + d.team_number,
                 team_number: d.team_number,
                 nickname: d.nickname,
                 name: d.nickname,
@@ -1121,6 +1189,10 @@ export class Project {
             if (this.info_.matchform_) {
                 this.info_.matchform_ = path.basename(this.info_.matchform_) ;
             }
+
+            if (!this.info_.datasets_) {
+                this.info_.datasets_ = [] ;
+            }
         }
         
         return ret ;
@@ -1385,19 +1457,95 @@ export class Project {
         return total / count ;
     }
 
-    private getMatchData(field: string, team: number) : Promise<any> {
+    private static matchLevels : string[] = ['qm', 'sf', 'f'] ;
+
+    private sortData(field: string, data: any[], mcount?: number) : any[] {
+        data = data.sort((a, b) => {
+            let am = Project.matchLevels.indexOf(a.comp_level) ;
+            let bm = Project.matchLevels.indexOf(b.comp_level) ;
+            if (am < bm) {
+                return -1 ;
+            }
+            else if (am > bm) {
+                return 1 ;
+            }
+            else {
+                if (a.set_number < b.set_number) {
+                    return -1 ;
+                }
+                else if (a.set_number > b.set_number) {
+                    return 1 ;
+                }
+                else {
+                    if (a.match_number < b.match_number) {
+                        return -1 ;
+                    }
+                    else if (a.match_number > b.match_number) {
+                        return 1 ;
+                    }
+                    else {
+                        return 0 ;
+                    }
+                }
+            }
+        }) ;
+
+        if (mcount && mcount < data.length) {
+            let newdata : any[] = [] ;
+
+            //
+            // Now, find the last N values, but skip past null data at the end
+            //
+            let last = data.length - 1 ;
+            while (last >= 0 && data[last][field] === null) {
+                last-- ;
+            }
+
+            if (last < mcount) {
+                //
+                // No good data, grab the last mcount values
+                //
+                for(let i = 0 ; i < mcount ; i++) {
+                    newdata.push(null) ;
+                }
+            }
+            else {
+                //
+                // We want from last - mcount to last
+                //
+                for(let i = last - mcount + 1; i <= last; i++) {
+                    newdata.push(data[i]) ;
+                }
+            }
+
+            data = newdata ;
+        }
+
+        let ret : any[] = [] ;
+        for(let d of data) {
+            let one : any = {} ;
+            one[field] = d[field] ;
+            ret.push(one) ;
+        }
+
+        return ret;
+    }
+
+    private getMatchData(field: string, team: number, mcount? : number) : Promise<any> {
 		let ret = new Promise<any>(async (resolve, reject) => {
+            let fields = field + ', comp_level, set_number, match_number' ;
 			let teamkey = 'frc' + team ;
-			let query = 'select ' + field + ' from ' + MatchDataModel.MatchTableName + ' where team_key = "' + teamkey + '" ;' ;
+			let query = 'select ' + fields + ' from ' + MatchDataModel.MatchTableName + ' where team_key = "' + teamkey + '" ;' ;
 			this.matchDB.all(query)
 				.then((data: any[]) => {
 					if (data.length !== 0) {
-						let dt = this.getDataType(field, data) ;
+                        let sortData = this.sortData(field, data, mcount) ;
+						let dt = this.getDataType(field, sortData) ;
 						if (dt === 'string') {
-							resolve(this.processStringData(data, field)) ;
+							resolve(this.processStringData(sortData, field)) ;
 						}
 						else if (dt === 'number') {
-							resolve(this.processNumberData(data, field)) ;
+							resolve(this.processNumberData(sortData, field)) ;
 						}
                         else if (dt === 'null') {
                             resolve('No Data') ;
@@ -1567,6 +1715,7 @@ export class Project {
                             callback('Inserting ' + type + ' into XeroScout2 database ... ');
                         }
                         await this.matchDB.processBAData(matches, results) ;
+                        this.generateMatchTabletSchedule() ;
                         if (callback) {
                             callback('inserted ' + matches.length + ' matches<br>') ;
                         }

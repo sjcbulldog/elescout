@@ -21,6 +21,7 @@ const viewMap = new Map([
   ['formulas', FormulaView],
   ['multiview', MultiView],
   ['spiderview', SpiderView],
+  ['datasets', DataSetsView],
 ]) ;
 
 async function updateMainWindow(mtype, args) {

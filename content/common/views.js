@@ -52,6 +52,33 @@ class XeroSelector {
         }
     }
 
+    getItems() {
+		let data = [];
+		if (this.items) {
+			for (let item of this.items) {
+					data.push(item.xerodata);
+			}
+		}
+
+		return data;        
+    }
+
+    getSelectedItem() {
+        let data = [];
+		if (this.items) {
+			for (let item of this.items) {
+				if (item.checked) {
+					data.push(item.xerodata);
+				}
+			}
+		}
+        if (data.length !== 1) {
+            return undefined ;
+        }
+
+        return data[0] ;
+    }
+
 	getSelectedItems() {
 		let data = [];
 		if (this.items) {

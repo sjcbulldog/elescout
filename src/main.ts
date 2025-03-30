@@ -48,7 +48,11 @@ import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventDa
          updateFormula,
          getMultiTeamList,
          setMultiTeamList,
-         getMultiTeamData} from "./ipchandlers" ;
+         getMultiTeamData,
+         getDataSets,
+         updateDataSet,
+         deleteDataSet,
+         renameDataSet} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -106,6 +110,10 @@ app.on("ready", () => {
     ipcMain.on('get-nav-data', (event, ...args) => { getNavData('get-nav-data', ...args)});
     ipcMain.on('get-info-data', (event, ...args) => { getInfoData('get-info-data', ...args)}) ;
     ipcMain.on('get-formulas', (event, ...args) => { getFormulas('get-formulas', ...args)}) ;
+    ipcMain.on('get-datasets', (event, ...args) => { getDataSets('get-datasets', ...args)}) ;
+    ipcMain.on('rename-dataset', (event, ...args) => { renameDataSet('rename-dataset', ...args)}) ;
+    ipcMain.on('update-dataset', (event, ...args) => { updateDataSet('update-datasets', ...args)}) ;
+    ipcMain.on('delete-dataset', (event, ...args) => { deleteDataSet('delete-datasets', ...args)}) ;
     ipcMain.on('delete-formula', (event, ...args) => { deleteFormula('delete-formulas', ...args)}) ;
     ipcMain.on('rename-formula', (event, ...args) => { renameFormula('rename-formulas', ...args)}) ;
     ipcMain.on('update-formula', (event, ...args) => { updateFormula('update-formulas', ...args)}) ;

@@ -1,6 +1,6 @@
 import { SCBase, XeroAppType, XeroVersion } from "./scbase";
 import { BlueAlliance } from "../extnet/ba";
-import { NamedGraphDataRequest, ProjColConfig, Project, TabletData } from "../project/project";
+import { DataSet, NamedGraphDataRequest, ProjColConfig, Project, ProjPicklistColumn, ProjPicklistNotes, SmallTeamInfo, TabletData } from "../project/project";
 import { BrowserWindow, dialog, Menu, MenuItem, shell } from "electron";
 import { TCPSyncServer } from "../sync/tcpserver";
 import { PacketObj } from "../sync/packetobj";
@@ -75,6 +75,7 @@ export class SCCentral extends SCBase {
 	private static readonly assignTablets: string = "assign-tablets";
 	private static readonly loadBAEvent: string = "load-ba-event";
 	private static readonly viewInit: string = "view-init";
+	private static readonly viewDataSets: string = "view-datasets";
 	private static readonly viewPicklist: string = 'view-picklist' ;
 	private static readonly lockEvent: string = "lock-event";
 	private static readonly editTeams: string = "edit-teams";
@@ -809,6 +810,22 @@ export class SCCentral extends SCBase {
 		this.sendToRenderer('send-formulas', this.project_!.info.formulas_) ;
 	}
 
+	public sendDataSets() : void {
+		this.sendToRenderer('send-datasets', this.project_!.info.datasets_) ;
+	}
+
+	public renameDataSet(oldname: string, newname: string) : void {
+		this.project_!.renameDataSet(oldname, newname) ;
+	}
+
+	public updateDataSet(ds: DataSet) : void {
+		this.project_!.updateDataSet(ds) ;
+	}
+
+	public deleteDataSet(name: string) : void {
+		this.project_!.deleteDataSet(name)
+	}
+
 	public sendTabletData(): void {
 		if (this.project_) {
 			this.sendToRenderer("send-tablet-data", this.project_.info.tablets_);
@@ -888,7 +905,7 @@ export class SCCentral extends SCBase {
 		return ret;
 	}
 
-	public setTeamData(data: any[]) {
+	public setTeamData(data: SmallTeamInfo[]) {
 		if (this.project_) {
 			this.project_.setTeamData(data);
 			this.setView('info');
@@ -1403,6 +1420,12 @@ export class SCCentral extends SCBase {
 			if (this.project_.info.locked_) {
 				treedata.push({
 					type: "item",
+					command: SCCentral.viewDataSets,
+					title: "Data Sets",
+				});
+
+				treedata.push({
+					type: "item",
 					command: SCCentral.viewPicklist,
 					title: "Picklist",
 				});
@@ -1473,6 +1496,8 @@ export class SCCentral extends SCBase {
 			this.setView("info");
 		} else if (cmd === SCCentral.viewPicklist) {
 			this.setView('picklist') ;
+		} else if (cmd === SCCentral.viewDataSets) {
+			this.setView('datasets') ;
 		} else if (cmd === SCCentral.lockEvent) {
 			this.sendToRenderer("set-status-title","Locking event");
 			this.sendToRenderer("set-status-visible", true);
@@ -2516,6 +2541,21 @@ export class SCCentral extends SCBase {
 		this.sendToRenderer('send-team-list', ret) ;
 	}
 
+	public getTeamListAndNames() {
+		let ret: any[] = [];
+		for(let team of this.project_?.info.teams_!) {
+			ret.push(
+				{
+					number: team.team_number,
+					name: team.nickname
+				}
+			) ;
+		}
+
+		ret.sort((a, b) => (a - b)) ;
+		this.sendToRenderer('send-team-list', ret) ;
+	}
+
 	public getMultiTeamList() {
 		if (!this.project_?.info.multi_team_list_) {
 			this.sendToRenderer('send-multi-selected-teams', undefined) ;
@@ -2529,7 +2569,7 @@ export class SCCentral extends SCBase {
 		this.project_!.setMultiTeamList(list) ;
 	}		
 
-	public async getMultiTeamData(list: number[], numericonly?: boolean) {
+	public async getMultiTeamData(list: number[], numericonly: boolean, mcount: number) {
 		let data = [] ;
 
 		if (numericonly === undefined) {
@@ -2924,12 +2964,12 @@ export class SCCentral extends SCBase {
 		this.sendToRenderer('send-picklist-col-data', data) ;
 	}
 
-	public updatePicklistColumns(obj: any) {
-		this.project_!.setPicklistCols(obj.name, obj.cols);
+	public updatePicklistColumns(name: string, cols: ProjPicklistColumn[]) {
+		this.project_!.setPicklistCols(name, cols);
 	}
 
-	public updatePicklistData(obj: any) {
-		this.project_!.setPicklistData(obj.name, obj.teams) ;
+	public updatePicklistData(name: string, teams: number[]) {
+		this.project_!.setPicklistData(name, teams) ;
 	}
 
 	public async sendPicklistNotes(name: string) {
@@ -2945,8 +2985,8 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	public updatePicklistNotes(obj: any) {
-		this.project_!.setPicklistNotes(obj.name, obj.notes) ;
+	public updatePicklistNotes(name: string, notes: ProjPicklistNotes[]) {
+		this.project_!.setPicklistNotes(name, notes) ;
 	}
 
 	private async getSingleTeamIndividualData(team: number, numericonly: boolean) : Promise<any> {

@@ -31,7 +31,7 @@ class SpiderView extends XeroView {
 
     receiveMultiSelectedTeams(data) {
         this.teams_ = data[0] ;
-        this.scoutingAPI('get-multi-team-data', this.teams_, true) ;
+        this.scoutingAPI('get-multi-team-data',  { teams: teams, numericonly: true } ) ;
     }
 
     drawAxis() {
