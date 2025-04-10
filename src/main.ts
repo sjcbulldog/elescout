@@ -16,21 +16,14 @@ import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventDa
          getTeamGraphData,
          generateRandomData,
          getTeamList,
-         getTeamFieldList,
-         getMatchFieldList,
          saveTeamGraphSetup,
          getMatchList,
          getStoredGraphList,
          deleteStoredGraph,
          getForm,
          getPicklistData,
-         updatePicklistColumns,
-         getPicklistColumns,
-         getPicklistColData,
          getPreferences,
          updatePreferences,
-         getZebraData,
-         updatePicklistData,
          getPicklistList,
          createNewPicklist,
          deletePicklist,
@@ -38,21 +31,16 @@ import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventDa
          updatePicklistNotes,
          getPicklistNotes,
          getSingleTeamData,
-         updateSingleTeamData,
-         getSingleTeamFields,
-         getZebraStatus,
-         getSingleTeamFormulas,
          getFormulas,
          deleteFormula,
          renameFormula,
          updateFormula,
-         getMultiTeamList,
-         setMultiTeamList,
-         getMultiTeamData,
          getDataSets,
          updateDataSet,
          deleteDataSet,
-         renameDataSet} from "./ipchandlers" ;
+         renameDataSet,
+         getTeamFieldList,
+         getMatchFieldList} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -123,6 +111,8 @@ app.on("ready", () => {
     ipcMain.on('get-tablet-data', (event, ...args) => { getTabletData('get-tablet-data', ...args)}) ;
     ipcMain.on('set-tablet-data', (event, ...args) => { setTabletData('set-tablet-data', ...args)}) ;
     ipcMain.on('get-team-data', (event, ...args) => { getTeamData('get-team-data', ...args)}) ;
+    ipcMain.on('get-team-field-list', (event, ...args) => { getTeamFieldList('get-team-field-list', ...args)}) ;
+    ipcMain.on('get-match-field-list', (event, ...args) => { getMatchFieldList('get-match-field-list', ...args)}) ;
     ipcMain.on('get-match-db', (event, ...args) => { getMatchDB('get-match-db', ...args)});
     ipcMain.on('get-team-db', (event, ...args) => { getTeamDB('get-team-db', ...args)}) ;
     ipcMain.on('get-form', (event, ...args) => { getForm('get-form', ...args)});
@@ -138,14 +128,7 @@ app.on("ready", () => {
     ipcMain.on('send-match-col-config', (event, ...args) => { sendMatchColConfig('send-match-col-config', ...args)}) ;
     ipcMain.on('send-team-col-config', (event, ...args) => { sendTeamColConfig('send-team-col-config', ...args)}) ;
     ipcMain.on('get-team-graph-data', (event, ...args) => { getTeamGraphData('get-team-graph-data', ...args)}) ;
-    ipcMain.on('get-zebra-data', (event, ...args) => { getZebraData('get-zebra-data', ...args)}) ;
     ipcMain.on('get-team-list', (event, ...args) => { getTeamList('get-team-list', ...args)}) ;
-    ipcMain.on('get-multi-selected-teams', (event, ...args) => { getMultiTeamList('get-multi-selected-teams', ...args)}) ;
-    ipcMain.on('set-multi-selected-teams', (event, ...args) => { setMultiTeamList('set-multi-selected-teams', ...args)}) ;
-    ipcMain.on('get-multi-team-data', (event, ...args) => { getMultiTeamData('get-multi-team-data', ...args)}) ;    
-    ipcMain.on('get-team-field-list', (event, ...args) => { getTeamFieldList('get-team-field-list', ...args)}) ;
-    ipcMain.on('get-match-field-list', (event, ...args) => { getMatchFieldList('get-match-field-list', ...args)}) ;
-    ipcMain.on('get-single-team-formulas', (event, ...args) => { getSingleTeamFormulas('get-single-team-formulas', ...args)}) ;
     ipcMain.on('save-team-graph-setup', (event, ...args) => { saveTeamGraphSetup('save-team-graph-setup', ...args)}) ;
     ipcMain.on('get-match-list', (event, ...args) => { getMatchList('get-match-list', ...args)}) ;
     ipcMain.on('get-stored-graph-list', (event, ...args) => { getStoredGraphList('get-stored-graph-list', ...args)}) ;
@@ -154,19 +137,12 @@ app.on("ready", () => {
     ipcMain.on('get-picklist-list', (event, ...args) => { getPicklistList('get-picklist-list', ...args)}) ;
     ipcMain.on('create-new-picklist', (event, ...args) => { createNewPicklist('create-new-picklist', ...args)}) ;
     ipcMain.on('delete-picklist', (event, ...args) => { deletePicklist('delete-picklist', ...args)}) ;
-    ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('update-picklist-columns', ...args)}) ;
-    ipcMain.on('update-picklist-data', (event, ...args) => { updatePicklistData('update-picklist-data', ...args)}) ;
     ipcMain.on('update-picklist-notes', (event, ...args) => { updatePicklistNotes('update-picklist-notes', ...args)}) ;
     ipcMain.on('get-picklist-notes', (event, ...args) => { getPicklistNotes('get-picklist-notes', ...args)}) ;
-    ipcMain.on('get-picklist-columns', (event, ...args) => { getPicklistColumns('get-picklist-columns', ...args)}) ;
-    ipcMain.on('get-picklist-col-data', (event, ...args) => { getPicklistColData('get-picklist-col-data', ...args)}) ;
     ipcMain.on('get-preferences', (event, ...args) => { getPreferences('get-preferences', ...args)}) ;
     ipcMain.on('update-preferences', (event, ...args) => { updatePreferences('update-preferences', ...args)}) ;
     ipcMain.on('client-log', (event, ...args) => { clientLog('client-log', ...args)}) ;
     ipcMain.on('get-single-team-data', (event, ...args) => { getSingleTeamData('get-single-team-data', ...args)}) ;
-    ipcMain.on('update-single-team-data', (event, ...args) => { updateSingleTeamData('update-single-team-data', ...args)}) ;
-    ipcMain.on('get-single-team-fields', (event, ...args) => { getSingleTeamFields('get-single-team-fields', ...args)}) ;
-    ipcMain.on('get-zebra-status', (event, ...args) => { getZebraStatus('get-zebra-status', ...args)}) ;
     createWindow() ;
 }) ;
 

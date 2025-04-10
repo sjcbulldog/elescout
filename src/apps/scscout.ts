@@ -6,10 +6,9 @@ import { PacketObj } from "../sync/packetobj";
 import * as path from 'path' ;
 import * as fs from 'fs' ;
 import { PacketType } from "../sync/packettypes";
-import { MatchTablet } from "../project/matchtablet";
-import { TeamTablet } from "../project/teamtablet";
 import { FormInfo } from "../comms/formifc";
 import { OneScoutField, OneScoutResult, ScoutingData } from "../comms/resultsifc";
+import { MatchTablet, TeamTablet } from "../project/tabletmgr";
 
 export class MatchInfo {
     public type_? : string ;

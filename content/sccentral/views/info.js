@@ -73,7 +73,7 @@ class InfoView extends XeroView {
         value.innerHTML = (info.bakey_ ? info.bakey_ : 'NONE');
         row.append(value);
 
-        if (!info.teams_ && !info.matches_ && !info.bakey_) {
+        if (info.teams_.length == 0 && info.matches_.length == 0 && !info.bakey_) {
             let cell = document.createElement('td');
             cell.className = "info-table-cell";
             row.append(cell);

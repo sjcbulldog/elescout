@@ -15,7 +15,6 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
   //
   send: (channel: string, data: any) => {
       let validChannels = [
-        'get-zebra-data',
         'get-nav-data', 
         'get-info-data',
         'get-formulas',
@@ -69,14 +68,12 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-preferences',
         'update-preferences',
         'update-picklist-columns',
-        'update-picklist-data',
         'update-picklist-notes',
         'get-picklist-notes',
         'client-log',
         'get-single-team-data',
         'update-single-team-data',
-        'get-single-team-fields',
-        'get-zebra-status'
+        'get-single-team-fields'
       ];
       if (validChannels.includes(channel)) {
         if (data) {
@@ -93,7 +90,6 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
   //
   receive: (channel: string, func:any) => {
       let validChannels = [
-        'send-zebra-data',
         'update-main-window-view',
         'event-name',
         'send-nav-data', 
@@ -137,8 +133,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-picklist-notes',
         'send-preferences',
         'send-single-team-data',
-        'send-single-team-fields',
-        'send-zebra-status'
+        'send-single-team-fields'
       ];
       if (validChannels.includes(channel)) {
         ipcRenderer.on(channel, (event, ...args) => func(...args));

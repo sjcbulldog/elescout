@@ -2,7 +2,7 @@ class XeroSelector {
 	constructor(title, radio) {
 		this.radio_ = radio ;
 		let detail = document.createElement('details');
-		detail.className = 'zebra-selector-details';
+		detail.className = 'selector-details';
 
 		let summary = document.createElement('summary');
 		summary.innerText = title;
@@ -124,7 +124,7 @@ class XeroSelector {
 				check.type = 'checkbox' ;
 			}
 
-			check.name = 'zebra-select';
+			check.name = 'select';
 			check.xerodata = item;
 			check.onchange = cb;
 			this.items.push(check);

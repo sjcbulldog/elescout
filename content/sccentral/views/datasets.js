@@ -153,7 +153,7 @@ class DataSetsView extends XeroView {
     getTeamListWithName() {
         let teamlist = [] ;
         for(let team of this.team_list_) {
-            teamlist.push(team.number + ' - ' + team.name) ;
+            teamlist.push(team.number + ' - ' + team.nickname) ;
         }
         return teamlist ;
     }
@@ -163,7 +163,7 @@ class DataSetsView extends XeroView {
         for(let num of ds.teams) {
             let team = this.lookupTeam(num) ;
             if (team) {
-                teamlist.push(team.number + ' - ' + team.name) ;
+                teamlist.push(team.number + ' - ' + team.nickname) ;
             }
         }
         return teamlist ;

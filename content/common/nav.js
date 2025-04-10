@@ -22,6 +22,17 @@ function updateNavProcess(args) {
                 navitem.textContent = item.title;
                 navelems.push(navitem) ;
             }
+            else if (item.type === 'icon') {
+                navitem.className = "navlistitem";
+                let icon = document.createElement("img");
+                icon.src = `data:image/jpg;base64,${item.icon}`
+                icon.alt = item.title;
+                icon.title = item.title;
+                icon.width = item.width ;
+                icon.height = item.height;
+                navitem.appendChild(icon);
+                navelems.push(navitem) ;
+            }
             else if (item.type === "separator") {
                 navitem.className = "navlistseparator" ;
                 navitem.textContent = item.title ;

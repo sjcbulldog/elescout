@@ -1,7 +1,7 @@
 import * as sqlite3 from 'sqlite3' ;
 import { DataModel, DataRecord, ValueType } from "./datamodel";
 import winston from 'winston';
-import { BARankings, BATeam } from '../extnet/badata';
+import { BAOprData, BARankingData, BARankings, BATeam } from '../extnet/badata';
 import { SCBase } from '../apps/scbase';
 import { ScoutingData } from '../comms/resultsifc';
 
@@ -174,7 +174,7 @@ export class TeamDataModel extends DataModel {
         return dr ;
     }
 
-    public processStatsYear(stats: any[]) : Promise<void> {
+    public processStatboticsYearToDateData(stats: any[]) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
             let records : DataRecord[] = [];
 
@@ -193,7 +193,7 @@ export class TeamDataModel extends DataModel {
         return ret ;
     }
 
-    public processStatsEvent(stats: any[]) : Promise<void> {
+    public processStatboticsEventData(stats: any[]) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
             let records : DataRecord[] = [];
 
@@ -227,7 +227,7 @@ export class TeamDataModel extends DataModel {
         return ret ;
     }
 
-    public processOPR(opr: any) : Promise<void> {
+    public processOPR(opr: BAOprData) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
             let records : DataRecord[] = [];
 
@@ -252,7 +252,7 @@ export class TeamDataModel extends DataModel {
         return ret;
     }
 
-    public processRankings(rankings: any[]) : Promise<void> {
+    public processRankings(rankings: BARankingData[]) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
             let records : DataRecord[] = [];
 
