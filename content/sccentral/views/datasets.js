@@ -30,6 +30,14 @@ class DataSetsView extends XeroView {
         this.scoutingAPI('get-team-list', true) ;
     }
 
+    close() {
+        super.close() ;
+        if (this.popup_ !== undefined) {
+            this.popup_.destroy() ;
+            this.popup_ = undefined ;
+        }
+    }
+
     checkReady() {
         this.field_list_.sort() ;
 
@@ -331,19 +339,6 @@ class DataSetsView extends XeroView {
                 editable: false
             },
         ] ;
-    }
-
-    getAbsPosition(element) {
-        let offset = {
-            x: 0,
-            y: 0,
-        }
-        while (element) {
-            offset.x += element.offsetLeft;
-            offset.y += element.offsetTop;
-            element = element.offsetParent;
-        }
-        return offset ;
     }
 
     teamEditingComplete(data) {

@@ -44,8 +44,6 @@ function updateView(args) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-
-  statusCreate();
   resizeCreate() ;
 
   // Query the element

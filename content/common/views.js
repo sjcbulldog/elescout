@@ -207,6 +207,19 @@ class XeroView {
         this.callbacks_ = [];
     }
 
+    getAbsPosition(element) {
+        let offset = {
+            x: 0,
+            y: 0,
+        }
+        while (element) {
+            offset.x += element.offsetLeft;
+            offset.y += element.offsetTop;
+            element = element.offsetParent;
+        }
+        return offset ;
+    }    
+
     keyToNumber(key) {
         return +this.stripKeyString(key) ;
     }
@@ -324,7 +337,6 @@ class XeroView {
         }
         return ret;
     }
-
 }
 
 class TabulatorView extends XeroView {

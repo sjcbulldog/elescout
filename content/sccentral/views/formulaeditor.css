@@ -1,0 +1,54 @@
+.formula-editor {
+    display: 'absolute';
+    z-index: 1000;
+    position: absolute;
+    background-color: #f0f0f0;
+    border-color: black;
+    border-style: solid;
+    border-radius: 30px;
+}
+
+.formula-editor-content {
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+    width: 100%;
+    display: flex ;
+    flex-direction: column;
+}
+
+.formula-editor-title {
+    margin-bottom: 20px;
+    font-size: 24px;
+    text-align: center;
+    font-weight: bold;
+    flex-grow: 0;
+    flex-shrink: 0 ;
+}
+
+.formula-editor-buttondiv {
+    display: flex;
+    flex-direction: row;
+    margin-left: 20px;
+    margin-right: 20px;
+    height: 30px;
+    justify-content: space-between;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.formula-editor-input {
+    display: flex ;
+    flex-direction: column;
+    justify-content: center ;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.formula-editor-input-text {
+    flex-grow: 0;
+}
+
+.formula-editor-input-autocomplete {
+    flex-grow: 1;
+}
