@@ -1318,7 +1318,7 @@ export class SCCentral extends SCBase {
 				treedata.push({
 					type: 'icon',
 					command: SCCentral.viewSingleTeamSummary,
-					title: "Single Team",
+					title: "Single Team View",
 					icon: this.getIconData('singleteam.png'),
 					width: dims,
 					height: dims						
@@ -1327,7 +1327,7 @@ export class SCCentral extends SCBase {
 				treedata.push({
 					type: 'icon',
 					command: SCCentral.viewMultiView,
-					title: "Multi View",
+					title: "Multiple Team View",
 					icon: this.getIconData('multipleteams.png'),
 					width: dims,
 					height: dims	

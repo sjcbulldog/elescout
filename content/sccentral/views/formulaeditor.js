@@ -5,6 +5,7 @@ class FormulaEditor {
         this.name = name ;
         this.formula = formula ;
         this.fields = fields ;
+        this.current_list = [] ;
 
         this.callbacks_ = new Map();
 
@@ -28,6 +29,7 @@ class FormulaEditor {
         this.editor_input.type = 'text';
         this.editor_input.className = 'formula-editor-input-text';
         this.editor_input.value = this.formula ;
+        this.editor_input.spellcheck = false ;
         this.editor_input.addEventListener('input', this.inputChanged.bind(this)) ;
         this.editor_input.addEventListener('keydown', this.keydown.bind(this)) ;
         this.editor.appendChild(this.editor_input);
@@ -36,6 +38,7 @@ class FormulaEditor {
         this.editor_complete.className = 'formula-editor-input-autocomplete';
         this.editor.appendChild(this.editor_complete);
         this.editor_complete.innerText = '-' ;
+        this.editor_complete.addEventListener('dblclick', this.autoClicked.bind(this)) ;
 
         this.buttondiv = document.createElement('div');
         this.buttondiv.className = 'formula-editor-buttondiv';
@@ -54,11 +57,6 @@ class FormulaEditor {
         this.cancelbutton.onclick = this.cancelPressed.bind(this) ;
     }
 
-    setFocus() {
-        this.editor_input.focus() ;
-        this.editor_input.setSelectionRange(this.editor_input.value.length, this.editor_input.value.length) ;
-    }
-
     extractLastText() {
         let input = this.editor_input.value ;
         let lastText = input.split(' ').pop() ;
@@ -66,29 +64,42 @@ class FormulaEditor {
     }
 
     fillAutoComplete() {
-        let input = this.extractLastText() ;
-        let text = '-' ;
-        if (input.length !== 0) {
-            text = '' ;
-            for(let field of this.fields) {
-                if (field.startsWith(input)) {
-                    if (text.length > 0) {
-                        text += '<br>'
-                    }
-                    text += field ;
-                }
-            }
+        let added = false ;
+        this.current_list = [] ;
 
-            if (text.length === 0) {
-                 text = '-' ;
-            }
-            else {
-                text += '<br>' ;
-            }
+        while (this.editor_complete.firstChild) {
+            this.editor_complete.removeChild(this.editor_complete.firstChild);
         }
 
-        this.editor_complete.innerHTML = text ;
-        this.editor_complete.style.display = 'block' ;
+        let input = this.extractLastText() ;
+        if (input.length !== 0) {
+            for(let field of this.fields) {
+                if (field.startsWith(input)) {
+                    this.current_list.push(field) ;
+                    let span = document.createElement('span') ;
+                    this.editor_complete.appendChild(span) ;
+                    span.className = 'formula-editor-input-autocomplete-item' ;
+                    span.innerText = field ;
+                    added = true ;
+                    span.addEventListener('click', this.autoClicked.bind(this)) ;
+                }
+            }
+        }
+    }
+
+    replaceWithKeyword(keyword) {
+        let input = this.editor_input.value ;
+        let lastText = input.split(' ').pop() ;
+        let newInput = input.slice(0, -lastText.length) + keyword + ' ' ;
+        this.editor_input.value = newInput ;
+        this.fillAutoComplete() ;
+
+        this.editor_input.focus() ;
+        this.editor_input.setSelectionRange(newInput.length, newInput.length) ;
+    }
+
+    autoClicked(event) {
+        this.replaceWithKeyword(event.target.innerText) ;
     }
 
     keydown(event) {
@@ -96,6 +107,12 @@ class FormulaEditor {
             this.okPressed() ;
         } else if (event.key === 'Escape') {
             this.cancelPressed() ;
+        }
+        else if (event.key === 'Tab') {
+            event.preventDefault() ;
+            if (this.current_list.length === 1) {
+                this.replaceWithKeyword(this.current_list[0]) ;
+            }
         }
     }
     
@@ -134,6 +151,11 @@ class FormulaEditor {
                 func() ;
             }
         }
+    }
+    
+    setFocus() {
+        this.editor_input.setSelectionRange(this.editor_input.value.length, this.editor_input.value.length) ;
+        this.editor_input.focus() ;
     }
     
     show(x, y, width, height) {

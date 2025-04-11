@@ -5,7 +5,7 @@
     background-color: #f0f0f0;
     border-color: black;
     border-style: solid;
-    border-radius: 30px;
+    border-radius: 10px;
 }
 
 .formula-editor-content {
@@ -13,8 +13,7 @@
     padding: 0px;
     height: 100%;
     width: 100%;
-    display: flex ;
-    flex-direction: column;
+    resize: none ;
 }
 
 .formula-editor-title {
@@ -22,8 +21,9 @@
     font-size: 24px;
     text-align: center;
     font-weight: bold;
-    flex-grow: 0;
-    flex-shrink: 0 ;
+    width: 100%;
+    height: 5%;
+    resize: none;
 }
 
 .formula-editor-buttondiv {
@@ -33,22 +33,39 @@
     margin-right: 20px;
     height: 30px;
     justify-content: space-between;
-    flex-grow: 0;
-    flex-shrink: 0;
+    resize: none;
+    width: 98%;
+    height: 5%;
+    margin-bottom: 20px ;
 }
 
 .formula-editor-input {
-    display: flex ;
-    flex-direction: column;
-    justify-content: center ;
-    flex-grow: 1;
-    flex-shrink: 1;
+    display: block ;
+    width: 98%;
+    height: 85%;
+    resize: none;
+    margin-left: 10px ;
+    margin-right: 10px ;
 }
 
 .formula-editor-input-text {
-    flex-grow: 0;
+    width: 100%;
+    height: 5%;
+    resize: none ;
 }
 
 .formula-editor-input-autocomplete {
-    flex-grow: 1;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    overflow: clip;
+    width: 100%;
+    height: 95%;
+    resize: none;
+    overflow: auto;
+}
+
+.formula-editor-input-autocomplete-item {
+    padding: 5px;
+    cursor: pointer;
 }

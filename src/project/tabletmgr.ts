@@ -119,7 +119,17 @@ export class TabletManager extends Manager {
     }
   
     public generateTabletSchedule() : boolean {
-        return this.generateMatchTabletSchedule() && this.generateTeamTabletSchedule() ;
+        if (!this.generateTeamTabletSchedule()) {
+            return false ;
+        }
+
+        if (this.match_mgr_.hasMatches()) {
+            if (!this.generateMatchTabletSchedule()) {
+                return false ;
+            }
+        }
+        
+        return true ;
     }
 
     public clearScoutingSchedules() {
