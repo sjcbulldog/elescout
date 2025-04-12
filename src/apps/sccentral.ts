@@ -2725,7 +2725,7 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	private async getSingleTeamIndividualData(team: number, numericonly: boolean) : Promise<any> {
+	private async getSingleTeamIndividualData(ds: string, team: number, numericonly: boolean) : Promise<any> {
 		interface MyObject {
 			[key: string]: any; // Allows any property with a string key
 		}
@@ -2738,15 +2738,15 @@ export class SCCentral extends SCBase {
 		return ret;
 	}
 
-	public async getSingleTeamData(obj: any) {
+	public async getSingleTeamData(ds: string, team: number) {
 		interface MyObject {
 			[key: string]: any; // Allows any property with a string key
 		}
 		let retdata : MyObject = {} ;
 
 		if (this.project_ && this.project_.isInitialized()) {
-			retdata.matches = this.project_.match_mgr_!.getMatchResults(obj) ;
-			retdata.teamdata = await this.getSingleTeamIndividualData(obj, false) ;
+			retdata.matches = this.project_.match_mgr_!.getMatchResults(+team) ;
+			retdata.teamdata = await this.getSingleTeamIndividualData(ds, +team, false) ;
 		}
 
 		this.sendToRenderer('send-single-team-data', retdata) ;

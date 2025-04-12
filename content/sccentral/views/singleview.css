@@ -6,6 +6,24 @@
 }
 
 .single-team-team-selector-div {
+    margin: 5px 20px 5px 20px;
+    text-align: center;
+    background: lightblue;
+    display: flex;
+    flex-direction: row;
+}
+
+.single-team-team-selector {
+    margin-top: 5px;
+    margin-bottom:5px ;
+    margin-right: 20px ;
+    font-size: 36px;
+    width: 66%;
+    display: block;
+    margin: 0 auto ;
+}
+
+.single-team-dataset-selector-div {
     border: 2px solid black ;
     border-radius: 25px;
     margin: 5px 20px 5px 20px;
@@ -13,9 +31,10 @@
     background: lightblue
 }
 
-.single-team-team-selector {
+.single-team-dataset-selector {
     margin-top: 5px;
     margin-bottom:5px ;
+    margin-left: 20px ;
     font-size: 36px;
     width: 66%;
     display: block;

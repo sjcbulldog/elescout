@@ -673,8 +673,8 @@ export async function getSingleTeamData(cmd: string, ...args: any[]) {
         let central : SCCentral = scappbase as SCCentral ;
         if (args.length === 1 && typeof args[0] === 'object') {       
             let obj = args[0] ;
-            if (obj.hasOwnProperty('team') && obj.hasOwnProperty('mcount')) {   
-                central.getSingleTeamData(args[0]) ;
+            if (obj.hasOwnProperty('team') && obj.hasOwnProperty('dataset')) {   
+                central.getSingleTeamData(obj.dataset, obj.team) ;
             }
             else {
                 scappbase.logger_.error({ message: 'renderer -> main invalid args', args: {cmd: cmd, cmdargs: args}});

@@ -8,37 +8,43 @@ class SingleTeamView extends XeroView {
 
         this.createBaseDisplay() ;
         
-        this.registerCallback('send-single-team-data', this.formCallback.bind(this));
-        this.registerCallback('send-team-data', this.receiveTeamData.bind(this));
-        this.registerCallback('send-team-field-list', this.receiveTeamFieldList.bind(this));
-        this.registerCallback('send-match-field-list', this.receiveMatchFieldList.bind(this));
-        this.registerCallback('send-single-team-fields', this.receiveSingleTeamFields.bind(this));
-        this.registerCallback('send-single-team-formulas', this.receiveFormulaFieldList.bind(this)) ;
+        this.registerCallback('send-datasets', this.receiveDatasets.bind(this)) ;
+        this.registerCallback('send-single-team-data', this.formCallback.bind(this)) ;
+        this.registerCallback('send-team-list', this.receiveTeamList.bind(this));
 
         this.team_fields_ = false ;
         this.match_fields_ = false ;
 
-        this.scoutingAPI('get-team-data') ;
-        this.scoutingAPI('get-team-field-list');
-        this.scoutingAPI('get-match-field-list');
-        this.scoutingAPI('get-single-team-formulas') ;
+        this.scoutingAPI('get-team-list', true) ;
+        this.scoutingAPI('get-datasets') ;
     }
 
-    createTeamSelector(parent) {
-        this.team_selector_div_ = document.createElement('div') ;
-        this.team_selector_div_.className = 'single-team-team-selector-div' ;
-        parent.append(this.team_selector_div_) ;
+    createTeamDataSetSelector(parent) {
+        this.team_ds_selector_div_ = document.createElement('div') ;
+        this.team_ds_selector_div_.className = 'single-team-team-selector-div' ;
+        parent.append(this.team_ds_selector_div_) ;
+
+        this.ds_selector_ = document.createElement('select') ;
+        this.ds_selector_.className = 'single-team-dataset-selector' ;
+        this.ds_selector_.onchange = this.selectedDatasetChanged.bind(this);
+        this.team_ds_selector_div_.append(this.ds_selector_) ;
+
+        let opt = document.createElement('option');
+        opt.value = '' ;
+        opt.text = 'Please Wait ...' ;
+        opt.disabled = true ;
+        this.ds_selector_.append(opt) ;
 
         this.team_selector_ = document.createElement('select') ;
         this.team_selector_.className = 'single-team-team-selector' ;
         this.team_selector_.onchange = this.selectedTeamChanged.bind(this);
-        this.team_selector_div_.append(this.team_selector_) ;
+        this.team_ds_selector_div_.append(this.team_selector_) ;
 
-        const opt = document.createElement('option');
+        opt = document.createElement('option');
         opt.value = '' ;
         opt.text = 'Please Wait ...' ;
         opt.disabled = true ;
-        this.team_selector_.append(opt) ;
+        this.team_selector_.append(opt) 
     }
 
     createReportData(parent) {
@@ -88,73 +94,15 @@ class SingleTeamView extends XeroView {
         this.createReportSchedule(this.team_report_div_) ;
     }
 
-    createFieldSelector(parent) {
-        this.field_sel_div_ = document.createElement('div') ;
-        this.field_sel_div_.className = 'single-team-field-div' ;
-        parent.append(this.field_sel_div_) ;
-
-        this.team_field_selector_ = new XeroSelector('Team Fields', false);
-        this.team_field_selector_.detail.className = 'single-team-team-field-selector' ;
-        this.field_sel_div_.append(this.team_field_selector_.detail);
-
-        this.match_field_selector_ = new XeroSelector('Match Fields', false);
-        this.match_field_selector_.detail.className = 'single-team-match-field-selector' ;
-        this.field_sel_div_.append(this.match_field_selector_.detail);
-
-        this.formula_field_selector_ = new XeroSelector('Formulas', false);
-        this.formula_field_selector_.detail.className = 'single-team-formula-selector' ;
-        this.field_sel_div_.append(this.formula_field_selector_.detail);        
-    }
-
     createBaseDisplay() {
         this.reset() ;
         this.single_top_ = document.createElement('div') ;
         this.single_top_.className = 'single-team-top' ;
 
-        this.createFieldSelector(this.single_top_) ;
-        this.createTeamSelector(this.single_top_) ;
+        this.createTeamDataSetSelector(this.single_top_) ;
         this.createReport(this.single_top_) ;
 
         this.top_.append(this.single_top_) ;
-    }
-
-    findTeamByNumber(n) {
-        let ret = null ;
-
-        if (this.teams_) {
-            for(let team of this.teams_) {
-                if (team.team_number === n) {
-                    ret = team ;
-                    break ;
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    selectedTeamChanged() {
-        this.team_ = this.findTeamByNumber(+this.team_selector_.value) ;
-        if (this.team_) {
-            this.team_report_title_.textContent = this.team_.team_number + ' - ' + this.team_.nickname ;
-            this.scoutingAPI('get-single-team-data', { team: this.team_.team_number, mcount: 1000 });
-        }
-    }
-
-    matchTitle(complevel, sno, mno) {
-        let str ;
-
-        if (complevel === 'qm') {
-            str = 'Qual Match ' + mno ;
-        }
-        else if (complevel === 'sf') {
-            str = 'Semi Final ' + sno ;
-        }
-        else if (complevel === 'f') {
-            str = 'Final ' + mno ;
-        }
-
-        return str;
     }
 
     createMatchTooltip(bkdown) {
@@ -412,11 +360,11 @@ class SingleTeamView extends XeroView {
         let data = args[0]; 
 
         if (data.matches) {
-            this.populateMatches(this.team_.team_number, data.matches) ;
+            this.populateMatches(this.team_, data.matches) ;
         }
 
         if (data.teamdata) {
-            this.populateTeamData(this.team_.team_number, data.teamdata) ;
+            this.populateTeamData(this.team_, data.teamdata) ;
         }
     }
 
@@ -424,63 +372,67 @@ class SingleTeamView extends XeroView {
         return a.team_number - b.team_number ;
     }
 
-    somethingChanged() {
-        let mfields = this.match_field_selector_.getSelectedItems() ;
-        let tfields = this.team_field_selector_.getSelectedItems() ;
-        let ffields = this.formula_field_selector_.getSelectedItems() ;
-        let obj = {
-            match: mfields,
-            team: tfields,
-            formulas: ffields,
-            num: this.team_.team_number
-        } ;
-        this.scoutingAPI('update-single-team-data', obj) ;
+    findDatasetByName(name) {
+        for(let ds of this.datasets_) {
+            if (ds.name === name) {
+                return ds ;
+            }
+        }
+
+        return undefined ;
     }
 
-    receiveTeamData(args) {
-        this.teams_ = args[0] ;
-		this.teams_.sort(this.teamCompareFunction.bind(this));
-
-        this.clear(this.team_selector_) ;
+    selectedTeamChanged() {
+        let dsname = this.ds_selector_.value ;
+        let team = this.team_selector_.value ;
+        this.team_ = team ;
+        this.scoutingAPI('get-single-team-data', { team: team, dataset: dsname}) ;
+    }
+    
+    findTeamByNumber(number) {
         for(let team of this.teams_) {
+            if (team.number === number) {
+                return team ;
+            }
+        }
+
+        return undefined ;
+    }
+
+    selectedDatasetChanged() {
+        let dsname = this.ds_selector_.value ;
+        let ds = this.findDatasetByName(dsname) ;
+        this.clear(this.team_selector_) ;
+        if (ds) {
+            for(let num of ds.teams) {
+                let team = this.findTeamByNumber(num) ;
+                if (team) {
+                    let opt = document.createElement('option') ;
+                    opt.value = num ;
+                    opt.text = num + ' ' + team.nickname ;
+                    this.team_selector_.append(opt) ;
+                }
+            }
+            this.selectedTeamChanged()
+        }
+    }
+
+    receiveDatasets(args) {
+        this.datasets_ = args[0] ;
+        this.clear(this.ds_selector_) ;
+        this.clear(this.team_selector_) ;
+
+        for(let dset of this.datasets_) {
             let opt = document.createElement('option') ;
-            opt.text = team.team_number + ' - ' + team.nickname;
-            opt.value = team.team_number ;
-            this.team_selector_.append(opt) ;
+            opt.value = dset.name ;
+            opt.text = dset.name ;
+            this.ds_selector_.append(opt) ;
         }
-        if (this.teams_ && this.teams_.length > 0) {
-            this.team_selector_.value = this.teams_[0].team_number ;
-        }
+
+        this.selectedDatasetChanged() ;
     }
 
-    checkFieldList() {
-        if (this.team_fields_ && this.meatch_fields_ && this.formula_fields_) {
-            this.scoutingAPI('get-single-team-fields') ;
-        }
-    }
-
-    receiveTeamFieldList(list) {
-        this.team_field_selector_.addDataToSelectors(list[0], this.somethingChanged.bind(this));
-        this.team_fields_ = true ;
-        this.checkFieldList() ;
-    }
-    
-    receiveMatchFieldList(list) {
-        this.match_field_selector_.addDataToSelectors(list[0], this.somethingChanged.bind(this));
-        this.meatch_fields_ = true ;
-        this.checkFieldList() ;
-    }
-
-    receiveSingleTeamFields(list) {
-        this.team_field_selector_.selectItems(list[0].team) ;
-        this.match_field_selector_.selectItems(list[0].match) ;
-        this.formula_field_selector_.selectItems(list[0].formulas) ;
-        this.selectedTeamChanged() ;
-    }
-    
-    receiveFormulaFieldList(list) {
-        this.formula_field_selector_.addDataToSelectors(list[0], this.somethingChanged.bind(this));
-        this.formula_fields_ = true ;
-        this.checkFieldList() ;
+    receiveTeamList(args) {
+        this.teams_ = args[0] ;
     }
 }
