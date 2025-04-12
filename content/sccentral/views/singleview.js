@@ -120,6 +120,22 @@ class SingleTeamView extends XeroView {
         return tip;
     }
 
+    matchTitle(complevel, sno, mno) {
+        let str ;
+
+        if (complevel === 'qm') {
+            str = 'Qual Match ' + mno ;
+        }
+        else if (complevel === 'sf') {
+            str = 'Semi Final ' + sno ;
+        }
+        else if (complevel === 'f') {
+            str = 'Final ' + mno ;
+        }
+
+        return str;
+    }
+
     populateMatches(team, matches) {
         let td, one ;
         let won = 0, lost = 0, tied = 0 ;
@@ -384,7 +400,7 @@ class SingleTeamView extends XeroView {
 
     selectedTeamChanged() {
         let dsname = this.ds_selector_.value ;
-        let team = this.team_selector_.value ;
+        let team = +this.team_selector_.value ;
         this.team_ = team ;
         this.scoutingAPI('get-single-team-data', { team: team, dataset: dsname}) ;
     }
