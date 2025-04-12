@@ -10,6 +10,7 @@ import { Expression } from "ts-expression-evaluator/build/main/lib/t";
 import { ScoutingData } from "../comms/resultsifc";
 import { BAMatch, BAOprData, BARankingData, BATeam } from "../extnet/badata";
 import { FieldAndType } from "../model/datamodel";
+import { MatchSet } from "./datasetmgr";
 
 export interface ProjectOneColCfg {
     name: string,
@@ -132,15 +133,13 @@ export class DataManager extends Manager {
         return ret ;
     }
 
-
-
     //
     // For a given field, either team or match, and a given team, get the
     // value of the field.  For team fields, it is the data stored for that
     // field.  For match fields, the data is processes over all matches to get
     // an average.
     //   
-    public getData(field: string, team: number) : Promise<number | string | Error> {
+    public getData(m: MatchSet, field: string, team: number) : Promise<number | string | Error> {
         let ret = new Promise<number | string | Error>(async (resolve, reject) => {
             let found = false ;
 
@@ -154,14 +153,14 @@ export class DataManager extends Manager {
 
             let mcols = await this.matchdb_.getColumnNames(MatchDataModel.MatchTableName) ;
             if (mcols.includes(field)) {
-                let v = await this.getMatchData(field, team) ;
+                let v = await this.getMatchData(m, field, team) ;
                 found = true ;
                 resolve(v) ;
                 return ;
             }
 
             if (this.formula_mgr_.hasFormula(field)) {
-                let v = await this.evalFormula(field, team) ;
+                let v = await this.evalFormula(m, field, team) ;
                 found = true ;
                 resolve(v) ;
                 return ;
@@ -311,7 +310,7 @@ export class DataManager extends Manager {
         return ret ;
     }
 
-    private getMatchData(field: string, team: number, mcount? : number) : Promise<any> {
+    private getMatchData(m: MatchSet, field: string, team: number) : Promise<number | string | Error> {
         let ret = new Promise<any>(async (resolve, reject) => {
             let fields = field + ', comp_level, set_number, match_number' ;
             let teamkey = 'frc' + team ;
@@ -319,20 +318,25 @@ export class DataManager extends Manager {
             this.matchdb_.all(query)
                 .then((data: any[]) => {
                     if (data.length !== 0) {
-                        let sortData = this.sortData(field, data, mcount) ;
-                        let dt = this.getDataType(field, sortData) ;
+                        let sorted = this.sortData(data) ;
+                        let filtered = this.filterMatchData(m, sorted) ;
+
+                        let dt = this.getDataType(field, filtered) ;
                         if (dt === 'string') {
-                            resolve(this.processStringData(sortData, field)) ;
+                            resolve(this.processStringData(filtered, field)) ;
                         }
                         else if (dt === 'number') {
-                            resolve(this.processNumberData(sortData, field)) ;
+                            resolve(this.processNumberData(filtered, field)) ;
                         }
-                        else if (dt === 'null') {
-                            resolve('No Data') ;
+                        else if (dt == 'null') {
+                            resolve(new Error('no data found for field ' + field)) ;
+                        }
+                        else {
+                            resolve(new Error('invalid data type for field ' + field)) ;
                         }
                     }
                     else {
-                        resolve("No Data") ;
+                        resolve(new Error('no data found for field ' + field)) ;
                     }
                 })
                 .catch((err) => {
@@ -396,24 +400,40 @@ export class DataManager extends Manager {
         this.info_.matchdb_col_config_?.columns.push(colcfg) ;
     }    
     
-    private evalFormula(name: string, team: number) : Promise<number  | string > {
-        let ret = new Promise<number | string>(async (resolve, reject) => {
+    private evalFormula(m: MatchSet, name: string, team: number) : Promise<number  | string | Error > {
+        let ret = new Promise<number | string | Error>(async (resolve, reject) => {
             let formula = this.formula_mgr_.findFormula(name) ;
             let result = NaN ;
+            let errors : Error[] = [] ;
             if (formula) {
                 let obj : any = {} ;
                 let expr = parseExpression(formula) ;
                 let deps = this.searchForDependencies(expr) ; 
                 for(let dep of deps) {
                     try {
-                        let v = await this.getData(dep, team) ;
+                        let v = await this.getData(m, dep, team) ;
+                        if (v instanceof Error) {
+                            errors.push(v) ;
+                        }
                         obj[dep] = v ;
                     }
                     catch(err) {
                         resolve('formula error') ;
                     }
                 }
-                result = evaluate(formula, obj) ;
+                if (errors.length > 0) { 
+                    let msg = '' ;
+                    for(let e of errors) {
+                        if (msg.length > 0) {
+                            msg += '\n' ;
+                        }
+                        msg += e.message ;
+                    }
+                    resolve(new Error(msg)) ;
+                }
+                else {
+                    result = evaluate(formula, obj) ;
+                }
                 resolve(result) ;
             }
             else {
@@ -423,7 +443,56 @@ export class DataManager extends Manager {
         return ret ;
     }
 
-    private sortData(field: string, data: any[], mcount?: number) : any[] {
+    private filterMatchData(m: MatchSet, data: any[]) : any[] {
+        let start = 0 ;
+        let end = data.length - 1 ;
+        let newdata : any[] = [] ;
+
+        if (m.kind == 'first') {
+            // 
+            // We want the first N entries
+            //
+            start = 0 ;
+            if (m.last - 1 < end) {
+                end = m.last - 1 ;
+            }
+        }
+        else if (m.kind == 'last') {
+            //
+            // We want the last N entries
+            //
+            end = data.length - 1 ;
+            start = data.length - m.first ;
+            if (start < 0) {
+                start = 0 ;
+            }
+        }
+        else if (m.kind == 'all') {
+            start = 0 ;
+            end = data.length - 1 ;
+        }
+        else if (m.kind == 'range') {
+            //
+            // We want the entries between the two values
+            //
+            start = m.first ;
+            end = m.last ;
+            if (start < 0) {
+                start = 0 ;
+            }
+            if (end > data.length - 1) {
+                end = data.length - 1 ;
+            }
+        }
+
+        for(let i = start ; i <= end ; i++) {
+            newdata.push(data[i]) ;
+        }
+
+        return newdata ;
+    }
+
+    private sortData(data: any[]) : any[] {
         data = data.sort((a, b) => {
             let am = DataManager.matchLevels.indexOf(a.comp_level) ;
             let bm = DataManager.matchLevels.indexOf(b.comp_level) ;
@@ -453,59 +522,27 @@ export class DataManager extends Manager {
                 }
             }
         }) ;
-
-        if (mcount && mcount < data.length) {
-            let newdata : any[] = [] ;
-
-            //
-            // Now, find the last N values, but skip past null data at the end
-            //
-            let last = data.length - 1 ;
-            while (last >= 0 && data[last][field] === null) {
-                last-- ;
-            }
-
-            if (last < mcount) {
-                //
-                // No good data, grab the last mcount values
-                //
-                for(let i = 0 ; i < mcount ; i++) {
-                    newdata.push(null) ;
-                }
-            }
-            else {
-                //
-                // We want from last - mcount to last
-                //
-                for(let i = last - mcount + 1; i <= last; i++) {
-                    newdata.push(data[i]) ;
-                }
-            }
-
-            data = newdata ;
-        }
-
-        let ret : any[] = [] ;
-        for(let d of data) {
-            let one : any = {} ;
-            one[field] = d[field] ;
-            ret.push(one) ;
-        }
-
-        return ret;
+        
+        return data ;
     }
 
 
     private getDataType(field: string, data: any[]) : string {
         let ret: string = typeof (data[0][field]) ;
+        let allnull = true ;
 
         for(let d of data) {
             if (d[field] === null) {
                 continue ;
             }
+            allnull = false ;
             if (typeof d[field] !== ret) {
                 return 'string' ;
             }
+        }
+
+        if (allnull) {
+            ret = 'null' ;
         }
 
         return ret;

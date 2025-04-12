@@ -70,26 +70,50 @@ export class DataSetManager extends Manager {
         return ret ;
     }
 
-    public async getData(dset: string, field: string, team: number) : Promise <string | number | Error> {
+    public async getData(ds: DataSet, field: string, team: number) : Promise <string | number | Error> {
         let ret = new Promise<string | number | Error>(async (resolve, reject) => {
-            let ds: DataSet | undefined = this.findDataSet(dset) ;
-            if (!ds) {
-                resolve(new Error("data set '" + dset + "' not found")) ;
+            if (this.containsField(ds, field)) {
+                try {
+                    let data = await this.datamgr_.getData(ds.matches, field, team) ;
+                    resolve(data) ;
+                }
+                catch(err) {
+                    reject(err) ;
+                }
             }
             else {
-                if (this.containsField(ds, field)) {
-                    let data = await this.datamgr_.getData(field, team) ;
-                    if (data) {
-                        resolve(data) ;
-                    }
-                    else {
-                        resolve(new Error("field '" + field + "' not found in data set '" + dset + "'")) ;
-                    }
-                }
+                resolve(new Error("field '" + field + "' not found in data set '" + ds.name + "'")) ;
             }
         }) ;
 
-        return ret;
+        return ret; 
+    }
+
+    public async getDataSetData(dsname: string) : Promise <any> {
+        interface OneTeam {
+            [key: string]: any; // Allows any property with a string key
+        }
+
+        let ret = new Promise<any>(async (resolve, reject) => {
+            let ds = this.findDataSet(dsname) ;
+            if (!ds) {
+                reject(new Error("data set '" + dsname + "' not found")) ;
+            }
+            else {
+                let allteams = [] ;
+                for(let t of ds.teams) {          
+                    let teamData: OneTeam = {} ;
+                    teamData['team_number'] = t ;
+                    for(let f of ds.fields) {
+                        let result = await this.getData(ds, f, t) ;
+                        teamData[f] = result ;
+                    }
+                    allteams.push(teamData) ;
+                }
+                resolve(allteams) ;
+            }
+        }) ;
+        return ret ;
     }
 
     public renameDataSet(oldName: string, newName: string) : void {

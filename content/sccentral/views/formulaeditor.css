@@ -39,6 +39,11 @@
     margin-bottom: 20px ;
 }
 
+.formula-editor-button {
+    margin-left: 20px ;
+    margin-right: 20px ;
+}
+
 .formula-editor-input {
     display: block ;
     width: 98%;

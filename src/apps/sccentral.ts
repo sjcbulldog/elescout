@@ -11,7 +11,7 @@ import { TeamDataModel } from "../model/teammodel";
 import { StatBotics } from "../extnet/statbotics";
 import { FormInfo } from "../comms/formifc";
 import { ScoutingData } from "../comms/resultsifc";
-import { DataSet } from "../project/datasetmgr";
+import { DataSet, MatchSet } from "../project/datasetmgr";
 import { TabletData } from "../project/tabletmgr";
 import { ProjColConfig } from "../project/datamgr";
 import { TeamNickNameNumber } from "../project/teammgr";
@@ -2686,13 +2686,13 @@ export class SCCentral extends SCBase {
         this.sendToRenderer('send-picklist-data', obj) ;
 	}
 
-	public async sendPicklistColData(field: string) {
+	public async sendPicklistColData(m:MatchSet, field: string) {
 		let values: (number|string|Error)[] = [];
 		let teams: number[] = [] ;
 
 		if (this.project_ && this.project_.isInitialized()) {
 			for(let t of this.project_!.team_mgr_!.getTeams()) {
-				let v = await this.project_!.data_mgr_!.getData(field, t.team_number) ;
+				let v = await this.project_!.data_mgr_!.getData(m, field, t.team_number) ;
 				values.push(v) ;
 				teams.push(t.team_number) ;
 			}
@@ -2725,19 +2725,6 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	private async getSingleTeamIndividualData(ds: string, team: number, numericonly: boolean) : Promise<any> {
-		interface MyObject {
-			[key: string]: any; // Allows any property with a string key
-		}
-
-		let ret = new Promise<any>(async (resolve, reject) => {
-			let values : MyObject = {} ;
-			resolve(values) ;
-		}) ;
-
-		return ret;
-	}
-
 	public async getSingleTeamData(ds: string, team: number) {
 		interface MyObject {
 			[key: string]: any; // Allows any property with a string key
@@ -2746,7 +2733,7 @@ export class SCCentral extends SCBase {
 
 		if (this.project_ && this.project_.isInitialized()) {
 			retdata.matches = this.project_.match_mgr_!.getMatchResults(+team) ;
-			retdata.teamdata = await this.getSingleTeamIndividualData(ds, +team, false) ;
+			retdata.teamdata = await this.project_.dataset_mgr_!.getDataSetData(ds) ;
 		}
 
 		this.sendToRenderer('send-single-team-data', retdata) ;

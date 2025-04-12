@@ -321,7 +321,7 @@ class SingleTeamView extends XeroView {
         this.team_report_matches_table_.append(tr) ;
     }
 
-    populateTeamData(number, data) {
+    populateTeamData(data) {
         let tr, td ;
         let even = false ;
 
@@ -343,6 +343,9 @@ class SingleTeamView extends XeroView {
         this.team_report_data_table_.append(tr) ;
         
         for(let key of Object.keys(data)) {
+            if (key === 'team_number') {
+                continue ;
+            }
             let value = data[key] ;
 
             tr = document.createElement('tr') ;
@@ -363,6 +366,8 @@ class SingleTeamView extends XeroView {
             td.className = 'single-team-report-data-cell' ;
             if (typeof value === 'number') {
                 td.textContent = value.toFixed(3) ;
+            } else if (value instanceof Error) {
+                td.innerHTML = value.message.replace(/\n/g, '<br>') ;
             } else {
                 td.textContent = value.toString() ;
             }
@@ -370,6 +375,16 @@ class SingleTeamView extends XeroView {
     
             this.team_report_data_table_.append(tr) ;
         }
+    }
+
+    findOneTeamData(team, data) {
+        for(let one of data) {
+            if (one.team_number === team) {
+                return one ;
+            }
+        }
+
+        return undefined ;
     }
 
     formCallback(args) {
@@ -380,7 +395,8 @@ class SingleTeamView extends XeroView {
         }
 
         if (data.teamdata) {
-            this.populateTeamData(this.team_, data.teamdata) ;
+            let one = this.findOneTeamData(this.team_, data.teamdata) ;
+            this.populateTeamData(one) ;
         }
     }
 
