@@ -231,7 +231,7 @@ class EditMatchesView extends TabulatorView {
             {
                 data: this.matches_,
                 selectableRows: true,
-                layout: "fitDataStretch",
+                layout: "fitData",
                 resizableColumnFit: true,
                 columns: this.createColsDescs(),
                 initialSort: [{ column: "comp_level", dir: "asc" }],

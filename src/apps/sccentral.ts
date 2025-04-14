@@ -22,6 +22,7 @@ import { ProjPicklistNotes } from "../project/picklistmgr";
 import Papa from "papaparse";
 import * as fs from "fs";
 import * as path from "path";
+import { FormManager } from "../project/formmgr";
 
 export interface GraphDataRequest {
 	ds: string,
@@ -757,6 +758,9 @@ export class SCCentral extends SCBase {
 				matches_: this.project_.match_mgr_!.getMatches(),
 				locked_: this.project_.info?.locked_,
 				uuid_: this.project_.info?.uuid_,
+				importicon: this.getIconData('import.png'),
+				createicon: this.getIconData('create.png'),
+				editicon: this.getIconData('edit.png')
 			};
 			this.sendToRenderer("send-info-data", obj);
 		}
@@ -1483,7 +1487,14 @@ export class SCCentral extends SCBase {
 
 		path.then((pathname) => {
 			if (!pathname.canceled) {
-				if (this.validateForm(pathname.filePaths[0], '*')) {
+				let result = FormManager.validateForm(pathname.filePaths[0], '*') ;
+				if (result) {
+					dialog.showMessageBox(this.win_, {
+						title: 'Error Loading Form',
+						message: result.message
+					});					
+				}
+				else {
 					this.previewfile_ = pathname.filePaths[0];
 					this.setFormView('preview');
 				}
@@ -1768,346 +1779,6 @@ export class SCCentral extends SCBase {
 		);
 	}
 
-	private validateTag(tag: string): boolean {
-		return /^[a-zA-Z][a-zA-Z0-9_]*$/.test(tag);
-	}
-
-	private validateImageItem(filename: string, sectno: number, itemno: number, item: any): boolean {
-		if (item.type === 'multi') {
-			if (item.datatype) {
-				if (typeof item.datatype !== 'string') {
-					this.showItemError(filename, sectno, itemno, "the field 'datatype' is defined but is not a string") ;
-					return false ;
-				}
-
-				let dt = item.datatype.toLowerCase() ;
-				if (dt !== 'integer' && dt !== 'real') {
-					this.showItemError(filename, sectno, itemno, "the field 'datatype' must be 'integer' or 'real'") ;
-					return false ;
-				}
-			}
-		}
-		return true ;
-	}
-
-	private validateItem(filename: string, sectno: number, itemno: number, item: any): boolean {
-		if (!item.name) {
-			this.showItemError(
-				filename,
-				sectno,
-				itemno,
-				"the field 'name' is not defined"
-			);
-			return false;
-		}
-
-		if (typeof item.name !== "string") {
-			this.showItemError(
-				filename,
-				sectno,
-				itemno,
-				"the field 'name' is defined, but is not a string"
-			);
-			return false;
-		}
-
-		if (!item.type) {
-			this.showItemError(
-				filename,
-				sectno,
-				itemno,
-				"the field 'type' is not defined"
-			);
-			return false;
-		}
-
-		if (typeof item.type !== "string") {
-			this.showItemError(
-				filename,
-				sectno,
-				itemno,
-				"the field 'type' is defined, but is not a string"
-			);
-			return false;
-		}
-
-		if (
-			item.type != "boolean" &&
-			item.type != "text" &&
-			item.type != "choice" &&
-			item.type != "updown"
-		) {
-			this.showItemError(
-				filename,
-				sectno,
-				itemno,
-				"the field 'type' is ${item.type} which is not valid.  Must be 'boolean', 'text', 'updown', or 'choice'"
-			);
-		}
-
-		if (!item.tag) {
-			this.showItemError(
-				filename,
-				sectno,
-				itemno,
-				"the field 'tag' is not defined"
-			);
-			return false;
-		}
-
-		if (typeof item.tag !== "string") {
-			this.showItemError(
-				filename,
-				sectno,
-				itemno,
-				"the field 'tag' is defined, but is not a string"
-			);
-			return false;
-		}
-
-		if (!this.validateTag(item.tag)) {
-			this.showItemError(
-				filename,
-				sectno,
-				itemno,
-				"the field 'tag' has a value '" + item.tag + "'which is not valid, must start with a letter and be composed of letters, numbers, and underscores"
-			);
-			return false;
-		}
-
-		if (item.type === "text") {
-			if (item.maxlen === undefined) {
-				this.showItemError(
-					filename,
-					sectno,
-					itemno,
-					"the field 'maxlen' is not defined and is required for an item of type 'text'"
-				);
-				return false;
-			}
-
-			if (typeof item.maxlen !== "number") {
-				this.showItemError(
-					filename,
-					sectno,
-					itemno,
-					"the field 'maxlen' is defined but is not a number"
-				);
-				return false;
-			}
-		} else if (item.type === "boolean") {
-			// NONE
-		} else if (item.type === "updown") {
-			if (item.minimum === undefined) {
-				this.showItemError(
-					filename,
-					sectno,
-					itemno,
-					"the field 'minimum' is not defined and is required for an item of type 'updown'"
-				);
-				return false;
-			}
-
-			if (typeof item.minimum !== "number") {
-				this.showItemError(
-					filename,
-					sectno,
-					itemno,
-					"the field 'minimum' is defined but is not a number"
-				);
-				return false;
-			}
-
-			if (item.maximum === undefined) {
-				this.showItemError(
-					filename,
-					sectno,
-					itemno,
-					"the field 'maximum' is not defined and is required for an item of type 'updown'"
-				);
-				return false;
-			}
-
-			if (typeof item.maximum !== "number") {
-				this.showItemError(
-					filename,
-					sectno,
-					itemno,
-					"the field 'maximum' is defined but is not a number"
-				);
-				return false;
-			}
-
-			if (item.maximum <= item.minimum) {
-				this.showItemError(
-					filename,
-					sectno,
-					itemno,
-					"the field 'maximum' is less than the field 'minimum'"
-				);
-				return false;
-			}
-		} else if (item.type === "choice") {
-			if (item.choices === undefined) {
-				this.showItemError(
-					filename,
-					sectno,
-					itemno,
-					"the field 'choices' is not defined and is required for an item of type 'choice'"
-				);
-				return false;
-			}
-
-			if (!Array.isArray(item.choices)) {
-				this.showItemError(
-					filename,
-					sectno,
-					itemno,
-					"the field 'choices' is defined but is not of type array"
-				);
-				return false;
-			}
-
-			let choiceno = 1;
-			for (let choice of item.choices) {
-				if (typeof choice !== "string" && typeof choice !== "number") {
-					let msg: string =
-						"choice " +
-						choiceno +
-						": the value is neither a 'string', nor a 'number'";
-					this.showItemError(filename, sectno, itemno, msg);
-					return false;
-				}
-				choiceno++;
-			}
-		}
-
-		return true;
-	}
-
-	private validateSection(filename: string, num: number, sect: any): boolean {
-		let isImage = false ;
-
-		if (!sect.name) {
-			this.showSectError(filename, num, "the field 'name' is not defined");
-			return false;
-		}
-
-		if (typeof sect.name !== "string") {
-			this.showSectError(
-				filename,
-				num,
-				"the field 'name' is defined, but is not a string"
-			);
-			return false;
-		}
-
-		if (sect.image) {
-			if (typeof sect.image !== "string") {
-				this.showSectError(
-					filename,
-					num,
-					"the field 'image' is defined, but is not a string"
-				);
-				return false;				
-			}
-			isImage = true ;
-		}
-
-		if (!sect.items) {
-			this.showSectError(filename, num, "the field 'items' is not defined");
-			return false;
-		}
-
-		if (!Array.isArray(sect.items)) {
-			this.showSectError(
-				filename,
-				num,
-				"the form 'items' is defined but it is not an array"
-			);
-			return false;
-		}
-
-		let itemnum = 1;
-		for (let item of sect.items) {
-			if (isImage) {
-				if (!this.validateImageItem(filename, num, itemnum, item)) {
-					return false;
-				}								
-			}
-			else {
-				if (!this.validateItem(filename, num, itemnum, item)) {
-					return false;
-				}
-			}
-			itemnum++;
-		}
-
-		return true;
-	}
-
-	private validateForm(filename: string, type: string) {
-		let jsonstr = fs.readFileSync(filename).toLocaleString();
-		let obj;
-
-		try {
-			obj = JSON.parse(jsonstr);
-		} catch (err) {
-			this.showError(
-				filename,
-				"not a valid JSON file - load the form file in VS Code to find errors"
-			);
-			return false;
-		}
-
-		if (!obj.form) {
-			this.showError(
-				filename,
-				"the form is missing the 'form' field to indicate form type"
-			);
-			return false;
-		}
-
-		if (obj.form !== type && type !== "*") {
-			this.showError(
-				filename,
-				"the form type is not valid, expected '" +
-					type +
-					"' but form '" +
-					obj.form +
-					"'"
-			);
-			return false;
-		}
-
-		if (!obj.sections) {
-			this.showError(
-				filename,
-				"the form is missing the 'sections' field to indicate form type"
-			);
-			return false;
-		}
-
-		if (!Array.isArray(obj.sections)) {
-			this.showError(
-				filename,
-				"the form has the 'sections' field but it is not an array"
-			);
-			return false;
-		}
-
-		let num = 1;
-		for (let sect of obj.sections) {
-			if (!this.validateSection(filename, num, sect)) {
-				return false;
-			}
-
-			num++;
-		}
-
-		return true;
-	}
-
 	private selectTeamForm() {
 		var path = dialog.showOpenDialog({
 			title: "Select Team Form",
@@ -2127,8 +1798,15 @@ export class SCCentral extends SCBase {
 
 		path.then((pathname) => {
 			if (!pathname.canceled) {
-				if (this.validateForm(pathname.filePaths[0], "team")) {
-					this.project_!.setTeamForm(pathname.filePaths[0]);
+				let result = FormManager.validateForm(pathname.filePaths[0], "team") ;
+				if (result) {
+					dialog.showErrorBox("Error", 'Error processing team form file: ' + result.message);
+				}
+				else {
+					result = this.project_!.setTeamForm(pathname.filePaths[0]);
+					if (result instanceof Error) {
+						dialog.showErrorBox("Error", 'Error processing team form file: ' + result.message);
+					}
 				}
 				this.setView("info");
 			}
@@ -2154,8 +1832,15 @@ export class SCCentral extends SCBase {
 
 		path.then((pathname) => {
 			if (!pathname.canceled) {
-				if (this.validateForm(pathname.filePaths[0], "match")) {
-					this.project_!.setMatchForm(pathname.filePaths[0]);
+				let result = FormManager.validateForm(pathname.filePaths[0], "match");
+				if (result instanceof Error) {
+					dialog.showErrorBox("Error", 'Error processing match form file: ' + result.message);
+				}
+				else {
+					result = this.project_!.setMatchForm(pathname.filePaths[0]);
+					if (result instanceof Error) {
+						dialog.showErrorBox("Error", 'Error processing match form file: ' + result.message);
+					}
 				}
 				this.setView("info");
 			}
@@ -2398,16 +2083,30 @@ export class SCCentral extends SCBase {
 
 	public generateRandomData() {
 		if (this.lastview_ && this.lastview_ === 'info') {
-			if (this.project_) {
-				this.project_!.generateRandomData();
-				dialog.showMessageBox(this.win_, {
-					title: "Generated Random Form Data",
-					message: "Generated Random Form Data",
-				});
+			if (this.project_ && this.project_.isInitialized() && this.project_.isLocked()) {
+				dialog.showOpenDialog(this.win_, {
+					title: 'Random data descriptor file',
+					filters: [
+						{ name: 'JSON Files', extensions: ['json'] },
+						{ name: 'All Files', extensions: ['*']}
+					],
+					properties: [
+						'openFile',
+					]
+				}).then(result => {	
+					if (!result.canceled) {
+						this.project_!.generateRandomData(result.filePaths[0]);
+						dialog.showMessageBox(this.win_, {
+							title: "Generated Random Form Data",
+							message: "Generated Random Form Data",
+						});
+					}
+				}) ;
+
 			} else {
 				dialog.showMessageBox(this.win_, {
 					title: "Random Data Error",
-					message: "You can only generate data for an opened project",
+					message: "You can only generate data for an opened and locked project",
 				});
 			}
 		}

@@ -26,3 +26,18 @@
 .info-table-cell {
     padding: 5px 10px;
 }
+
+.info-table-icon-import {
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+.info-table-icon-create {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.info-table-icon-edit{
+    margin-left: 0px;
+    margin-right: 0px;
+}

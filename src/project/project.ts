@@ -102,13 +102,15 @@ export class Project {
         return this.location_ ;
     }
 
-    public generateRandomData() {
-        if (this.team_mgr_ && this.match_mgr_ && this.form_mgr_ && this.form_mgr_.hasForms()) {
+    public generateRandomData(descfile: string) {
+        let str = fs.readFileSync(descfile) ;
+        let desc = JSON.parse(str.toString()) ;
 
+        if (this.team_mgr_ && this.match_mgr_ && this.form_mgr_ && this.form_mgr_.hasForms()) {
             if (this.team_mgr_.hasTeams()) {
                 let teams = this.team_mgr_.getTeams().map((v)=> { return 'st-' + v.team_number}) ;
 
-                let gendata: DataGenerator = new DataGenerator(this.form_mgr_.getTeamFormFullPath()!) ;
+                let gendata: DataGenerator = new DataGenerator(this.form_mgr_.getTeamFormFullPath()!, desc.team) ;
                 let results : ScoutingData | null = gendata.generateData(teams) ;
                 if (results) {
                     results.purpose = "team" ;
@@ -129,7 +131,7 @@ export class Project {
                     }
                 }
 
-                let gendata: DataGenerator = new DataGenerator(this.form_mgr_.getMatchFormFullPath()!) ;
+                let gendata: DataGenerator = new DataGenerator(this.form_mgr_.getMatchFormFullPath()!, desc.match) ;
                 let results : ScoutingData | null  = gendata.generateData(matches) ;
                 if (results) {
                     results.purpose = "match" ;
@@ -188,12 +190,12 @@ export class Project {
         return ret;
     }
 
-    public setTeamForm(form: string) {
-        this.form_mgr_!.setTeamForm(form) ;
+    public setTeamForm(form: string) : Error | undefined {
+        return this.form_mgr_!.setTeamForm(form) ;
     }
 
-    public setMatchForm(form: string) {
-        this.form_mgr_!.setMatchForm(form) ;
+    public setMatchForm(form: string) : Error | undefined {
+        return this.form_mgr_!.setMatchForm(form) ;
     }
 
     public static async createEvent(logger: winston.Logger, dir: string, year: number) : Promise<Project> {

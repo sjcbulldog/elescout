@@ -6,8 +6,9 @@ import { ScoutingData } from '../comms/resultsifc';
 import { SCBase } from '../apps/scbase';
 
 export class MatchDataModel extends DataModel {
-    static readonly MatchTableName: string = 'matches' ;
-    static readonly BlueAlliancePrefix: string = 'ba_' ;
+    public static readonly MatchTableName: string = 'matches' ;
+    private static readonly BlueAlliancePrefix: string = 'ba_' ;
+    private static readonly fixedcols = ['comp_level', 'match_number', 'set_number'] ;
 
     public constructor(dbname: string, logger: winston.Logger) {
         super(dbname, logger) ;
@@ -17,7 +18,7 @@ export class MatchDataModel extends DataModel {
         return this.getColumnNames(MatchDataModel.MatchTableName, (a, b) => { return this.compareCols(a, b) ;}) ;
     }
 
-    private static fixedcols = ['comp_level', 'match_number', 'set_number'] ;
+
     private compareCols(a: string, b: string) : number {
         let ra = MatchDataModel.fixedcols.indexOf(a) ;
         let rb = MatchDataModel.fixedcols.indexOf(b) ;

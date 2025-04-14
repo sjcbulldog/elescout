@@ -107,11 +107,37 @@ class InfoView extends XeroView {
         row.append(cell);
 
         if (!info.locked_) {
-            let button = document.createElement('button');
-            cell.append(button);
+            let icon = document.createElement('img');
+            icon.className = "info-table-icon-import";
+            icon.src = `data:image/jpg;base64,${info.importicon}`
+            icon.alt = 'Import' ;
+            icon.title = 'Import' ;
+            icon.width = 32 ;
+            icon.height = 32 ;
+            icon.onclick = () => { this.scoutingAPI('execute-command', 'select-team-form'); };
+            cell.append(icon) ;
+            
+            icon = document.createElement('img');
+            icon.className = "info-table-icon-create";
+            icon.src = `data:image/jpg;base64,${info.createicon}`
+            icon.alt = 'Create' ;
+            icon.title = 'Create' ;
+            icon.width = 32 ;
+            icon.height = 32 ;
+            icon.onclick = () => { this.scoutingAPI('execute-command', 'create-team-form'); };
+            cell.append(icon) ;
 
-            button.innerText = 'Select Team Form';
-            button.onclick = () => { this.scoutingAPI('execute-command', 'select-team-form'); };
+            if (info.teamform_) {
+                icon = document.createElement('img');
+                icon.className = "info-table-icon-edit";
+                icon.src = `data:image/jpg;base64,${info.editicon}`
+                icon.alt = 'Edit' ;
+                icon.title = 'Edit' ;
+                icon.width = 32 ;
+                icon.height = 32 ;
+                icon.onclick = () => { this.scoutingAPI('execute-command', 'edit-team-form'); };
+                cell.append(icon) ;                
+            }
         }
 
         cell = document.createElement('td');
@@ -147,11 +173,37 @@ class InfoView extends XeroView {
         row.append(cell);
 
         if (!info.locked_) {
-            let button = document.createElement('button');
-            cell.append(button);
+            let icon = document.createElement('img');
+            icon.className = "info-table-icon-import";
+            icon.src = `data:image/jpg;base64,${info.importicon}`
+            icon.alt = 'Import' ;
+            icon.title = 'Import' ;
+            icon.width = 32 ;
+            icon.height = 32 ;
+            icon.onclick = () => { this.scoutingAPI('execute-command', 'select-match-form'); };
+            cell.append(icon) ;
+            
+            icon = document.createElement('img');
+            icon.className = "info-table-icon-create";
+            icon.src = `data:image/jpg;base64,${info.createicon}`
+            icon.alt = 'Create' ;
+            icon.title = 'Create' ;
+            icon.width = 32 ;
+            icon.height = 32 ;
+            icon.onclick = () => { this.scoutingAPI('execute-command', 'create-match-form'); };
+            cell.append(icon) ;
 
-            button.innerText = 'Select Match Form';
-            button.onclick = () => { this.scoutingAPI('execute-command', 'select-match-form') };
+            if (info.teamform_) {
+                icon = document.createElement('img');
+                icon.className = "info-table-icon-edit";
+                icon.src = `data:image/jpg;base64,${info.editicon}`
+                icon.alt = 'Edit' ;
+                icon.title = 'Edit' ;
+                icon.width = 32 ;
+                icon.height = 32 ;
+                icon.onclick = () => { this.scoutingAPI('execute-command', 'edit-match-form'); };
+                cell.append(icon) ;                
+            }       
         }
 
         cell = document.createElement('td');

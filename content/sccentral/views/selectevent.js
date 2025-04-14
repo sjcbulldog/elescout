@@ -42,9 +42,10 @@ class SelectEventView extends TabulatorView {
     }
 
     formCallback(args) {
-        this.logMessage('silly', 'SelectEventView.formCallback') ;
+        this.logMessage('silly', 'SelectEventView.formCallback', { args: args}) ;
         this.reset() ;
 
+        this.logMessage('silly', 'after reset') ;
         this.view_div_ = document.createElement('div') ;
         this.top_.append(this.view_div_) ;
 
@@ -86,15 +87,19 @@ class SelectEventView extends TabulatorView {
             field: 'start_date',
             title: 'Date'
         })
+
+        this.logMessage('silly', 'before create table') ;
         
         this.table_ = new Tabulator(this.table_div_,
             {
                 data:args[0],
-                layout:"fitDataStretch",
+                layout:"fitData",
                 resizableColumnFit:true,
                 resizableColumnGuide:true,
                 columns:cols
             });
+
+        this.logMessage('silly', 'after create table') ;
         
         this.table_.on("cellDblClick", this.loadBAEvent.bind(this)) ;
         this.table_.on("tableBuilt", this.tableComplete.bind(this)) ;

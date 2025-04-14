@@ -527,7 +527,7 @@ class DataSetsView extends XeroView {
         this.table_ = new Tabulator(this.table_div_, 
             {
                 data:data,
-                layout:"fitDataStretch",
+                layout:"fitData",
                 resizableColumnFit:true,
                 columns: this.generateColDesc(),
                 movableColumns: true,

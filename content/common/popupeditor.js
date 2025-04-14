@@ -68,7 +68,7 @@ class PopupEditor {
             {
                 height: "85%",
                 data: tdata,
-                layout:"fitDataStretch",
+                layout:"fitData",
                 resizableColumnFit:false,
                 columns: [
                     {

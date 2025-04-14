@@ -369,7 +369,7 @@ class SingleTeamView extends XeroView {
             } else if (value instanceof Error) {
                 td.innerHTML = value.message.replace(/\n/g, '<br>') ;
             } else {
-                td.textContent = value.toString() ;
+                td.innerHTML = value.toString().replace(/\n/g, '<br>') ;
             }
             tr.append(td) ;
     

@@ -5,6 +5,7 @@ export class DataGenerator
 {
     public formtype: string | undefined ;
     private formpath_ : string ;
+    private desc_: Object | undefined ;
     private items_ : any[] = [] ;
 
     private static randomStrings = [
@@ -21,8 +22,9 @@ export class DataGenerator
         'flaming chickens'
     ] ;
 
-    constructor(formpath: string) {
+    constructor(formpath: string, desc: Object) {
         this.formpath_ = formpath;
+        this.desc_ = desc ;
     }
 
     public generateData(ids: string[]) : ScoutingData | null {
@@ -67,8 +69,16 @@ export class DataGenerator
         let value = undefined ;
 
         if (item.type === 'text') {
-            let index = this.getRandomInt(DataGenerator.randomStrings.length) ;
-            value = DataGenerator.randomStrings[index] ;
+            let descf : any = this.desc_?.[item.tag as keyof typeof this.desc_] ;
+            if (descf !== undefined) {
+                let choices = descf.choices ;
+                let i = this.getRandomInt(choices.length) ;
+                value = choices[i] ;
+            }
+            else {
+                let index = this.getRandomInt(DataGenerator.randomStrings.length) ;
+                value = DataGenerator.randomStrings[index] ;
+            }
         }
         else if (item.type === 'choice') {
             let i = this.getRandomInt(item.choices.length) ;

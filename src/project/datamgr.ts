@@ -29,8 +29,8 @@ export class DataInfo {
     public teamdb_col_config_? : ProjColConfig ;        // List of hidden columns in team data
     public scouted_team_: number[] = [] ;               // The list of teams that have scouting data
     public scouted_match_: string[] = [] ;              // The list of matches that have scouring data
-    public team_db_fields_ : string[] = [] ;            // The list of fields from the team form currently in the database
-    public match_db_fields_ : string[] = [] ;           // The list of fields from the match form currently in the database
+    public team_db_fields_ : FieldAndType[] = [] ;            // The list of fields from the team form currently in the database
+    public match_db_fields_ : FieldAndType[] = [] ;           // The list of fields from the match form currently in the database
 } ;
 
 export class DataManager extends Manager {
@@ -102,16 +102,8 @@ export class DataManager extends Manager {
 
     public createFormColumns(teamfields: FieldAndType[], matchfields: FieldAndType[]) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
-            this.info_.team_db_fields_ = [] ;
-            this.info_.match_db_fields_ = [] ;
-
-            for(let field of teamfields) {
-                this.info_.team_db_fields_.push(field.name) ;
-            }
-
-            for(let field of matchfields) {
-                this.info_.match_db_fields_.push(field.name) ;
-            }
+            this.info_.team_db_fields_ = teamfields;
+            this.info_.match_db_fields_ = matchfields;
 
             try {
                 await this.teamdb_.addNecessaryCols(TeamDataModel.TeamTableName, teamfields) ;
@@ -202,10 +194,12 @@ export class DataManager extends Manager {
     
     public async removeFormColumns() : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
-            this.teamdb_.removeColumns(TeamDataModel.TeamTableName, this.info_.team_db_fields_)
+            this.teamdb_.removeColumns(TeamDataModel.TeamTableName, this.info_.team_db_fields_.map((one) => one.name))
                 .then(async () => {
-                    this.matchdb_.removeColumns(MatchDataModel.MatchTableName, this.info_.match_db_fields_)
+                    this.info_.team_db_fields_ = [] ;
+                    this.matchdb_.removeColumns(MatchDataModel.MatchTableName, this.info_.match_db_fields_.map((one) => one.name))
                         .then(() => {
+                            this.info_.match_db_fields_ = [] ;
                             resolve() ;
                         })
                         .catch((err) => {
@@ -571,7 +565,7 @@ export class DataManager extends Manager {
         for(let v of vmap.keys()) {
             let pcnt = Math.round(vmap.get(v) / total * 10000) / 100 ;
             if (ret.length > 0) {
-                ret += '/' ;
+                ret += '\n' ;
             }
             ret += v + ' ' + pcnt + '%' ;
         }

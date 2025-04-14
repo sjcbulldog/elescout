@@ -1,16 +1,29 @@
+GitHub Issues
+-------------
+
 Central
 -------
-When importing graphs from other events, check the field names and omit those that are not valid
+Generate random data
+Provide access to max, min, stddev for numeric match data
+View: dataset mgr - add/remove icons
+View: dataset mgr - 
+View: picklist editor
+View: single team view - add video links
+View: multi team view - adapt to new dataset model
+View: team graph - adapt to new dataset model
+View: spider graph - adapt to new dataset model
+
+
 
 Scout
--------
-
-Coach
 -----
-    Think about what this should do ...
+When you click into a new scouting form, prompt to see if the user really wants to scout
+- yes: all data (even empty) is valid
+- no: form is read-only
 
-All
----
+Sync
+----
+Sync scouting data from central back to tablet when needed
 
 
 Attributions
@@ -28,3 +41,6 @@ Attributions
 <a href="https://www.flaticon.com/free-icons/graph" title="graph icons">Graph icons created by Freepik - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/spider-web" title="spider web icons">Spider web icons created by Freepik - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/math" title="math icons">Math icons created by Freepik - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/file-import" title="file import icons">File import icons created by Vectors Tank - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/content" title="content icons">Content icons created by Pixelmeetup - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/editing" title="editing icons">Editing icons created by Freepik - Flaticon</a>
