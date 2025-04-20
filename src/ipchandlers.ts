@@ -453,6 +453,73 @@ export async function getForm(cmd: string, ...args: any[]) {
     }
 }
 
+// get-image-data image:string
+export async function getImageData(cmd: string, ...args: any[]) {
+    if (scappbase) {
+        scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
+        if (args.length === 1 && typeof args[0] === 'string') {
+            if (scappbase.applicationType === XeroAppType.Central) {
+                scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
+                let central : SCCentral = scappbase as SCCentral ;
+                central.sendImageData(args[0]) ;
+            } 
+        }
+        else {
+            scappbase.logger_.error({ message: 'renderer -> main invalid args', args: {cmd: cmd, cmdargs: args}});             
+        }
+    }
+}
+
+export async function getImages(cmd: string, ...args: any[]) {
+    if (scappbase) {
+        scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
+        if (args.length === 0) {
+            if (scappbase.applicationType === XeroAppType.Central) {
+                scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
+                let central : SCCentral = scappbase as SCCentral ;
+                central.sendImages() ;
+            } 
+        }
+        else {
+            scappbase.logger_.error({ message: 'renderer -> main invalid args', args: {cmd: cmd, cmdargs: args}});             
+        }
+    }
+}
+
+export async function importImage(cmd: string, ...args: any[]) {
+    if (scappbase) {
+        scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
+        if (args.length === 0) {
+            if (scappbase.applicationType === XeroAppType.Central) {
+                scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
+                let central : SCCentral = scappbase as SCCentral ;
+                central.importImage() ;
+            } 
+        }
+        else {
+            scappbase.logger_.error({ message: 'renderer -> main invalid args', args: {cmd: cmd, cmdargs: args}});             
+        }
+    }
+}
+
+// save-form form_name:string contents:object
+export async function saveForm(cmd: string, ...args: any[]) {
+    if (scappbase) {
+        scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
+        if (args.length === 1 && typeof args[0] === 'object') {
+            if (scappbase.applicationType === XeroAppType.Central) {
+                scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
+                let central : SCCentral = scappbase as SCCentral ;
+                let obj = args[0] as any ;
+                central.saveForm(obj.type, obj.contents) ;
+            } 
+        }
+        else {
+            scappbase.logger_.error({ message: 'renderer -> main invalid args', args: {cmd: cmd, cmdargs: args}});             
+        }
+    }
+}
+
 // set-match-data data:object[]
 export async function setMatchData(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {

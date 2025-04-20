@@ -30,14 +30,17 @@
 .info-table-icon-import {
     margin-left: 0px;
     margin-right: 0px;
+    cursor: pointer;
 }
 
 .info-table-icon-create {
     margin-left: 5px;
     margin-right: 5px;
+    cursor: pointer;
 }
 
 .info-table-icon-edit{
     margin-left: 0px;
     margin-right: 0px;
+    cursor: pointer;
 }

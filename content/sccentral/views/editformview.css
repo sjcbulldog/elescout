@@ -1,0 +1,23 @@
+.form-edit-topmost {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.form-edit-title {
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    flex-grow: 0;
+}
+
+.form-edit-tab {
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+    flex-grow: 0;
+}
+
+.form-edit-form {
+    flex-grow: 1;
+    z-index: 1;
+}

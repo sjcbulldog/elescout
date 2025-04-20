@@ -1,0 +1,18 @@
+.popup-menu {
+    z-index: 1000;
+    position: absolute;
+    background-color: white;
+}
+
+.popup-menu-item {
+    padding: 10px;
+    font-size: 16px;
+    color: black;
+    background-color: white;
+    cursor: pointer;
+}
+
+.popup-menu-item:hover {
+    background-color: gray;
+    color: white
+}

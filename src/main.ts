@@ -40,7 +40,11 @@ import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventDa
          deleteDataSet,
          renameDataSet,
          getTeamFieldList,
-         getMatchFieldList} from "./ipchandlers" ;
+         getMatchFieldList,
+         saveForm,
+         getImages,
+         importImage,
+         getImageData} from "./ipchandlers" ;
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -116,6 +120,10 @@ app.on("ready", () => {
     ipcMain.on('get-match-db', (event, ...args) => { getMatchDB('get-match-db', ...args)});
     ipcMain.on('get-team-db', (event, ...args) => { getTeamDB('get-team-db', ...args)}) ;
     ipcMain.on('get-form', (event, ...args) => { getForm('get-form', ...args)});
+    ipcMain.on('get-image-data', (event, ...args) => { getImageData('get-image-data', ...args)});
+    ipcMain.on('get-images', (event, ...args) => { getImages('get-images', ...args)});
+    ipcMain.on('import-image', (event, ...args) => { importImage('import-image', ...args)}) ;
+    ipcMain.on('save-form', (event, ...args) => { saveForm('save-form', ...args)});
     ipcMain.on('get-match-data', (event, ...args) => { getMatchData('get-match-data', ...args)});
     ipcMain.on('get-team-status', (event, ...args) => { getTeamStatus('get-team-status', ...args)}) ;
     ipcMain.on('get-match-status', (event, ...args) => { getMatchStatus('get-match-status', ...args)}) ;

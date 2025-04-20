@@ -56,34 +56,38 @@ export class SCCentral extends SCBase {
 		"b3",
 	];
 
-	private static readonly openExistingEvent: string = "open-existing";
-	private static readonly closeEvent: string = "close-event";
-	private static readonly createNewEvent: string = "create-new";
-	private static readonly selectTeamForm: string = "select-team-form";
-	private static readonly selectMatchForm: string = "select-match-form";
-	private static readonly assignTablets: string = "assign-tablets";
-	private static readonly loadBAEvent: string = "load-ba-event";
-	private static readonly viewInit: string = "view-init";
-	private static readonly viewDataSets: string = "view-datasets";
+	private static readonly createMatchForm: string = 'create-match-form' ;
+	private static readonly editMatchForm: string = 'edit-match-form' ;
+	private static readonly createTeamForm: string = 'create-team-form' ;
+	private static readonly editTeamForm: string = 'edit-team-form' ;
+	private static readonly openExistingEvent: string = 'open-existing';
+	private static readonly closeEvent: string = 'close-event';
+	private static readonly createNewEvent: string = 'create-new';
+	private static readonly selectTeamForm: string = 'select-team-form';
+	private static readonly selectMatchForm: string = 'select-match-form';
+	private static readonly assignTablets: string = 'assign-tablets';
+	private static readonly loadBAEvent: string = 'load-ba-event';
+	private static readonly viewInit: string = 'view-init';
+	private static readonly viewDataSets: string = 'view-datasets';
 	private static readonly viewPicklist: string = 'view-picklist' ;
-	private static readonly lockEvent: string = "lock-event";
-	private static readonly editTeams: string = "edit-teams";
-	private static readonly editMatches: string = "edit-matches";
-	private static readonly importTeams: string = "import-teams";
-	private static readonly importMatches: string = "import-matches";
-	private static readonly viewTeamForm: string = "view-team-form";
-	private static readonly viewTeamStatus: string = "view-team-status";
-	private static readonly viewTeamDB: string = "view-team-db";
-	private static readonly viewMatchForm: string = "view-match-form";
-	private static readonly viewMatchStatus: string = "view-match-status";
-	private static readonly viewMatchDB: string = "view-match-db";
-	private static readonly viewPreviewForm: string = "view-preview-form";
-	private static readonly viewHelp: string = "view-help";
-	private static readonly viewAbout: string = "view-about";
-	private static readonly viewTeamGraph: string = "view-team-graph";
-	private static readonly viewFormulas: string = "view-formulas";
-	private static readonly viewMultiView: string = "view-multi-view";
-	private static readonly viewSpider: string = "view-spider" ;
+	private static readonly lockEvent: string = 'lock-event';
+	private static readonly editTeams: string = 'edit-teams';
+	private static readonly editMatches: string = 'edit-matches';
+	private static readonly importTeams: string = 'import-teams';
+	private static readonly importMatches: string = 'import-matches';
+	private static readonly viewTeamForm: string = 'view-team-form';
+	private static readonly viewTeamStatus: string = 'view-team-status';
+	private static readonly viewTeamDB: string = 'view-team-db';
+	private static readonly viewMatchForm: string = 'view-match-form';
+	private static readonly viewMatchStatus: string = 'view-match-status';
+	private static readonly viewMatchDB: string = 'view-match-db';
+	private static readonly viewPreviewForm: string = 'view-preview-form';
+	private static readonly viewHelp: string = 'view-help';
+	private static readonly viewAbout: string = 'view-about';
+	private static readonly viewTeamGraph: string = 'view-team-graph';
+	private static readonly viewFormulas: string = 'view-formulas';
+	private static readonly viewMultiView: string = 'view-multi-view';
+	private static readonly viewSpider: string = 'view-spider' ;
 	private static readonly viewSingleTeamSummary: string = 'view-single-team-summary' ;
 
 	private project_?: Project = undefined;
@@ -104,13 +108,13 @@ export class SCCentral extends SCBase {
 	private lastformview_? : string ;
 
 	constructor(win: BrowserWindow, args: string[]) {
-		super(win, "server");
+		super(win, 'server');
 
 		this.color_ = 'blue' ;
 		this.reversed_ = false ;
 
 		for (let arg of args) {
-			if (arg.startsWith("--year:")) {
+			if (arg.startsWith('--year:')) {
 				this.year_ = +arg.substring(7);
 			}
 		}
@@ -143,7 +147,7 @@ export class SCCentral extends SCBase {
 	}
 
 	public basePage(): string {
-		return "content/sccentral/central.html";
+		return 'content/sccentral/central.html';
 	}
 
 	public canQuit(): boolean {
@@ -198,37 +202,37 @@ export class SCCentral extends SCBase {
 		let index = 0;
 
 		let filemenu: MenuItem = new MenuItem({
-			type: "submenu",
-			label: "File",
-			role: "fileMenu",
+			type: 'submenu',
+			label: 'File',
+			role: 'fileMenu',
 		});
 
 		let createitem: MenuItem = new MenuItem({
-			type: "normal",
-			label: "Create Event ...",
-			id: "create-event",
+			type: 'normal',
+			label: 'Create Event ...',
+			id: 'create-event',
 			click: () => {
 				this.executeCommand(SCCentral.createNewEvent);
 			},
 		});
 		filemenu.submenu!.insert(index++, createitem);
-		this.menuitems_.set("file/create", createitem);
+		this.menuitems_.set('file/create', createitem);
 
 		let openitem: MenuItem = new MenuItem({
-			type: "normal",
-			label: "Open Event ...",
-			id: "open-event",
+			type: 'normal',
+			label: 'Open Event ...',
+			id: 'open-event',
 			click: () => {
 				this.executeCommand(SCCentral.openExistingEvent);
 			},
 		});
 		filemenu.submenu!.insert(index++, openitem);
-		this.menuitems_.set("file/open", openitem);
+		this.menuitems_.set('file/open', openitem);
 
 		if (this.hasSetting(SCCentral.recentFilesSetting)) {
 			let recent: MenuItem = new MenuItem({
-				type: "submenu",
-				label: "Recent",
+				type: 'submenu',
+				label: 'Recent',
 				submenu: new Menu(),
 				click: () => {
 					this.executeCommand(SCCentral.openExistingEvent);
@@ -240,10 +244,10 @@ export class SCCentral extends SCBase {
 
 			for (let one of recents) {
 				let item: MenuItem = new MenuItem({
-					type: "normal",
+					type: 'normal',
 					label: one,
 					click: () => {
-						let evpath = path.join(one, "event.json");
+						let evpath = path.join(one, 'event.json');
 						Project.openEvent(this.logger_, evpath, this.year_!)
 							.then((p) => {
 								this.addRecent(p.location);
@@ -252,12 +256,12 @@ export class SCCentral extends SCBase {
 								if (this.project_  && this.project_.isLocked()) {
 									this.startSyncServer();
 								}
-								this.setView("info");
+								this.setView('info');
 								this.sendNavData();
 							})
 							.catch((err) => {
 								let errobj: Error = err as Error;
-								dialog.showErrorBox("Open Project Error", errobj.message);
+								dialog.showErrorBox('Open Project Error', errobj.message);
 							});
 					},
 				});
@@ -265,19 +269,19 @@ export class SCCentral extends SCBase {
 			}
 		}
 
-		filemenu.submenu!.insert(index++, new MenuItem({ type: "separator" }));
+		filemenu.submenu!.insert(index++, new MenuItem({ type: 'separator' }));
 
 		let closeitem: MenuItem = new MenuItem({
-			type: "normal",
-			label: "Close Event",
-			id: "close-event",
+			type: 'normal',
+			label: 'Close Event',
+			id: 'close-event',
 			enabled: false,
 			click: () => {
 				this.executeCommand(SCCentral.closeEvent);
 			},
 		});
 		filemenu.submenu!.insert(index++, closeitem);
-		this.menuitems_.set("file/close", closeitem);
+		this.menuitems_.set('file/close', closeitem);
 
 		ret.append(filemenu);
 
@@ -311,109 +315,109 @@ export class SCCentral extends SCBase {
 		ret.append(optionmenu);
 
 		let datamenu: MenuItem = new MenuItem({
-			type: "submenu",
-			label: "Data",
+			type: 'submenu',
+			label: 'Data',
 			submenu: new Menu(),
 		});
 
 		let downloadBAData: MenuItem = new MenuItem({
-			type: "normal",
-			label: "Import Data From Blue Alliance",
+			type: 'normal',
+			label: 'Import Data From Blue Alliance',
 			enabled: false,
 			click: () => {
 				this.importBlueAllianceData();
 			},
 		});
 		datamenu.submenu?.append(downloadBAData);
-		this.menuitems_.set("data/loadbadata", downloadBAData);
+		this.menuitems_.set('data/loadbadata', downloadBAData);
 
 		let downloadSTData: MenuItem = new MenuItem({
-			type: "normal",
-			label: "Import Data From Statbotics",
+			type: 'normal',
+			label: 'Import Data From Statbotics',
 			enabled: false,
 			click: () => {
 				this.importStatboticsData();
 			},
 		});
 		datamenu.submenu?.append(downloadSTData);
-		this.menuitems_.set("data/loadstdata", downloadSTData);
+		this.menuitems_.set('data/loadstdata', downloadSTData);
 
 		let importGraphDefns: MenuItem = new MenuItem({
-			type: "normal",
-			label: "Import Graph Definitions",
+			type: 'normal',
+			label: 'Import Graph Definitions',
 			enabled: false,
 			click: () => {
 				this.importGraphDefinitions();
 			},
 		});
 		datamenu.submenu?.append(importGraphDefns);
-		this.menuitems_.set("data/graphdefn", importGraphDefns);		
+		this.menuitems_.set('data/graphdefn', importGraphDefns);		
 
-		datamenu.submenu?.append(new MenuItem({ type: "separator" }));
+		datamenu.submenu?.append(new MenuItem({ type: 'separator' }));
 
 		let exportTeamData: MenuItem = new MenuItem({
-			type: "normal",
-			label: "Export Team Data",
+			type: 'normal',
+			label: 'Export Team Data',
 			enabled: false,
 			click: () => {
 				this.doExportData(TeamDataModel.TeamTableName);
 			},
 		});
 		datamenu.submenu?.append(exportTeamData);
-		this.menuitems_.set("data/exportteam", exportTeamData);
+		this.menuitems_.set('data/exportteam', exportTeamData);
 
 		let exportMatchData: MenuItem = new MenuItem({
-			type: "normal",
-			label: "Export Match Data",
+			type: 'normal',
+			label: 'Export Match Data',
 			enabled: false,
 			click: () => {
 				this.doExportData(MatchDataModel.MatchTableName);
 			},
 		});
 		datamenu.submenu?.append(exportMatchData);
-		this.menuitems_.set("data/exportmatch", exportMatchData);
+		this.menuitems_.set('data/exportmatch', exportMatchData);
 	
 		let exportPicklistData = new MenuItem({
-			type: "normal",
-			label: "Export All Picklist Data",
+			type: 'normal',
+			label: 'Export All Picklist Data',
 			enabled: false,
 			click: () => {
 				this.doExportPicklist();
 			},
 		});
 		datamenu.submenu?.append(exportPicklistData);
-		this.menuitems_.set("data/exportpicklist", exportPicklistData);
+		this.menuitems_.set('data/exportpicklist', exportPicklistData);
 
-		datamenu.submenu?.append(new MenuItem({ type: "separator" }));
+		datamenu.submenu?.append(new MenuItem({ type: 'separator' }));
 		let importFormulas = new MenuItem({
-			type: "normal",
-			label: "Import Formulas",
+			type: 'normal',
+			label: 'Import Formulas',
 			enabled: false,
 			click: () => {
 				this.importFormulasFromFile();
 			},
 		});
 		datamenu.submenu?.append(importFormulas);
-		this.menuitems_.set("data/importformulas", importFormulas);
+		this.menuitems_.set('data/importformulas', importFormulas);
 
 		ret.append(datamenu);
 
 		let viewmenu: MenuItem = new MenuItem({
-			type: "submenu",
-			role: "viewMenu",
+			type: 'submenu',
+			role: 'viewMenu',
 		});
 		ret.append(viewmenu);
 
 		let helpmenu: MenuItem = new MenuItem({
-			type: "submenu",
-			label: "Help",
+			type: 'submenu',
+			label: 'Help',
 			submenu: new Menu(),
 		});
 
 		let helpitem: MenuItem = new MenuItem({
-			type: "normal",
-			label: "Help",
-			id: "help-help",
+			type: 'normal',
+			label: 'Help',
+			id: 'help-help',
 			click: () => {
 				this.executeCommand(SCCentral.viewHelp);
 			},
@@ -421,9 +425,9 @@ export class SCCentral extends SCBase {
 		helpmenu.submenu!.append(helpitem);
 
 		let aboutitem: MenuItem = new MenuItem({
-			type: "normal",
-			label: "About",
-			id: "help-about",
+			type: 'normal',
+			label: 'About',
+			id: 'help-about',
 			click: () => {
 				this.executeCommand(SCCentral.viewAbout);
 			},
@@ -445,14 +449,14 @@ export class SCCentral extends SCBase {
 
 	private updateMenuState(hasEvent: boolean) {
 		let items: string[] = [
-			"data/exportmatch",
-			"data/exportteam",
-			"data/loadbadata",
-			"data/loadstdata",
-			"data/exportpicklist",
-			"data/graphdefn",
-			"file/close",
-			"data/importformulas",
+			'data/exportmatch',
+			'data/exportteam',
+			'data/loadbadata',
+			'data/loadstdata',
+			'data/exportpicklist',
+			'data/graphdefn',
+			'file/close',
+			'data/importformulas',
 		];
 		for (let item of items) {
 			this.enableMenuItem(item, hasEvent);
@@ -461,20 +465,20 @@ export class SCCentral extends SCBase {
 
 	private doExportData(table: string) {
 		if (!this.project_ || !this.project_.isInitialized()) {
-			dialog.showErrorBox("Export Data", "No event has been loaded - cannot export data");
+			dialog.showErrorBox('Export Data', 'No event has been loaded - cannot export data');
 			return;
 		}
 
 		var fpath = dialog.showSaveDialog({
-			title: "Select CSV Output File",
-			message: "Select file for CSV output for table '" + table + "'",
+			title: 'Select CSV Output File',
+			message: 'Select file for CSV output for table "' + table + '"',
 			filters: [
 				{
-					extensions: ["csv"],
-					name: "CSV File",
+					extensions: ['csv'],
+					name: 'CSV File',
 				},
 			],
-			properties: ["showOverwriteConfirmation"],
+			properties: ['showOverwriteConfirmation'],
 		});
 
 		fpath.then((pathname) => {
@@ -482,6 +486,36 @@ export class SCCentral extends SCBase {
 				this.project_!.data_mgr_!.exportToCSV(pathname.filePath, table);
 			}
 		});
+	}
+
+	public saveForm(type: string, contents: any) {
+		this.project_!.form_mgr_!.saveForm(type, contents) ;
+	}
+
+	public sendImages() {
+		this.sendToRenderer('send-images', this.image_mgr_.getImageNames()) ;
+	}
+
+	public sendImageData(image: string) {
+		this.sendToRenderer('send-image-data', { name: image, data: this.getImageData(image) }) ;
+	}
+
+	public importImage() {
+		dialog.showOpenDialog(this.win_, {
+			title: 'Open event.json file for event',
+			filters: [
+				{ name: 'PNGFiles', extensions: ['png'] },
+				{ name: 'All Files', extensions: ['*']}
+			],
+			properties: [
+				'openFile',
+			]
+		}).then(result => {	
+			if (!result.canceled) {
+				this.image_mgr_.addImage(result.filePaths[0]) ;
+				this.sendToRenderer('send-images', this.image_mgr_.getImageNames()) ;
+			}
+		}) ;		
 	}
 
 	public sendForm(arg: string) {
@@ -544,9 +578,9 @@ export class SCCentral extends SCBase {
 				ret.message = errobj.message;
 			}
 		} else {
-			ret.message = "No team form has been set";
+			ret.message = 'No team form has been set';
 		}
-		this.sendToRenderer("send-form", ret);
+		this.sendToRenderer('send-form', ret);
 	}
 
 	public async sendMatchStatus() {
@@ -671,13 +705,13 @@ export class SCCentral extends SCBase {
 					};
 					ret.push(obj);
 				}
-				this.sendToRenderer("send-match-status", ret);
+				this.sendToRenderer('send-match-status', ret);
 			}
 		} catch (err) {
 			let errobj: Error = err as Error;
 			dialog.showErrorBox(
-				"Error",
-				"Error retreiving match data - " + errobj.message
+				'Error',
+				'Error retreiving match data - ' + errobj.message
 			);
 		}
 	}
@@ -695,8 +729,8 @@ export class SCCentral extends SCBase {
 		if (this.project_ && this.project_.tablet_mgr_!.hasTeamAssignments()) {
 			for (let t of this.project_.tablet_mgr_!.getTeamAssignments()) {
 				let status: string = this.project_.data_mgr_!.hasTeamScoutingResults(t.team)
-					? "Y"
-					: "N";
+					? 'Y'
+					: 'N';
 				let team: BATeam | undefined = this.project_.team_mgr_!.findTeamByNumber(t.team);
 				if (team) {
 					ret.push({
@@ -709,7 +743,7 @@ export class SCCentral extends SCBase {
 			}
 		}
 
-		this.sendToRenderer("send-team-status", ret);
+		this.sendToRenderer('send-team-status', ret);
 	}
 
 
@@ -733,7 +767,7 @@ export class SCCentral extends SCBase {
 
 		if (str) {
 			if (str.length > maxlen) {
-				ret = "..." + str.substring(str.length - maxlen);
+				ret = '...' + str.substring(str.length - maxlen);
 			} else {
 				ret = str;
 			}
@@ -762,7 +796,7 @@ export class SCCentral extends SCBase {
 				createicon: this.getIconData('create.png'),
 				editicon: this.getIconData('edit.png')
 			};
-			this.sendToRenderer("send-info-data", obj);
+			this.sendToRenderer('send-info-data', obj);
 		}
 	}
 
@@ -785,11 +819,11 @@ export class SCCentral extends SCBase {
 	public sendTeamFieldList() : void {
 		this.project_?.data_mgr_?.getTeamColumns()
 			.then((cols) => {
-				this.sendToRenderer("send-team-field-list", cols);
+				this.sendToRenderer('send-team-field-list', cols);
 			})
 			.catch((err) => {
 				this.logger_.error(
-					"error getting columns from database for send-team-field-list",
+					'error getting columns from database for send-team-field-list',
 					err
 				);
 			});
@@ -798,11 +832,11 @@ export class SCCentral extends SCBase {
 	public sendMatchFieldList() : void {
 		this.project_?.data_mgr_?.getMatchColumns()
 			.then((cols) => {
-				this.sendToRenderer("send-match-field-list", cols);
+				this.sendToRenderer('send-match-field-list', cols);
 			})
 			.catch((err) => {
 				this.logger_.error(
-					"error getting columns from database for send-match-field-list",
+					'error getting columns from database for send-match-field-list',
 					err
 				);
 			});
@@ -827,7 +861,7 @@ export class SCCentral extends SCBase {
 
 	public sendTabletData(): void {
 		if (this.project_) {
-			this.sendToRenderer("send-tablet-data", this.project_.tablet_mgr_!.getTablets());
+			this.sendToRenderer('send-tablet-data', this.project_.tablet_mgr_!.getTablets());
 		}
 	}
 
@@ -856,7 +890,7 @@ export class SCCentral extends SCBase {
 	}
 
 	public sendTeamData(): void {
-		this.sendToRenderer("send-team-data", this.project_?.team_mgr_!.getTeams());
+		this.sendToRenderer('send-team-data', this.project_?.team_mgr_!.getTeams());
 	}
 
 	public setMatchData(data: ManualMatchData[]) {
@@ -874,8 +908,8 @@ export class SCCentral extends SCBase {
 								cols: cols,
 								data: data,
 							};
-							this.sendToRenderer("send-match-col-config",this.project_!.data_mgr_!.getMatchColConfig()) ;
-							this.sendToRenderer("send-match-db", dataobj);
+							this.sendToRenderer('send-match-col-config',this.project_!.data_mgr_!.getMatchColConfig()) ;
+							this.sendToRenderer('send-match-db', dataobj);
 						})
 						.catch((err) => {});
 				})
@@ -894,18 +928,18 @@ export class SCCentral extends SCBase {
 								data: data,
 							};
 							this.sendToRenderer('send-team-col-config', this.project_!.data_mgr_!.getTeamColConfig()) ;
-							this.sendToRenderer("send-team-db", dataobj);
+							this.sendToRenderer('send-team-db', dataobj);
 						})
 						.catch((err) => {
 							this.logger_.error(
-								"error getting data from database for send-team-db",
+								'error getting data from database for send-team-db',
 								err
 							);
 						});
 				})
 				.catch((err) => {
 					this.logger_.error(
-						"error getting columns from database for send-team-db",
+						'error getting columns from database for send-team-db',
 						err
 					);
 				});
@@ -936,7 +970,7 @@ export class SCCentral extends SCBase {
 				data.push(d);
 			}
 		}
-		this.sendToRenderer("send-match-data", data, this.project_?.team_mgr_!.getTeams());
+		this.sendToRenderer('send-match-data', data, this.project_?.team_mgr_!.getTeams());
 	}
 
 	public sendEventData(): void {
@@ -944,47 +978,47 @@ export class SCCentral extends SCBase {
 			this.ba_?.getEvents()
 				.then((frcevs: BAEvent[]) => {
 					this.baevents_ = frcevs;
-					this.sendToRenderer("send-event-data", frcevs);
+					this.sendToRenderer('send-event-data', frcevs);
 				})
 				.catch((err) => {
 					let errobj: Error = err as Error;
 					dialog.showMessageBoxSync(this.win_, {
-						title: "Load Blue Alliance Event",
+						title: 'Load Blue Alliance Event',
 						message: errobj.message,
 					});
-					this.setView("info");
+					this.setView('info');
 				});
 		} else {
 			dialog.showErrorBox(
-				"Load Blue Alliance Event",
-				"The Blue Alliance site is not available"
+				'Load Blue Alliance Event',
+				'The Blue Alliance site is not available'
 			);
-			this.sendToRenderer("send-event-data", null);
+			this.sendToRenderer('send-event-data', null);
 		}
 	}
 
 	public async loadBaEventDataError(): Promise<void> {
-		this.sendToRenderer("set-status-title", "Blue Alliance Error");
+		this.sendToRenderer('set-status-title', 'Blue Alliance Error');
 		this.sendToRenderer(
-			"set-status-html",
-			"Error importing data - invalid request from renderer - internal error"
+			'set-status-html',
+			'Error importing data - invalid request from renderer - internal error'
 		);
-		this.sendToRenderer("set-status-close-button-visible", true);
-		this.setView("info");
+		this.sendToRenderer('set-status-close-button-visible', true);
+		this.setView('info');
 	}
 
 	public async loadBaEventData(key: string): Promise<void> {
 		if (!this.isBAAvailable()) {
 			dialog.showErrorBox(
-				"Load Blue Alliance Event",
-				"The Blue Alliance site is not available."
+				'Load Blue Alliance Event',
+				'The Blue Alliance site is not available.'
 			);
 			return;
 		}
 
 		let fev: BAEvent | undefined = this.getEventFromKey(key);
 		if (fev) {
-			this.sendToRenderer("set-status-title","Loading event '" + fev.name + "'");
+			this.sendToRenderer('set-status-title','Loading event "' + fev.name + '"');
 			this.msg_ = "";
 
 			try {
@@ -1466,6 +1500,24 @@ export class SCCentral extends SCBase {
 		} else if (cmd === SCCentral.viewSingleTeamSummary) {
 			this.setView("singleteam") ;
 		}
+		else if (cmd === SCCentral.createMatchForm) {
+			if (this.project_ && this.project_.form_mgr_) {
+				this.project_.form_mgr_.createMatchForm() ;
+				this.executeCommand(SCCentral.editMatchForm) ;
+			}
+		}
+		else if (cmd === SCCentral.createTeamForm) {
+			if (this.project_ && this.project_.form_mgr_) {
+				this.project_.form_mgr_.createTeamForm() ;
+				this.executeCommand(SCCentral.editTeamForm) ;
+			}
+		}
+		else if (cmd === SCCentral.editMatchForm) {
+			this.setFormEdit('match') ;
+		}
+		else if (cmd === SCCentral.editTeamForm) {
+			this.setFormEdit('team') ;
+		}
 	}
 
 	private previewForm() {
@@ -1505,6 +1557,11 @@ export class SCCentral extends SCBase {
 	private setFormView(view: string) {
 		this.lastformview_ = view ;
 		this.setView('formview', view);
+	}
+
+	private setFormEdit(name: string) {
+		this.lastformview_ = name ;
+		this.setView('formedit', name);
 	}
 
 	private importTeams() {
@@ -2471,6 +2528,12 @@ export class SCCentral extends SCBase {
 
 	private getIconData(iconname: string) {
 		let datafile = path.join(this.content_dir_, 'images', 'icons', iconname) ;
+		let data: string  = fs.readFileSync(datafile).toString('base64');
+		return data ;
+	}
+
+	private getImageData(name: string) {
+		let datafile = path.join(this.content_dir_, 'images', name + '.png') ;
 		let data: string  = fs.readFileSync(datafile).toString('base64');
 		return data ;
 	}

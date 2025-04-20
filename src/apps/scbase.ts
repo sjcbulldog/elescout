@@ -14,6 +14,7 @@ import * as winston from "winston";
 import * as crypto from "crypto";
 import settings from "electron-settings";
 import { FormDetailInfo, FormImage, FormInfo } from "../comms/formifc";
+import { ImageManager } from "../imagemgr";
 
 export enum XeroAppType {
   None,
@@ -38,6 +39,7 @@ export abstract class SCBase {
   protected win_: BrowserWindow;
   protected appdir_: string;
   protected content_dir_: string ;
+  protected image_mgr_ : ImageManager ;
   public logger_: winston.Logger;
   public lastview_?: string ;
 
@@ -46,6 +48,7 @@ export abstract class SCBase {
     this.win_ = win;
     this.appdir_ = path.join(os.homedir(), SCBase.appdirName);
     this.content_dir_ = path.join(process.cwd(), 'content') ;
+    this.image_mgr_ = new ImageManager(path.join(this.content_dir_, 'images')) ;
 
     if (!fs.existsSync(this.appdir_)) {
       fs.mkdirSync(this.appdir_);

@@ -20,6 +20,7 @@ const viewMap = new Map([
   ['multiview', MultiView],
   ['spiderview', SpiderView],
   ['datasets', DataSetsView],
+  ['formedit', EditFormView],
 ]) ;
 
 async function updateMainWindow(mtype, args) {

@@ -53,7 +53,8 @@ export class Project {
 
     public isInitialized() : boolean {
         if (this.info_) {
-            return true ;        }
+            return true ;        
+        }
         return false ;
     }
 

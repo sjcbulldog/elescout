@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { DataManager } from "./datamgr";
 import { DataValueType } from "../expr/datavalue";
+import { dialog } from "electron";
 
 export class FormInfo {
   public teamform_?: string; // The path to the form for team scouting
@@ -236,6 +237,61 @@ export class FormManager extends Manager {
     });
 
     return ret;
+  }
+
+  public createTeamForm() {
+    if (this.info_.teamform_ && this.info_.teamform_.length > 0) {
+      let ans = dialog.showMessageBoxSync(
+        {
+          title: 'Replace Team Form',
+          type: 'warning',
+          buttons: ['Yes', 'No'],
+          message: 'There is already a team form.  This will replace the current form.  Do you want to continue?',
+        }) ;
+
+      if (ans === 1) {
+        return;
+      }
+    }
+
+    this.info_.teamform_ = this.createFormInternal('team', 'team.json') ;
+  }
+
+  public saveForm(type: string, contents: any) {
+    let target = path.join(this.location_, type + ".json");
+    let jsonstr = JSON.stringify(contents, null, 4);
+    fs.writeFileSync(target, jsonstr);
+  }
+
+  public createMatchForm() {
+    if (this.info_.matchform_ && this.info_.matchform_.length > 0) {
+      let ans = dialog.showMessageBoxSync(
+        {
+          title: 'Replace Match Form',
+          type: 'warning',
+          buttons: ['Yes', 'No'],
+          message: 'There is already a match form.  This will replace the current form.  Do you want to continue?',
+        }) ;
+
+      if (ans === 1) {
+        return;
+      }
+    }
+
+    this.info_.matchform_ = this.createFormInternal('match', 'match.json') ;
+  }
+
+  private createFormInternal(ftype: string, filename: string): string {
+    let target = path.join(this.location_, filename);
+    let jsonobj = {
+      form: ftype,
+      sections: []
+    };
+
+    let jsonstr = JSON.stringify(jsonobj, null, 4);
+    fs.writeFileSync(target, jsonstr);
+
+    return filename ;
   }
 
   private static validateTag(tag: string): boolean {
