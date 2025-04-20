@@ -11,25 +11,25 @@ class PopupMenu {
         this.items_ = items ;
         this.top_ = document.createElement('div') ;
         this.top_.className = 'popup-menu' ;
+        this.child_menu_ = undefined ;
     }
 
-    onClick(item) {
+    onClick(item, event) {
         if (item.action) {
             item.action() ;
         }
     }
 
-    onSubmenuClick(item) {
+    onSubmenuClick(item, event) {
         if (item.submenu) {
+            this.child_menu_ = item.submenu ;
+            this.child_menu_.showRelative(this.parent_, event.clientX, event.clientY) ;
         }
     }
 
     onGlobalClick(event) {
         let item = event.target.mitem ;
-        if (item && item.submenu) {
-            item.submenu.showRelative(this.parent_, event.clientX, event.clientY) ;
-        }
-        else {
+        if (item && !item.submenu) {
             this.closeMenu() ;
         }
     }
@@ -41,6 +41,11 @@ class PopupMenu {
     }
 
     closeMenu() {
+        if (this.child_menu_) {
+            this.child_menu_.closeMenu() ;
+            this.child_menu_ = undefined ;
+        }
+
         if (this.popup_ && this.parent_.contains(this.popup_)) {
             this.parent_.removeChild(this.popup_) ;
             this.popup_ = null ;
@@ -64,7 +69,7 @@ class PopupMenu {
             div.mitem = item ;
             if (item.submenu) {
                 div.onclick = this.onSubmenuClick.bind(this, item) ;
-                div.innerHTML += item.name + '&#x27A4;' ;
+                div.innerHTML += item.name + '&nbsp;&nbsp;&nbsp;&nbsp;&#x27A4;' ;
             } else {
                 div.innerText = item.name ;
                 div.onclick = this.onClick.bind(this, item) ;

@@ -85,6 +85,9 @@ export class SCScout extends SCBase {
         return true ;
     }
 
+    public close() : void {
+    }
+    
     public sendNavData() : any {
         let treedata : any[] = [] ;
 

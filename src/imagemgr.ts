@@ -20,7 +20,6 @@ export class ImageManager {
     }
 
     public getImageNames() : string[] {
-        // Get the names of all images in the image map
         return Array.from(this.imagemap_.keys()) ;
     }
 
@@ -36,9 +35,10 @@ export class ImageManager {
         // Add an image to the image directory
         if (this.imagedir_) {
             let name = path.basename(imagePath) ;
+            let mname = path.parse(name).name ;
             const destPath = path.join(this.imagedir_, name) ;
             fs.copyFileSync(imagePath, destPath) ;
-            this.imagemap_.set(name, destPath) ;
+            this.imagemap_.set(mname, destPath) ;
             return true ;
         }
         return false ;
@@ -84,7 +84,7 @@ export class ImageManager {
             for (const file of files) {
                 const filePath = path.join(dir!, file) ;
                 if (fs.statSync(filePath).isFile() && file.endsWith('.png')) {
-                    this.imagemap_.set(file, filePath) ;
+                    this.imagemap_.set(path.parse(file).name, filePath) ;
                 }
             }
         }

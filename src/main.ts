@@ -95,6 +95,14 @@ function createWindow() : void {
 
     Menu.setApplicationMenu(scappbase!.createMenu()) ;
 
+    win.on("close", (event) => {
+        if (scappbase) {
+            if (!scappbase.canQuit()) {
+                event.preventDefault() ;
+            }
+        }
+    });
+
     scappbase!.windowCreated() ;
 }
 
@@ -164,6 +172,9 @@ app.on('before-quit', (ev) => {
     if (scappbase) {
         if (!scappbase.canQuit()) {
             ev.preventDefault() ;
+        }
+        else {
+            scappbase.close() ;
         }
     }
 }) ;

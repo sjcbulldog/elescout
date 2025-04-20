@@ -108,6 +108,7 @@ export abstract class SCBase {
   public abstract createMenu(): Menu | null;
   public abstract windowCreated(): void;
   public abstract canQuit(): boolean;
+  public abstract close() : void ;
 
   // process.vesions.node
   // process.version

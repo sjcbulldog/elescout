@@ -18,6 +18,9 @@ export class SCCoach extends SCBase {
         return true ;
     }
 
+    public close() : void {
+    }
+
     public sendNavData() : any {
         this.sendToRenderer('send-tree-data', null);
     }   

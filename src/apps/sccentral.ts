@@ -150,9 +150,12 @@ export class SCCentral extends SCBase {
 		return 'content/sccentral/central.html';
 	}
 
+	public close() : void {
+	}
+
 	public canQuit(): boolean {
 		let ret: boolean = true;
-
+		
 		if (this.project_ && this.project_.data_mgr_) {
 			ret = this.project_.data_mgr_.close() ;
 		}
@@ -572,7 +575,9 @@ export class SCCentral extends SCBase {
 				ret.color = this.color_ ;
 				ret.reversed = this.reversed_ ;
 
-				this.getImages(ret) ;
+				for(let image of jsonobj.images) {
+					this.sendImageData(image) ;
+				}
 			} catch (err) {
 				let errobj = err as Error;
 				ret.message = errobj.message;
@@ -2533,7 +2538,11 @@ export class SCCentral extends SCBase {
 	}
 
 	private getImageData(name: string) {
-		let datafile = path.join(this.content_dir_, 'images', name + '.png') ;
+		let datafile = this.image_mgr_.getImage(name) ;
+		if (!datafile) {
+			return '' ;
+		}
+		
 		let data: string  = fs.readFileSync(datafile).toString('base64');
 		return data ;
 	}
