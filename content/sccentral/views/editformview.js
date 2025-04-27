@@ -574,6 +574,210 @@ class EditFormMultipleSelectDialog extends EditFormControlDialog {
         label.appendChild(this.text_color_) ;
         div.appendChild(label) ;       
 
+        this.radio_size_ = document.createElement('input') ;
+        this.radio_size_.type = 'number' ;
+        this.radio_size_.className = 'popup-form-edit-dialog-input' ;
+        this.radio_size_.value = this.formctrl_.item.radiosize ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Radio Button Size' ;
+        label.appendChild(this.radio_size_) ;
+        div.appendChild(label) ;  
+
+        this.orientation_ = document.createElement('select') ;
+        this.orientation_.className = 'popup-form-edit-dialog-select' ;
+        let option = document.createElement('option') ;
+        option.value = 'vertical' ;
+        option.innerText = 'Vertical' ;
+        this.orientation_.appendChild(option) ;
+
+        option = document.createElement('option') ;
+        option.value = 'horizontal' ;
+        option.innerText = 'Horizontal' ;
+        this.orientation_.appendChild(option) ;
+        this.orientation_.value = this.formctrl_.item.orientation ;
+        div.appendChild(this.orientation_) ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Orientation' ;
+        label.appendChild(this.orientation_) ;
+        div.appendChild(label) ;      
+
+        this.list_ = document.createElement('div') ;
+        div.appendChild(this.list_) ;
+
+        this.table_ = new Tabulator(this.list_, 
+            {
+                height: "200px",
+                width: "100%",
+                data: this.getChoiceData(),
+                layout:"fitDataStretch",
+                resizableColumnFit:false,
+                columns: [
+                    {
+                        formatter:"buttonCross", 
+                        width:40, 
+                        cellClick: this.deleteChoice.bind(this),
+                        editable: false,
+                        headerSort: false
+                    },
+                    {
+                        title: "Choice", 
+                        field: "choice", 
+                        hozAlign: "left",
+                        editable: true,
+                        editor: "input",
+                        headerSort: false
+                    },
+                    {
+                        title: "Value", 
+                        field: "value", 
+                        hozAlign: "left",
+                        editable: this.valueEditable.bind(this),
+                        editor: "input",
+                        headerSort: false
+                    }
+                ]
+            }
+        );
+        this.list_.style.marginTop = '8px' ;
+
+        this.table_.on('cellEdited', this.cellEdited.bind(this)) ;
+        this.table_.on('tableBuilt', this.tableBuilt.bind(this)) ;
+
+        pdiv.appendChild(div) ;
+    }
+
+    valueEditable(cell) {
+        let data = cell.getRow().getData().choice ;
+        if (data === EditFormMultipleSelectDialog.addNewChoiceValue) {
+            return false ;
+        }
+
+        return true ;
+    }
+
+    tableBuilt() {
+        this.table_.addRow({ choice: EditFormMultipleSelectDialog.addNewChoiceValue }) ;
+    }
+
+    cellEdited(cell) {
+        if (cell.getValue() === EditFormMultipleSelectDialog.addNewChoiceValue) {
+            cell.restoreOldValue() ;
+        }
+        else if  (cell.getOldValue() === EditFormMultipleSelectDialog.addNewChoiceValue) {
+            this.table_.addRow({ choice: EditFormMultipleSelectDialog.addNewChoiceValue }) ;
+        }
+    }
+
+    extractData() {
+        this.formctrl_.item.tag = this.tag_.value ;
+        this.formctrl_.ctrl.tag = this.tag_.value ;
+        this.formctrl_.item.color = this.text_color_.value ;
+        this.formctrl_.item.font = this.font_name_.value ;
+        this.formctrl_.item.fontsize = parseInt(this.font_size_.value) ;
+        this.formctrl_.item.orientation = this.orientation_.value ;
+        this.formctrl_.item.radiosize = parseInt(this.radio_size_.value) ;
+
+        this.formctrl_.item.choices = [] ;
+        for(let rows of this.table_.getRows()) {
+            let choice = rows.getData().choice ;
+            if (choice === EditFormMultipleSelectDialog.addNewChoiceValue) {
+                break ;
+            }
+            let value = rows.getData().value ;
+            this.formctrl_.item.choices.push({ text: choice, value: value }) ;
+        }
+
+        this.formctrl_.updateChoices() ;
+    }
+}
+
+
+class EditFormSelectDialog extends EditFormControlDialog {
+    static addNewChoiceValue = 'Add New Choice Value' ;
+
+    constructor(close, formctrl) {
+        super(close) ;
+
+        this.formctrl_ = formctrl ;
+    }
+
+    deleteChoice(e, cell) {
+        let data = cell.getRow().getData().choice ;
+        if (data === EditFormSelectDialog.addNewChoiceValue) {
+            return ;
+        }
+        cell.getRow().delete() ;
+    }
+
+    getChoiceData() {
+        let data = [] ;
+        for(let choice of this.formctrl_.item.choices) {
+            data.push(
+                { 
+                    choice: choice.text,
+                    value: choice.value
+                }
+            ) ;
+        }
+        return data ;
+    }
+
+    async populateDialog(pdiv) {
+        let label ;
+
+        let div = document.createElement('div') ;
+        div.className = 'popup-form-edit-dialog-rowdiv' ;
+
+        this.tag_ = document.createElement('input') ;
+        this.tag_.type = 'text' ;
+        this.tag_.className = 'popup-form-edit-dialog-input' ;
+        this.tag_.value = this.formctrl_.item.tag ;
+
+        this.font_name_ = document.createElement('select') ;
+        this.font_name_.className = 'popup-form-edit-dialog-select' ;
+        let fonts = await window.queryLocalFonts() ;
+        for(let font of fonts) {
+            let option = document.createElement('option') ;
+            option.value = font ;
+            option.innerText = font.fullName ;
+            this.font_name_.appendChild(option) ;
+        }
+        this.font_name_.value = this.formctrl_.item.font ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Font' ;
+        label.appendChild(this.font_name_) ;
+        div.appendChild(label) ;       
+        
+        this.font_size_ = document.createElement('input') ;
+        this.font_size_.type = 'number' ;
+        this.font_size_.max = 48 ;
+        this.font_size_.min = 8 ;
+        this.font_size_.className = 'popup-form-edit-dialog-input' ;
+        this.font_size_.value = this.formctrl_.item.fontsize ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Font Size' ;
+        label.appendChild(this.font_size_) ;
+        div.appendChild(label) ;  
+
+        this.text_color_ = document.createElement('input') ;
+        this.text_color_.type = 'color' ;
+        this.text_color_.className = 'popup-form-edit-dialog-input' ;
+        this.text_color_.value = this.formctrl_.item.color ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Color' ;
+        label.appendChild(this.text_color_) ;
+        div.appendChild(label) ;       
+
         this.list_ = document.createElement('div') ;
         div.appendChild(this.list_) ;
 
@@ -662,405 +866,9 @@ class EditFormMultipleSelectDialog extends EditFormControlDialog {
     }
 }
 
-
-class FormControl {
-    constructor(editdone, item) {
-        this.item = item ;
-        this.ctrl = undefined ;
-        this.editdone = editdone ;
-    }
-
-    update(pitem, clone) {
-        if (!clone) {
-            this.item = pitem ;
-        }
-        else {
-            for(let key of Object.keys(pitem)) {
-                if (key !== 'tag') {
-                    this.item[key] = pitem[key] ;
-                }
-            }
-        }
-    }
-
-    put(parent) {
-    }
-
-    edit(parent) {
-    }
-
-    callback(changed) {
-        if (changed) {
-            this.editdone(changed) ;
-        }
-    }
-}
-
-class LabelFormControl extends FormControl {
-    constructor(editdone, ptag, px, py, pwidth, pheight) {
-        super(      
-            editdone,
-            {
-                type: EditFormView.ctrlTypeLabel,
-                x: px,
-                y: py,
-                width: pwidth,
-                height: pheight,
-                font: 'Arial',
-                fontsize: 36,
-                color: 'black',
-                tag: ptag,
-                text: 'Label'
-            }) ;
-    }
-
-    clone(tag) {
-        let ret = new LabelFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
-        ret.update(this.item, true) ;
-        return ret ;
-    }
-
-    put(parent) {
-        let label = document.createElement('p') ;
-        label.className = 'form-edit-label' ;
-        label.style.position = 'absolute' ;
-        label.style.left = this.item.x + 'px' ;
-        label.style.top = this.item.y + 'px' ;
-        label.style.width = this.item.width + 'px' ;
-        label.style.height = this.item.height + 'px' ;
-        label.innerText = this.item.text ;
-        label.style.font = this.item.font ;
-        label.style.fontSize = this.item.fontsize + 'px' ;
-        label.style.color = this.item.color ;
-        label.style.zIndex = 1000 ;
-        label.disabled = true ;
-        label.style.pointerEvents = 'none' ;
-        label.style.margin = '4px' ;
-        label.style.textAlign = 'center' ;
-
-        this.ctrl = label ;
-        parent.appendChild(label) ;
-    }
-    
-    edit(parent) {
-        let dialog = new EditFormLabelDialog(this.callback.bind(this), this) ;
-        dialog.showRelative(parent) ;
-    }
-}
-
-class TextFormControl extends FormControl {
-    constructor(editdone, ptag, px, py, pwidth, pheight) {
-        super(
-            editdone, 
-            {
-                type: EditFormView.ctrlTypeText,
-                x: px,
-                y: py,
-                width: pwidth,
-                height: pheight,
-                font: 'Arial',
-                fontsize: 36,
-                color: 'black',
-                backcolor: '#f0f0f0f',
-                tag: ptag,
-                placeholder: 'Enter text here',
-            }) ;
-    }
-
-    clone(tag) {
-        let ret = new TextFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
-        ret.update(this.item, true) ;
-        return ret ;
-    }
-
-    put(parent) {
-        let input = document.createElement('input') ;
-        input.type = 'text' ;
-        input.style.position = 'absolute' ;
-        input.style.left = this.item.x + 'px' ;
-        input.style.top = this.item.y + 'px' ;
-        input.style.width = this.item.width + 'px' ;
-        input.style.height = this.item.height + 'px' ;
-        input.value = this.item.placeholder ;
-        input.style.font = this.item.font ;
-        input.style.fontSize = this.item.fontsize + 'px' ;
-        input.style.color = this.item.color ;
-        input.style.backgroundColor = this.item.backcolor ;
-        input.style.zIndex = 1000 ;
-        input.disabled = true ;
-        input.style.pointerEvents = 'none' ;
-        input.style.margin = '4px' ;
-
-        this.ctrl = input ;
-        parent.appendChild(input) ;
-    }
-
-    edit(parent) {
-        let dialog = new EditFormTextDialog(this.callback.bind(this), this) ;
-        dialog.showRelative(parent) ;
-    }
-}
-
-class BooleanFormControl extends FormControl {
-    constructor(editdone, ptag, px, py, pwidth, pheight) {
-        super(
-            editdone, 
-            {
-                type: EditFormView.ctrlTypeBoolean,
-                x: px,
-                y: py,
-                width: pwidth,
-                height: pheight,
-                color: 'blue',
-                backcolor: 'white',
-                tag: ptag,
-            }) ;
-    }
-
-    clone(tag) {
-        let ret = new BooleanFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
-        ret.update(this.item, true) ;
-        return ret ;
-    }
-
-    put(parent) {
-        let div = document.createElement('div') ;
-        div.style.position = 'absolute' ;
-        div.style.left = this.item.x + 'px' ;
-        div.style.top = this.item.y + 'px' ;
-        div.style.width = this.item.width + 'px' ;
-        div.style.height = this.item.height + 'px' ;
-        div.style.zIndex = 1000 ;
-        div.style.pointerEvents = 'none' ;
-        div.style.margin = '4px' ;
-
-        let input = document.createElement('input') ;
-        input.type = 'checkbox' ;
-        input.style.accentColor = this.item.color ;
-        input.disabled = true ;
-        input.style.pointerEvents = 'none' ;
-        input.checked = true ;
-        input.style.width = '100%' ;
-        input.style.height = '100%' ;
-        div.appendChild(input) ;
-
-        this.ctrl = div ;
-        parent.appendChild(div) ;
-    }
-
-    edit(parent) {
-        let dialog = new EditFormBooleanDialog(this.callback.bind(this), this) ;
-        dialog.showRelative(parent) ;
-    }
-}
-
-class UpDownFormControl extends FormControl {
-    constructor(editdone, ptag, px, py, pwidth, pheight) {
-        super(
-            editdone, 
-            {
-                type: EditFormView.ctrlTypeUpDown,
-                x: px,
-                y: py,
-                width: pwidth,
-                height: pheight,
-                color: 'black',
-                backcolor: 'grey',
-                tag: ptag,
-            }) ;
-    }
-
-    clone(tag) {
-        let ret = new UpDownFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
-        ret.update(this.item, true)
-        return ret ;
-    }
-
-    put(parent) {
-        let div = document.createElement('div') ;
-        div.style.position = 'absolute' ;
-        div.style.left = this.item.x + 'px' ;
-        div.style.top = this.item.y + 'px' ;
-        div.style.width = this.item.width + 'px' ;
-        div.style.height = this.item.height + 'px' ;
-        div.style.zIndex = 1000 ;
-        div.style.pointerEvents = 'none' ;
-        div.style.margin = '4px' ;
-        div.style.backgroundColor = this.item.backcolor ;
-        div.disabled = true ;
-        div.className = 'form-edit-updown' ;
-
-        this.upbutton_ = document.createElement('button') ;
-        this.upbutton_.disabled = false ;
-        this.upbutton_.style.pointerEvents = 'none' ;
-        this.upbutton_.style.width = '100%' ;
-        this.upbutton_.innerHTML = '&uarr;' ;
-        this.upbutton_.style.flexGrow = '1' ;
-        this.upbutton_.style.font = this.item.font ;
-        this.upbutton_.style.fontSize = this.item.fontsize + 'px' ;
-        this.upbutton_.style.color = this.item.color ;
-        this.upbutton_.style.backgroundColor = this.item.backcolor ;
-        div.appendChild(this.upbutton_) ;
-
-        this.count_ = document.createElement('span') ;
-        this.count_.className = 'form-edit-updown-count' ;
-        this.count_.disabled = false ;
-        this.count_.style.pointerEvents = 'none' ;
-        this.count_.style.width = '100%' ;
-        this.count_.innerHTML = '12' ;
-        this.count_.style.textAlign = 'center' ;
-        this.count_.style.flexGrow = '1' ;
-        this.count_.style.font = this.item.font ;
-        this.count_.style.fontSize = this.item.fontsize + 'px' ;
-        this.count_.style.color = this.item.color ;
-        this.count_.style.backgroundColor = this.item.backcolor ;
-        div.appendChild(this.count_) ;
-
-        this.downbutton_ = document.createElement('button') ;
-        this.downbutton_.disabled = false ;
-        this.downbutton_.style.pointerEvents = 'none' ;
-        this.downbutton_.style.width = '100%' ;
-        this.downbutton_.innerHTML = '&darr;' ;
-        this.downbutton_.style.flexGrow = '1' ;
-        this.downbutton_.style.font = this.item.font ;
-        this.downbutton_.style.fontSize = this.item.fontsize + 'px' ;
-        this.downbutton_.style.color = this.item.color ;
-        this.downbutton_.style.backgroundColor = this.item.backcolor ;
-        div.appendChild(this.downbutton_) ;
-
-        this.ctrl = div ;
-        parent.appendChild(div) ;
-    }
-
-    edit(parent) {
-        let dialog = new EditFormUpDownDialog(this.callback.bind(this), this) ;
-        dialog.showRelative(parent) ;
-    }
-}
-
-class MultipleChoiceFormControl extends FormControl {
-    constructor(editdone, ptag, px, py, pwidth, pheight) {
-        super(
-            editdone, 
-            {
-                type: EditFormView.ctrlTypeMultipleChoice,
-                x: px,
-                y: py,
-                width: pwidth,
-                height: pheight,
-                tag: ptag,
-                data: 'integer',
-                orientation: 'vertical',
-                choices: [
-                    { text: 'Choice 1', value: 1},
-                    { text: 'Choice 2', value: 2 },
-                    { text: 'Choice 3', value: 3 },
-                ],
-            }) ;
-
-        this.choices_ctrls_ = [] ;
-    }
-
-    update(item, clone) {
-        super.update(item, clone) ;
-
-        if (clone) {
-            this.item.choices = [] ;
-            for(let choice of item.choices) {
-                this.item.choices.push({ text: choice.text, value: choice.value }) ;
-            }
-        }
-    }
-
-    clone(tag) {
-        let ret = new MultipleChoiceFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
-        ret.update(this.item, true)
-        return ret ;
-    }
-
-    updateChoices() {
-        this.choices_ctrls_ = [] ;
-        if (this.table_ && this.ctrl.contains(this.table_)) {
-            this.ctrl.removeChild(this.table_) ;
-        }
-        this.addAllChoices() ;
-    }
-
-    addAllChoices() {
-        this.table_ = document.createElement('table') ;
-        this.table_.className = 'form-edit-multiple-choice-table' ;
-        this.ctrl.appendChild(this.table_) ;
-
-        for(let choice of this.item.choices) {
-            let tabrow = document.createElement('tr') ;
-            tabrow.className = 'form-edit-multiple-choice-item' ;
-            tabrow.style.width = '100%' ;
-
-            let label = document.createElement('td') ;
-            let text = choice.text.replace(' ', '&nbsp;') ;
-            label.className = 'form-edit-multiple-choice-label' ;
-            label.innerHTML = text ;
-            label.style.font = this.item.font ;
-            label.style.fontSize = this.item.fontsize + 'px' ;
-            label.style.color = this.item.color ;
-            tabrow.appendChild(label) ;
-
-            let iwrap = document.createElement('td') ;
-            tabrow.appendChild(iwrap) ;
-
-            let input = document.createElement('input') ;
-            input.type = 'radio' ;
-            input.className = 'form-edit-multiple-choice-radio' ;
-            input.style.accentColor = this.item.color ;
-            input.disabled = true ;
-            input.style.pointerEvents = 'none' ;
-            input.checked = true ;
-            input.style.width = '100%' ;
-            input.name = this.item.tag ;
-            input.id = this.item.tag + '_' + choice.value ;
-            input.style.font = this.item.font ;
-            input.style.fontSize = this.item.fontsize + 'px' ;
-            input.style.color = this.item.color ;
-            iwrap.appendChild(input) ;
-
-            this.table_.appendChild(tabrow) ;
-        }
-    }
-
-    put(parent) {
-        this.choices_ctrls_ = [] ;
-
-        let div = document.createElement('div') ;
-        div.className = 'form-edit-multiple-choice' ;
-        div.style.position = 'absolute' ;
-        div.style.left = this.item.x + 'px' ;
-        div.style.top = this.item.y + 'px' ;
-        div.style.width = this.item.width + 'px' ;
-        div.style.height = this.item.height + 'px' ;
-        div.style.zIndex = 1000 ;
-        div.style.pointerEvents = 'none' ;
-        div.style.margin = '4px' ;
-        div.style.backgroundColor = this.item.backcolor ;
-        div.style.flexDirection = this.item.orientation === 'vertical' ? 'column' : 'row' ;
-        div.disabled = true ;
-        this.ctrl = div ;
-
-        this.addAllChoices() ;
-        parent.appendChild(div) ;
-    }    
-
-    edit(parent) {
-        let dialog = new EditFormMultipleSelectDialog(this.callback.bind(this), this) ;
-        dialog.showRelative(parent) ;
-    }    
-}
-
 class EditFormView extends XeroView {
     static fuzzyEdgeSpacing = 20 ;
-    static ctrlTypeText = 'text' ;
-    static ctrlTypeBoolean = 'boolean' ;
-    static ctrlTypeUpDown = 'updown' ;
-    static ctrlTypeMultipleChoice = 'choice' ;
+
 
     constructor(div, type, args) {
         super(div, type) ;
@@ -1093,6 +901,7 @@ class EditFormView extends XeroView {
             new PopupMenuItem('Up/Down Field', this.addNewUpDownCtrl.bind(this)),
             new PopupMenuItem('Boolean Field', this.addNewBooleanCtrl.bind(this)),
             new PopupMenuItem('Multiple Choice', this.addNewMultipleChoiceCtrl.bind(this)),
+            new PopupMenuItem('Select', this.addNewSelectCtrl.bind(this)),
         ]
         this.ctrl_menu_ = new PopupMenu(ctrlitems) ;
     }
@@ -1102,13 +911,11 @@ class EditFormView extends XeroView {
             if (section.items) {
                 for(let item of section.items) {
                     if (item.tag === name) {
-                        console.log('Found item by tag: ' + name) ;
                         return item ;
                     }
                 }
             }
         }
-        console.log('Did not find item by tag: ' + name) ;
         return undefined ;
     }
 
@@ -1184,7 +991,7 @@ class EditFormView extends XeroView {
             frmctrl.item.x += 40 ;
             frmctrl.item.y += 40 ;
             this.formctrlitems_.push(frmctrl) ;
-            frmctrl.put(this.alltop_) ;
+            frmctrl.createForEdit(this.alltop_) ;
             this.addItemToCurrentSection(frmctrl.item) ;
             this.unselectCurrent() ;
             this.select(frmctrl.ctrl) ;
@@ -1508,7 +1315,7 @@ class EditFormView extends XeroView {
         this.addItemToCurrentSection(formctrl.item) ;
         this.formctrlitems_.push(formctrl) ;
 
-        formctrl.put(this.alltop_) ;
+        formctrl.createForEdit(this.alltop_) ;
         this.modified() ;        
     }
 
@@ -1519,7 +1326,7 @@ class EditFormView extends XeroView {
         this.addItemToCurrentSection(formctrl.item) ;
         this.formctrlitems_.push(formctrl) ;
 
-        formctrl.put(this.alltop_) ;
+        formctrl.createForEdit(this.alltop_) ;
         this.modified() ;  
     }
     
@@ -1530,7 +1337,7 @@ class EditFormView extends XeroView {
         this.addItemToCurrentSection(formctrl.item) ;
         this.formctrlitems_.push(formctrl) ;
 
-        formctrl.put(this.alltop_) ;
+        formctrl.createForEdit(this.alltop_) ;
         this.modified() ;  
     }
 
@@ -1541,7 +1348,7 @@ class EditFormView extends XeroView {
         this.addItemToCurrentSection(formctrl.item) ;
         this.formctrlitems_.push(formctrl) ;
 
-        formctrl.put(this.alltop_) ;
+        formctrl.createForEdit(this.alltop_) ;
         this.modified() ;  
     }
 
@@ -1552,7 +1359,18 @@ class EditFormView extends XeroView {
         this.addItemToCurrentSection(formctrl.item) ;
         this.formctrlitems_.push(formctrl) ;
 
-        formctrl.put(this.alltop_) ;
+        formctrl.createForEdit(this.alltop_) ;
+        this.modified() ;  
+    }
+
+    addNewSelectCtrl(type) {
+        let imgrect = this.formimg_.getBoundingClientRect() ;
+        let formctrl = new SelectFormControl(this.editdone.bind(this), this.getUniqueTagName(), 0, imgrect.top, 250, 50) ;
+
+        this.addItemToCurrentSection(formctrl.item) ;
+        this.formctrlitems_.push(formctrl) ;
+
+        formctrl.createForEdit(this.alltop_) ;
         this.modified() ;  
     }
 
@@ -1722,30 +1540,34 @@ class EditFormView extends XeroView {
         if (section.items) {
             for(let item of section.items) {
                 let formctrl ;
-                if (item.type === EditFormView.ctrlTypeLabel) {
+                if (item.type === FormControl.ctrlTypeLabel) {
                     formctrl = new LabelFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
                     formctrl.update(item) ;
                 }
-                else if (item.type === EditFormView.ctrlTypeText) {
+                else if (item.type === FormControl.ctrlTypeText) {
                     formctrl = new TextFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
                     formctrl.update(item) ;
                 }
-                else if (item.type === EditFormView.ctrlTypeBoolean) {  
+                else if (item.type === FormControl.ctrlTypeBoolean) {  
                     formctrl = new BooleanFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
                     formctrl.update(item) ;
                 }
-                else if (item.type === EditFormView.ctrlTypeUpDown) {
+                else if (item.type === FormControl.ctrlTypeUpDown) {
                     formctrl = new UpDownFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
                     formctrl.update(item) ;
                 }
-                else if (item.type === EditFormView.ctrlTypeMultipleChoice) {
+                else if (item.type === FormControl.ctrlTypeMultipleChoice) {
                     formctrl = new MultipleChoiceFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === FormControl.ctrlTypeSelect) {
+                    formctrl = new SelectFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
                     formctrl.update(item) ;
                 }
 
                 if (formctrl) {
                     this.formctrlitems_.push(formctrl) ;
-                    formctrl.put(this.alltop_) ;
+                    formctrl.createForEdit(this.alltop_) ;
                 }
             }
         }

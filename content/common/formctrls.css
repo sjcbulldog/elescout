@@ -1,0 +1,134 @@
+
+.form-edit-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;   
+    z-index: 1000;
+    pointer-events: none;
+    text-align: center;
+}
+
+.form-edit-text-input {
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.form-edit-checkbox-div {
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.form-edit-checkbox {
+    width: 100%;
+    height: 100% ;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.form-edit-updown {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;   
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.form-edit-updown-button {
+    width: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    flex-grow: 1;
+}
+
+.form-edit-updown-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 1000;
+    pointer-events: none;
+    flex-grow: 1;
+    width: 100%;
+}
+
+.form-edit-multiple-choice {
+    display: flex;
+    justify-content: center;
+    align-items: center;   
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.form-edit-multiple-choice-item {
+    width: 100%;
+}
+
+.form-edit-multiple-choice-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.form-edit-multiple-choice-radio {
+    pointer-events: none;
+    z-index: 1000;
+    width: 100%;
+}
+
+.form-edit-multiple-choice-table {
+    width: 100%;
+    height: 100%;
+    table-layout: auto;
+}
+
+.form-edit-multiple-choice-table td:first-child {
+    display: table-cell;
+    white-space: nowrap;
+    width: 80%;
+    vertical-align: middle;
+    text-align: right ;
+}
+
+.form-edit-multiple-choice-table td:last-child {
+    display: table-cell;
+    width: 20% ;
+    vertical-align: middle;
+}
+
+.form-edit-multiple-choice-item-horizontal {
+    width: 100%;
+}
+
+.form-edit-multiple-choice-label-horizontal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
+    height: 100%;
+}
+
+.form-edit-multiple-choice-wrap-horizontal {
+    height: 100%;
+}
+
+.form-edit-multiple-choice-radio-horizontal {
+    height: 100% ;
+    width: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.form-edit-multiple-choice-table-horizontal {
+    width: 100%;
+    height: 100%;
+    table-layout: auto;
+}
+
+.form-edit-multiple-choice-separator-horizontal {
+    width: 20px ;
+}
