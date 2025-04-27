@@ -1,4 +1,4 @@
-class EditFormDialog {
+ class EditFormDialog {
 
     constructor(close) {
         this.closecb = close ;
@@ -32,6 +32,21 @@ class EditFormDialog {
         this.popup_.style.top = y + 'px' ;
 
         this.parent_.appendChild(this.popup_) ;
+        this.onInit() ;
+
+        document.addEventListener('keydown', this.keyDown.bind(this)) ;
+    }
+
+    keyDown(event) {
+        if (event.key === 'Escape') {
+            this.cancelButton(event) ;
+        }
+        else if (event.key === 'Enter') {
+            this.okButton(event) ;
+        }
+    }
+
+    onInit() {
     }
 
     okButton(event) {
@@ -57,6 +72,8 @@ class EditFormDialog {
     }
 
     close(changed) {
+        document.removeEventListener('keydown', this.keyDown.bind(this)) ;
+
         if (this.popup_ && this.parent_.contains(this.popup_)) {
             this.parent_.removeChild(this.popup_) ;
             this.popup_ = null ;
@@ -90,6 +107,11 @@ class EditSectionNameDialog extends EditFormDialog {
         div.appendChild(label) ;
 
         pdiv.appendChild(div) ;
+    }
+
+    onInit() {
+        this.section_name_.focus() ;
+        this.section_name_.select() ;
     }
 
     okButton(event) {
@@ -471,20 +493,31 @@ class EditFormUpDownDialog extends EditFormControlDialog {
 }
 
 class EditFormMultipleSelectDialog extends EditFormControlDialog {
+    static addNewChoiceValue = 'Add New Choice Value' ;
+
     constructor(close, formctrl) {
         super(close) ;
 
         this.formctrl_ = formctrl ;
     }
 
-    deleteChoice(e, row) {
-        console.log('Delete choice: ' + row.getData().choice) ;
+    deleteChoice(e, cell) {
+        let data = cell.getRow().getData().choice ;
+        if (data === EditFormMultipleSelectDialog.addNewChoiceValue) {
+            return ;
+        }
+        cell.getRow().delete() ;
     }
 
     getChoiceData() {
         let data = [] ;
         for(let choice of this.formctrl_.item.choices) {
-            data.push({ choice: choice.text }) ;
+            data.push(
+                { 
+                    choice: choice.text,
+                    value: choice.value
+                }
+            ) ;
         }
         return data ;
     }
@@ -547,25 +580,65 @@ class EditFormMultipleSelectDialog extends EditFormControlDialog {
         this.table_ = new Tabulator(this.list_, 
             {
                 height: "200px",
+                width: "100%",
                 data: this.getChoiceData(),
-                layout:"fitData",
+                layout:"fitDataStretch",
                 resizableColumnFit:false,
                 columns: [
                     {
                         formatter:"buttonCross", 
                         width:40, 
                         cellClick: this.deleteChoice.bind(this),
+                        editable: false,
+                        headerSort: false
                     },
                     {
                         title: "Choice", 
                         field: "choice", 
                         hozAlign: "left",
+                        editable: true,
+                        editor: "input",
+                        headerSort: false
+                    },
+                    {
+                        title: "Value", 
+                        field: "value", 
+                        hozAlign: "left",
+                        editable: this.valueEditable.bind(this),
+                        editor: "input",
+                        headerSort: false
                     }
                 ]
             }
         );
+        this.list_.style.marginTop = '8px' ;
+
+        this.table_.on('cellEdited', this.cellEdited.bind(this)) ;
+        this.table_.on('tableBuilt', this.tableBuilt.bind(this)) ;
 
         pdiv.appendChild(div) ;
+    }
+
+    valueEditable(cell) {
+        let data = cell.getRow().getData().choice ;
+        if (data === EditFormMultipleSelectDialog.addNewChoiceValue) {
+            return false ;
+        }
+
+        return true ;
+    }
+
+    tableBuilt() {
+        this.table_.addRow({ choice: EditFormMultipleSelectDialog.addNewChoiceValue }) ;
+    }
+
+    cellEdited(cell) {
+        if (cell.getValue() === EditFormMultipleSelectDialog.addNewChoiceValue) {
+            cell.restoreOldValue() ;
+        }
+        else if  (cell.getOldValue() === EditFormMultipleSelectDialog.addNewChoiceValue) {
+            this.table_.addRow({ choice: EditFormMultipleSelectDialog.addNewChoiceValue }) ;
+        }
     }
 
     extractData() {
@@ -575,18 +648,17 @@ class EditFormMultipleSelectDialog extends EditFormControlDialog {
         this.formctrl_.item.font = this.font_name_.value ;
         this.formctrl_.item.fontsize = parseInt(this.font_size_.value) ;
 
-        for(let choice of this.formctrl_.choices_ctrls_) {
-            let input = choice.lastElementChild ;
-            let label = choice.firstElementChild ;
-
-            input.style.font = this.font_name_.value ;
-            input.style.fontSize = this.font_size_.value + 'px' ;
-            input.style.color = this.text_color_.value ;
-
-            label.style.font = this.font_name_.value ;
-            label.style.fontSize = this.font_size_.value + 'px' ;
-            label.style.color = this.text_color_.value ;
+        this.formctrl_.item.choices = [] ;
+        for(let rows of this.table_.getRows()) {
+            let choice = rows.getData().choice ;
+            if (choice === EditFormMultipleSelectDialog.addNewChoiceValue) {
+                break ;
+            }
+            let value = rows.getData().value ;
+            this.formctrl_.item.choices.push({ text: choice, value: value }) ;
         }
+
+        this.formctrl_.updateChoices() ;
     }
 }
 
@@ -603,7 +675,7 @@ class FormControl {
             this.item = pitem ;
         }
         else {
-            for(let key in Object.keys(pitem)) {
+            for(let key of Object.keys(pitem)) {
                 if (key !== 'tag') {
                     this.item[key] = pitem[key] ;
                 }
@@ -889,10 +961,70 @@ class MultipleChoiceFormControl extends FormControl {
         this.choices_ctrls_ = [] ;
     }
 
+    update(item, clone) {
+        super.update(item, clone) ;
+
+        if (clone) {
+            this.item.choices = [] ;
+            for(let choice of item.choices) {
+                this.item.choices.push({ text: choice.text, value: choice.value }) ;
+            }
+        }
+    }
+
     clone(tag) {
         let ret = new MultipleChoiceFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
         ret.update(this.item, true)
         return ret ;
+    }
+
+    updateChoices() {
+        this.choices_ctrls_ = [] ;
+        if (this.table_ && this.ctrl.contains(this.table_)) {
+            this.ctrl.removeChild(this.table_) ;
+        }
+        this.addAllChoices() ;
+    }
+
+    addAllChoices() {
+        this.table_ = document.createElement('table') ;
+        this.table_.className = 'form-edit-multiple-choice-table' ;
+        this.ctrl.appendChild(this.table_) ;
+
+        for(let choice of this.item.choices) {
+            let tabrow = document.createElement('tr') ;
+            tabrow.className = 'form-edit-multiple-choice-item' ;
+            tabrow.style.width = '100%' ;
+
+            let label = document.createElement('td') ;
+            let text = choice.text.replace(' ', '&nbsp;') ;
+            label.className = 'form-edit-multiple-choice-label' ;
+            label.innerHTML = text ;
+            label.style.font = this.item.font ;
+            label.style.fontSize = this.item.fontsize + 'px' ;
+            label.style.color = this.item.color ;
+            tabrow.appendChild(label) ;
+
+            let iwrap = document.createElement('td') ;
+            tabrow.appendChild(iwrap) ;
+
+            let input = document.createElement('input') ;
+            input.type = 'radio' ;
+            input.className = 'form-edit-multiple-choice-radio' ;
+            input.style.accentColor = this.item.color ;
+            input.disabled = true ;
+            input.style.pointerEvents = 'none' ;
+            input.checked = true ;
+            input.style.width = '100%' ;
+            input.name = this.item.tag ;
+            input.id = this.item.tag + '_' + choice.value ;
+            input.style.font = this.item.font ;
+            input.style.fontSize = this.item.fontsize + 'px' ;
+            input.style.color = this.item.color ;
+            iwrap.appendChild(input) ;
+
+            this.table_.appendChild(tabrow) ;
+        }
     }
 
     put(parent) {
@@ -911,44 +1043,9 @@ class MultipleChoiceFormControl extends FormControl {
         div.style.backgroundColor = this.item.backcolor ;
         div.style.flexDirection = this.item.orientation === 'vertical' ? 'column' : 'row' ;
         div.disabled = true ;
-
-        for(let choice of this.item.choices) {
-            let cdiv = document.createElement('div') ;
-            cdiv.className = 'form-edit-multiple-choice-item' ;
-            cdiv.style.width = '100%' ;
-            cdiv.style.flexGrow = '1' ;
-
-            this.choices_ctrls_.push(cdiv) ;
-
-            let label = document.createElement('span') ;
-            let text = choice.text.replace(' ', '&nbsp;') ;
-            label.className = 'form-edit-multiple-choice-label' ;
-            label.innerHTML = text ;
-            label.style.flexGrow = '1' ;
-            label.style.font = this.item.font ;
-            label.style.fontSize = this.item.fontsize + 'px' ;
-            label.style.color = this.item.color ;
-            cdiv.appendChild(label) ;
-
-            let input = document.createElement('input') ;
-            input.type = 'radio' ;
-            input.style.accentColor = this.item.color ;
-            input.disabled = true ;
-            input.style.pointerEvents = 'none' ;
-            input.checked = true ;
-            input.style.width = '100%' ;
-            input.name = this.item.tag ;
-            input.id = this.item.tag + '_' + choice.value ;
-            input.style.flexGrow = '1' ;
-            input.style.font = this.item.font ;
-            input.style.fontSize = this.item.fontsize + 'px' ;
-            input.style.color = this.item.color ;
-            cdiv.appendChild(input) ;
-
-            div.appendChild(cdiv) ;
-        }
-
         this.ctrl = div ;
+
+        this.addAllChoices() ;
         parent.appendChild(div) ;
     }    
 
@@ -959,6 +1056,7 @@ class MultipleChoiceFormControl extends FormControl {
 }
 
 class EditFormView extends XeroView {
+    static fuzzyEdgeSpacing = 20 ;
     static ctrlTypeText = 'text' ;
     static ctrlTypeBoolean = 'boolean' ;
     static ctrlTypeUpDown = 'updown' ;
@@ -1122,7 +1220,7 @@ class EditFormView extends XeroView {
             let item = entry.item ;
 
             let rect = ctrl.getBoundingClientRect() ;
-            if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            if (x >= rect.left - EditFormView.fuzzyEdgeSpacing && x <= rect.right + EditFormView.fuzzyEdgeSpacing && y >= rect.top - EditFormView.fuzzyEdgeSpacing && y <= rect.bottom + EditFormView.fuzzyEdgeSpacing) {
                 return ctrl ;
             }
         }
@@ -1142,6 +1240,53 @@ class EditFormView extends XeroView {
         this.controlRelease(event) ;
     }
 
+    updateMouseCursor(x, y) {
+        let ctrl = this.findControlByPosition(x, y) ;
+        if (ctrl === undefined) {
+            this.unselectCurrent() ;
+            this.alltop_.style.cursor = 'default' ;
+            return ;
+        }
+
+        if (ctrl !== this.selected_) {
+            this.unselectCurrent() ;
+            this.select(ctrl) ;
+        }      
+
+        let top = this.isTopEdge(x, y, ctrl) ;
+        let bottom = this.isBottomEdge(x, y, ctrl) ;
+        let left = this.isLeftEdge(x, y, ctrl) ;
+        let right = this.isRightEdge(x, y, ctrl) ;
+
+        if (top && left) {
+            this.alltop_.style.cursor = 'nwse-resize' ;
+        }
+        else if (top && right) {
+            this.alltop_.style.cursor = 'nesw-resize' ;
+        }
+        else if (bottom && left) {
+            this.alltop_.style.cursor = 'nesw-resize' ;
+        }
+        else if (bottom && right) {
+            this.alltop_.style.cursor = 'nwse-resize' ;
+        }                
+        else if (right) {
+            this.alltop_.style.cursor = 'ew-resize' ;
+        }
+        else if (left) {
+            this.alltop_.style.cursor = 'ew-resize' ;
+        }
+        else if (top) {
+            this.alltop_.style.cursor = 'ns-resize' ;
+        }
+        else if (bottom) {
+            this.alltop_.style.cursor = 'ns-resize' ;
+        }
+        else {
+            this.alltop_.style.cursor = 'move' ;
+        }
+    }
+
     mouseMove(event) {
         if (this.dragging_ === 'all') {
             let dx = event.pageX - this.basex ;
@@ -1154,6 +1299,68 @@ class EditFormView extends XeroView {
                 frmctrl.item.x = this.ctrlx + dx ;
                 frmctrl.item.y = this.ctrly + dy ;
             }
+            this.alltop_.style.cursor = 'move' ;
+            this.modified() ;
+        }
+        else if (this.dragging_ === 'ulcorner') {
+            let dx = event.pageX - this.basex ;
+            let dy = event.pageY - this.basey ;
+            this.selected_.style.left = (this.ctrlx + dx) + 'px' ;
+            this.selected_.style.top = (this.ctrly + dy) + 'px' ;
+            this.selected_.style.width = (this.ctrlwidth - dx) + 'px' ;
+            this.selected_.style.height = (this.ctrlheight - dy) + 'px' ;
+            let frmctrl = this.findFormControlFromCtrl(this.selected_) ;
+            if (frmctrl && frmctrl.item) {
+                frmctrl.item.x = this.ctrlx + dx ;
+                frmctrl.item.y = this.ctrly + dy ;
+                frmctrl.item.width = this.ctrlwidth - dx ;
+                frmctrl.item.height = this.ctrlheight - dy ;
+            }
+            this.alltop_.style.cursor = 'nwse-resize' ;
+            this.modified() ;
+        }
+        else if (this.dragging_ === 'urcorner') {
+            let dx = event.pageX - this.basex ;
+            let dy = event.pageY - this.basey ;
+            this.selected_.style.top = (this.ctrly + dy) + 'px' ;
+            this.selected_.style.width = (this.ctrlwidth + dx) + 'px' ;
+            this.selected_.style.height = (this.ctrlheight - dy) + 'px' ;
+            let frmctrl = this.findFormControlFromCtrl(this.selected_) ;
+            if (frmctrl && frmctrl.item) {
+                frmctrl.item.y = this.ctrly + dy ;
+                frmctrl.item.width = this.ctrlwidth + dx ;
+                frmctrl.item.height = this.ctrlheight - dy ;
+            }
+            this.alltop_.style.cursor = 'nesw-resize' ;
+            this.modified() ;
+        }
+        else if (this.dragging_ === 'llcorner') {
+            let dx = event.pageX - this.basex ;
+            let dy = event.pageY - this.basey ;
+            this.selected_.style.left = (this.ctrlx + dx) + 'px' ;
+            this.selected_.style.width = (this.ctrlwidth - dx) + 'px' ;
+            this.selected_.style.height = (this.ctrlheight + dy) + 'px' ;
+            let frmctrl = this.findFormControlFromCtrl(this.selected_) ;
+            if (frmctrl && frmctrl.item) {
+
+                frmctrl.item.x = this.ctrlx + dx ;
+                frmctrl.item.width = this.ctrlwidth - dx ;
+                frmctrl.item.height = this.ctrlheight + dy ;
+            }
+            this.alltop_.style.cursor = 'nesw-resize' ;
+            this.modified() ;
+        }
+        else if (this.dragging_ === 'lrcorner') {
+            let dx = event.pageX - this.basex ;
+            let dy = event.pageY - this.basey ;
+            this.selected_.style.width = (this.ctrlwidth + dx) + 'px' ;
+            this.selected_.style.height = (this.ctrlheight + dy) + 'px' ;
+            let frmctrl = this.findFormControlFromCtrl(this.selected_) ;
+            if (frmctrl && frmctrl.item) {
+                frmctrl.item.width = this.ctrlwidth + dx ;
+                frmctrl.item.height = this.ctrlheight + dy ;
+            }
+            this.alltop_.style.cursor = 'nwse-resize' ;
             this.modified() ;
         }
         else if (this.dragging_ === 'right') {
@@ -1163,6 +1370,7 @@ class EditFormView extends XeroView {
             if (frmctrl && frmctrl.item) {
                 frmctrl.item.width = this.ctrlwidth + dx ;
             }
+            this.alltop_.style.cursor = 'ew-resize' ;
             this.modified() ;
         }
         else if (this.dragging_ === 'left') {
@@ -1174,6 +1382,7 @@ class EditFormView extends XeroView {
                 frmctrl.item.x = this.ctrlx + dx ;
                 frmctrl.item.width = this.ctrlwidth - dx ;
             }
+            this.alltop_.style.cursor = 'ew-resize' ;
             this.modified() ;
         }
         else if (this.dragging_ === 'top') {
@@ -1185,6 +1394,7 @@ class EditFormView extends XeroView {
                 frmctrl.item.y = this.ctrly + dy ;
                 frmctrl.item.height = this.ctrlheight - dy ;
             }
+            this.alltop_.style.cursor = 'ns-resize' ;
             this.modified() ;
         }
         else if (this.dragging_ === 'bottom') {
@@ -1194,13 +1404,17 @@ class EditFormView extends XeroView {
             if (frmctrl && frmctrl.item) {
                 frmctrl.item.height = this.ctrlheight + dy ;
             }
+            this.alltop_.style.cursor = 'ns-resize' ;
             this.modified() ;
+        }
+        else {
+            this.updateMouseCursor(event.pageX, event.pageY) ;
         }
     }
 
     isRightEdge(x, y, ctrl) {
         let rect = ctrl.getBoundingClientRect() ;
-        if (x >= rect.right - 10 && x <= rect.right + 10 && y >= rect.top && y <= rect.bottom) {
+        if (x >= rect.right - EditFormView.fuzzyEdgeSpacing && x <= rect.right + EditFormView.fuzzyEdgeSpacing && y >= rect.top && y <= rect.bottom) {
             return true ;
         }
         return false ;
@@ -1208,7 +1422,7 @@ class EditFormView extends XeroView {
 
     isLeftEdge(x, y, ctrl) {
         let rect = ctrl.getBoundingClientRect() ;
-        if (x >= rect.left - 10 && x <= rect.left + 10 && y >= rect.top && y <= rect.bottom) {
+        if (x >= rect.left - EditFormView.fuzzyEdgeSpacing && x <= rect.left + EditFormView.fuzzyEdgeSpacing && y >= rect.top && y <= rect.bottom) {
             return true ;
         }
         return false ;
@@ -1216,7 +1430,7 @@ class EditFormView extends XeroView {
 
     isTopEdge(x, y, ctrl) {
         let rect = ctrl.getBoundingClientRect() ;
-        if (x >= rect.left && x <= rect.right && y >= rect.top - 10 && y <= rect.top + 10) {
+        if (x >= rect.left && x <= rect.right && y >= rect.top - EditFormView.fuzzyEdgeSpacing && y <= rect.top + EditFormView.fuzzyEdgeSpacing) {
             return true ;
         }
         return false ;
@@ -1224,7 +1438,7 @@ class EditFormView extends XeroView {
 
     isBottomEdge(x, y, ctrl) {
         let rect = ctrl.getBoundingClientRect() ;
-        if (x >= rect.left && x <= rect.right && y >= rect.bottom - 10 && y <= rect.bottom + 10) {
+        if (x >= rect.left && x <= rect.right && y >= rect.bottom - EditFormView.fuzzyEdgeSpacing && y <= rect.bottom + EditFormView.fuzzyEdgeSpacing) {
             return true ;
         }
         return false ;
@@ -1239,27 +1453,40 @@ class EditFormView extends XeroView {
     }
 
     mouseDown(event) {
-        this.unselectCurrent() ;
+        if (this.selected_) {
+            let top = this.isTopEdge(event.pageX, event.pageY, this.selected_) ;
+            let bottom = this.isBottomEdge(event.pageX, event.pageY, this.selected_) ;
+            let left = this.isLeftEdge(event.pageX, event.pageY, this.selected_) ;
+            let right = this.isRightEdge(event.pageX, event.pageY, this.selected_) ;
 
-        let ctrl = this.findControlByPosition(event.pageX, event.pageY) ;
-        if (ctrl) {
-            if (this.isRightEdge(event.pageX, event.pageY, ctrl)) {
+            if (top && left) {
+                this.dragging_ = 'ulcorner' ;
+            }
+            else if (top && right) {
+                this.dragging_ = 'urcorner' ;
+            }
+            else if (bottom && left) {
+                this.dragging_ = 'llcorner' ;
+            }
+            else if (bottom && right) {
+                this.dragging_ = 'lrcorner' ;
+            }                
+            else if (right) {
                 this.dragging_ = 'right' ;
             }
-            else if (this.isLeftEdge(event.pageX, event.pageY, ctrl)) {
+            else if (left) {
                 this.dragging_ = 'left' ;
             }
-            else if (this.isTopEdge(event.pageX, event.pageY, ctrl)) {
+            else if (top) {
                 this.dragging_ = 'top' ;
             }
-            else if (this.isBottomEdge(event.pageX, event.pageY, ctrl)) {
+            else if (bottom) {
                 this.dragging_ = 'bottom' ;
             }
             else {
                 this.dragging_ = 'all' ;
             }
 
-            this.select(ctrl) ;
             this.basex = event.pageX ;
             this.basey = event.pageY ;
             this.ctrlx = this.selected_.offsetLeft ;
@@ -1480,7 +1707,9 @@ class EditFormView extends XeroView {
     removeExistingControls() {
         for(let entry of this.formctrlitems_) {
             if (entry.ctrl) {
-                this.alltop_.removeChild(entry.ctrl) ;
+                if (this.alltop_.contains(entry.ctrl)) {
+                    this.alltop_.removeChild(entry.ctrl) ;
+                }
             }
         }
         this.formctrlitems_ = [] ;

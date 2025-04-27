@@ -55,16 +55,35 @@
     align-items: center;   
 }
 
-.form-edit-multiple-choice-item {
-    display: flex;
-    flex-direction: row;
-}
-
 .form-edit-multiple-choice-label {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     text-align: center;   
+}
+.form-edit-multiple-choice-radio {
+    width: 100%;
+    height: 100% ;
+}
+
+.form-edit-multiple-choice-table {
+    width: 100%;
+    height: 100%;
+    table-layout: auto;
+}
+
+.form-edit-multiple-choice-table td:first-child {
+    display: table-cell;
+    white-space: nowrap;
+    width: 80%;
+    vertical-align: middle;
+    text-align: right ;
+}
+
+.form-edit-multiple-choice-table td:last-child {
+    display: table-cell;
+    width: 20% ;
+    vertical-align: middle;
 }
 
 .popup-form-edit-dialog {
