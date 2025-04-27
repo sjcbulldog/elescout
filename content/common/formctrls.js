@@ -34,6 +34,10 @@ class FormControl {
     edit(parent) {
     }
 
+    getData() {
+        return 'No Data Provider In Place'
+    }
+
     callback(changed) {
         if (changed) {
             this.editdone(changed) ;
@@ -101,6 +105,10 @@ class LabelFormControl extends FormControl {
 
         this.ctrl = label ;
         parent.appendChild(label) ;
+    }
+
+    getData() {
+        return undefined ;
     }
     
     edit(parent) {
@@ -173,6 +181,10 @@ class TextFormControl extends FormControl {
         parent.appendChild(input) ;
     }
 
+    getData() {
+        return this.ctrl.value ;
+    }
+
     edit(parent) {
         let dialog = new EditFormTextDialog(this.callback.bind(this), this) ;
         dialog.showRelative(parent) ;
@@ -211,11 +223,11 @@ class BooleanFormControl extends FormControl {
         div.style.height = this.item.height + 'px' ;
         div.style.margin = '4px' ;
 
-        let input = document.createElement('input') ;
-        input.className = 'form-view-checkbox' ;
-        input.type = 'checkbox' ;
-        input.style.accentColor = this.item.color ;
-        div.appendChild(input) ;
+        this.input_ = document.createElement('input') ;
+        this.input_.className = 'form-view-checkbox' ;
+        this.input_.type = 'checkbox' ;
+        this.input_.style.accentColor = this.item.color ;
+        div.appendChild(this.input_) ;
 
         this.ctrl = div ;
         parent.appendChild(div) ;
@@ -231,16 +243,20 @@ class BooleanFormControl extends FormControl {
         div.style.height = this.item.height + 'px' ;
         div.style.margin = '4px' ;
 
-        let input = document.createElement('input') ;
-        input.className = 'form-edit-checkbox' ;
-        input.type = 'checkbox' ;
-        input.style.accentColor = this.item.color ;
-        input.disabled = true ;
-        input.checked = true ;
-        div.appendChild(input) ;
+        this.input_ = document.createElement('input') ;
+        this.input_.className = 'form-edit-checkbox' ;
+        this.input_.type = 'checkbox' ;
+        this.input_.style.accentColor = this.item.color ;
+        this.input_.disabled = true ;
+        this.input_.checked = true ;
+        div.appendChild(this.input_) ;
 
         this.ctrl = div ;
         parent.appendChild(div) ;
+    }
+
+    getData() {
+        return this.input_.checked ? 1 : 0 ;
     }
 
     edit(parent) {
@@ -370,6 +386,10 @@ class UpDownFormControl extends FormControl {
         parent.appendChild(div) ;
     }
 
+    getData() {
+        return parseInt(this.count_.innerText) ;
+    }
+
     edit(parent) {
         let dialog = new EditFormUpDownDialog(this.callback.bind(this), this) ;
         dialog.showRelative(parent) ;
@@ -428,6 +448,7 @@ class MultipleChoiceFormControl extends FormControl {
     addAllChoices(editing) {
         this.table_ = document.createElement('table') ;
         this.ctrl.appendChild(this.table_) ;
+        this.radios_ = [] ;
 
         if (this.item.orientation === 'vertical') {
             this.table_.className = editing ? 'form-edit-multiple-choice-table' : 'form-view-multiple-choice-table' ;
@@ -499,12 +520,14 @@ class MultipleChoiceFormControl extends FormControl {
                 input.disabled = editing ;
                 input.checked = true ;
                 input.name = this.item.tag ;
+                input.choice_value = choice.value ;
                 input.id = this.item.tag + '_' + choice.value ;
                 input.style.font = this.item.font ;
                 input.style.fontSize = this.item.fontsize + 'px' ;
                 input.style.color = this.item.color ;
                 input.style.width = this.item.radiosize + 'px' ;
                 input.style.height = this.item.radiosize + 'px' ;
+                this.radios_.push(input) ;
                 iwrap.appendChild(input) ;
 
                 first = false ;
@@ -546,6 +569,17 @@ class MultipleChoiceFormControl extends FormControl {
         this.addAllChoices(true) ;
         parent.appendChild(div) ;
     }    
+
+    getData() {
+        for(let choice of this.radios_) {
+            if (choice.checked) {
+                return choice.choice_value ;
+
+            }
+        }
+
+        return undefined ;
+    }
 
     edit(parent) {
         let dialog = new EditFormMultipleSelectDialog(this.callback.bind(this), this) ;
@@ -672,6 +706,10 @@ class SelectFormControl extends FormControl {
         this.addAllEditChoices() ;
         parent.appendChild(div) ;
     }    
+
+    getData() {
+        return this.select_.value ;
+    }
 
     edit(parent) {
         let dialog = new EditFormSelectDialog(this.callback.bind(this), this) ;

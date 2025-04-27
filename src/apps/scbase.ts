@@ -13,7 +13,6 @@ import * as fs from "fs";
 import * as winston from "winston";
 import * as crypto from "crypto";
 import settings from "electron-settings";
-import { FormDetailInfo, FormImage, FormInfo } from "../comms/formifc";
 import { ImageManager } from "../imagemgr";
 
 export enum XeroAppType {
@@ -48,7 +47,8 @@ export abstract class SCBase {
     this.win_ = win;
     this.appdir_ = path.join(os.homedir(), SCBase.appdirName);
     this.content_dir_ = path.join(process.cwd(), 'content') ;
-    this.image_mgr_ = new ImageManager(path.join(this.content_dir_, 'images')) ;
+
+    this.image_mgr_ = new ImageManager(type === 'server' ? path.join(this.content_dir_, 'images') : undefined) ;
 
     if (!fs.existsSync(this.appdir_)) {
       fs.mkdirSync(this.appdir_);
@@ -330,17 +330,6 @@ export abstract class SCBase {
   }
 
   protected searchForImage(jsonname: string) : string | undefined {
-    if (process.env.XEROIMAGEPATH) {
-      let impath = process.env.XEROIMAGEPATH ;
-      let elems = impath.split(';') ;
-      for(let elem of elems) {
-        let trypath = path.join(elem, jsonname) ;
-        if (fs.existsSync(trypath)) {
-          return trypath ;
-        }
-      }
-    }
-
     let trypath = path.join(this.content_dir_, 'fields', jsonname) + '.json' ;
     if (fs.existsSync(trypath)) {
       return trypath ;
@@ -349,52 +338,13 @@ export abstract class SCBase {
     return undefined ;
   }
 
-  protected getImageFromJson(name: string, jsonfile: string) : FormImage | undefined {
-    let ret: FormImage | undefined ;
-
-    try {
-      let str = fs.readFileSync(jsonfile) ;
-      let desc = JSON.parse(str.toString()) ;
-      let datafile = path.join(path.dirname(jsonfile), desc['field-image']) ;
-
-      if (fs.existsSync(datafile)) {
-        let data: string  = fs.readFileSync(datafile).toString('base64');
-
-        ret = {
-          name: name,
-          data: data,
-          topleft : { x: desc['field-corners']['top-left'][0], y: desc['field-corners']['top-left'][1] },
-          bottomright: { x: desc['field-corners']['bottom-right'][0], y: desc['field-corners']['bottom-right'][1] },
-          fieldsize: { width: desc['field-size'][0], height: desc['field-size'][1] },
-          units: desc['field-unit']
-        }
-      }
-    }
-    catch(err) {
-      let errobj = err as Error ;
-    }
-
-    return ret;
-  }
-
-  protected getImages(form: FormInfo) {
-    for(let section of form.form?.json.sections) {
-      if (section.image) {
-        let imgjson = this.searchForImage(section.image) ;
-        if (!imgjson) {
-          form.message = 'Cannot find image \'' + section.image + '\' required by the scouting form' ;
-          form.form = undefined ;
-        }
-        else {
-          let imgdesc = this.getImageFromJson(section.image, imgjson);
-          if (imgdesc) {
-            if (!form.form!.images) {
-              form.form!.images = [] ;
-            }
-            form.form?.images.push(imgdesc) ;
-          }
-        }
-      }
-    }
-  }
+	protected getImageData(name: string) {
+		let datafile = this.image_mgr_.getImage(name) ;
+		if (!datafile) {
+			return '' ;
+		}
+		
+		let data: string  = fs.readFileSync(datafile).toString('base64');
+		return data ;
+	}
 }

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { PacketObj } from './packetobj';
-import { PacketCompressionNone, PacketNameMap } from './packettypes';
+import { PacketCompressionNone } from './packettypes';
 import { SyncServer } from './syncserver';
 import winston from 'winston';
 
@@ -111,18 +111,8 @@ export class SyncBase extends EventEmitter {
         return buffer ;
     }
 
-    private packetTypeName(type: number) : string | undefined {
-        let ret: string | undefined ;
-
-        if (type < PacketNameMap.length) {
-            ret = PacketNameMap[type] ;
-        }
-
-        return ret ;
-    }
-
     private logPacket(text: string, p: PacketObj) {
-        let msg: string = text + ':' + this.packetTypeName(p.type_) + ':' + p.data_.length + ':' ;
+        let msg: string = text + ':' + p.type_.toString() + ':' + p.data_.length + ':' ;
         let index = 0 ; 
         while (index < p.data_.length) {
                 msg += ' ' ;

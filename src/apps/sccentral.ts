@@ -583,7 +583,7 @@ export class SCCentral extends SCBase {
 				ret.message = errobj.message;
 			}
 		} else {
-			ret.message = 'No team form has been set';
+			ret.message = `No ${arg} form has been set`;
 		}
 		this.sendToRenderer('send-form', ret);
 	}
@@ -1984,6 +1984,24 @@ export class SCCentral extends SCBase {
 			};
 			let uuidbuf = Buffer.from(JSON.stringify(evid), "utf-8");
 			resp = new PacketObj(PacketType.Hello, uuidbuf);
+		} else if (p.type_ === PacketType.RequestImages) {
+			let obj : string[] = JSON.parse(p.payloadAsString()) as string[] ;
+			let retdata : any = {} ;
+
+			for(let img of obj) {
+				let path = this.image_mgr_.getImage(img) ;
+				let imdata = Buffer.from('') ;
+				if (path) {
+					imdata = fs.readFileSync(path) ;
+				}
+
+				retdata[img] = imdata.toString('base64') ;
+			}
+
+			let data: Uint8Array = new Uint8Array(0);
+			let msg : string = JSON.stringify(retdata) ;
+			data = Buffer.from(msg, "utf-8");
+			resp = new PacketObj(PacketType.ProvideImages, data);
 		} else if (p.type_ === PacketType.RequestTablets) {
 			let data: Uint8Array = new Uint8Array(0);
 			if (this.project_ && this.project_.tablet_mgr_?.areTabletsValid()) {
@@ -2537,13 +2555,4 @@ export class SCCentral extends SCBase {
 		return data ;
 	}
 
-	private getImageData(name: string) {
-		let datafile = this.image_mgr_.getImage(name) ;
-		if (!datafile) {
-			return '' ;
-		}
-		
-		let data: string  = fs.readFileSync(datafile).toString('base64');
-		return data ;
-	}
 }

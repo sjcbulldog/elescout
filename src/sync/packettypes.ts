@@ -15,23 +15,7 @@ export enum PacketType {
     ProvideTeamList = 0x0b,
     ProvideResults = 0x0c,
     ReceivedResults = 0x0d,
-    Goodbye = 0x0e
+    RequestImages = 0x0e,
+    ProvideImages = 0x0f,
+    Goodbye = 0x10
 } ;
-
-export const PacketNameMap : string[] = [
-    'PacketType.Hello',
-    'PacketType.RequestTablets',
-    'PacketType.Error',
-    'PacketType.ProvideTablets',
-    'PacketType.RequestMatchList',
-    'PacketType.RequestTeamList',
-    'PacketType.RequestTeamForm',
-    'PacketType.RequestMatchForm',
-    'PacketType.ProvideTeamForm',
-    'PacketType.ProvideMatchForm',
-    'PacketType.ProvideMatchList',
-    'PacketType.ProvideTeamList',
-    'PacketType.ProvideResults',
-    'PacketType.ReceivedResults',
-    'PacketType.Goodbye'
-];

@@ -215,6 +215,8 @@ export class SCScout extends SCBase {
 
         this.sendNavData() ;
         this.setView('empty') ;
+
+        this.image_mgr_.removeAllImages() ;
     }
 
     private scoutTeam(team: string, force: boolean = false) {
@@ -283,6 +285,7 @@ export class SCScout extends SCBase {
     }
 
     public sendForm(type: string) {
+        let good : boolean = true ;
         let ret : FormInfo = {
             message: undefined,
             form: undefined,
@@ -291,33 +294,45 @@ export class SCScout extends SCBase {
         }
 
         if (type === 'team') {
-            ret.form = {
-                json: this.info_.teamform_,
-                title: this.current_scout_!,
+            ret.form = 
+            {
                 type: 'team',
-            } ;
+                title: 'Team Form',
+                json: this.info_.teamform_
+            }
         }
         else if (type === 'match') {
-            ret.form = {
-                json: this.info_.matchform_,
-                title: this.current_scout_!,
-                type: 'match'
+            ret.form = 
+            {
+                type: 'match',
+                title: 'Match Form',
+                json: this.info_.matchform_
             }
         }
         else {
             ret.message = 'Invalid form type requested' ;
+            good = false ;
         }
 
-        if (ret.form !== undefined) {
-            this.getImages(ret) ;
+        if (good) {
+            let images = ret.form!.json.images ;
+            if (images) {
+                for(let image of images) {
+                    this.sendImageData(image) ;
+                }
+            }
         }
+        this.sendToRenderer('send-form', ret);
 
-        this.sendToRenderer('send-form', ret) ;
         let data: OneScoutResult | undefined = this.getResults(this.current_scout_!) ;
         if (data) {
             this.sendToRenderer('send-initial-values', data.data) ;
         }
     }
+
+    public sendImageData(image: string) {
+		this.sendToRenderer('send-image-data', { name: image, data: this.getImageData(image) }) ;
+	}
 
     public sendMatchForm() {
         let ret = {
@@ -380,7 +395,7 @@ export class SCScout extends SCBase {
         this.conn_ = conn ;
         conn.connect()
             .then(async ()=> {
-                this.logger_.info('ScouterSync: connected to server \'' + conn.name() + '\'') ;
+                this.logger_.info(`ScouterSync: connected to server ' ${conn.name()}'`) ;
                 let data = new Uint8Array(0) ;
 
                 if (this.info_.tablet_ && this.info_.purpose_) {
@@ -493,6 +508,13 @@ export class SCScout extends SCBase {
             this.writeEventFile() ;
             ret = this.getMissingData() ;  
         }
+        else if (p.type_ === PacketType.ProvideImages) {
+            let obj = JSON.parse(p.payloadAsString()) ;
+            for(let imname of Object.keys(obj)) {
+                let imdata = obj[imname] ;
+                this.image_mgr_.addImageWithData(imname, imdata) ;
+            }
+        }
         else if (p.type_ === PacketType.ReceivedResults) {
             this.conn_?.send(new PacketObj(PacketType.Goodbye, Buffer.from(this.info_.tablet_!))) ;
             this.conn_?.close() ;
@@ -518,6 +540,18 @@ export class SCScout extends SCBase {
         this.conn_?.send(new PacketObj(PacketType.ProvideResults, Buffer.from(jsonstr))) ;
     }
 
+    private needImages() : string[] {
+        let ret : string[] = [] ;
+        for(let im of [ ...this.info_.matchform_!.images, ...this.info_.teamform_!.images]) {
+            if (!this.image_mgr_.getImage(im)) {
+                if (ret.indexOf(im) < 0) {
+                    ret.push(im) ;
+                }
+            }
+        }
+        return ret ;
+    }
+
     private getMissingData() {
         let ret: boolean = false ;
 
@@ -536,6 +570,9 @@ export class SCScout extends SCBase {
         else if (!this.info_.teamlist_) {
             this.conn_?.send(new PacketObj(PacketType.RequestTeamList)) ;
             ret = true ;
+        }
+        else if (this.needImages().length > 0) {
+            this.conn_?.send(new PacketObj(PacketType.RequestImages, Buffer.from(JSON.stringify(this.needImages())))) ;1
         }
         
         if (!ret) {

@@ -6,7 +6,7 @@ export class ImageManager {
     private imagedir_? : string ;
     private imagemap_ : Map<string, string> = new Map() ;
 
-    constructor(appimagedir: string) {
+    constructor(appimagedir?: string) {
         // Initialize the image manager
         this.imagedir_ = this.findUserImageDir() ;
         if (this.imagedir_) {
@@ -14,7 +14,9 @@ export class ImageManager {
         }
 
         if (this.imagedir_) {
-            this.scanImageDir(appimagedir) ;
+            if (appimagedir) {
+                this.scanImageDir(appimagedir) ;
+            }
             this.scanImageDir(this.imagedir_) ;
         }
     }
@@ -42,6 +44,15 @@ export class ImageManager {
             return true ;
         }
         return false ;
+    }
+
+    public addImageWithData(name : string, data : string) {
+        if (this.imagedir_) {
+            const destPath = path.join(this.imagedir_, name) + '.png' ;
+            let buf = Buffer.from(data, 'base64') ;
+            fs.writeFileSync(destPath, buf) ;
+            this.imagemap_.set(name, destPath) ;
+        }
     }
 
     private findUserImageDir() : string | undefined{
@@ -86,6 +97,15 @@ export class ImageManager {
                 if (fs.statSync(filePath).isFile() && file.endsWith('.png')) {
                     this.imagemap_.set(path.parse(file).name, filePath) ;
                 }
+            }
+        }
+    }
+
+    public removeAllImages() {
+        if (this.imagedir_ && fs.existsSync(this.imagedir_) && fs.statSync(this.imagedir_).isDirectory()) {
+            for(let file of fs.readdirSync(this.imagedir_!)) {
+                const filePath = path.join(this.imagedir_!, file) ;
+                fs.unlinkSync(filePath) ;
             }
         }
     }
