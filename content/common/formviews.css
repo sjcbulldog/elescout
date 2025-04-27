@@ -1,118 +1,30 @@
-
 .form-view-topmost {
-    width: 100%;
-    height: 100% ;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    position: relative;
 }
 
 .form-view-title {
-    width: 100%;
-    font-size: 36px ;
-    font-weight: bolder ;
     text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    flex-grow: 0;
 }
 
-.form-top-div {
-    flex-grow: 1;
-    display:flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-.form-canvas {
-    cursor: crosshair;
-}
-
-.formtab {
+.form-view-tab {
     border: 1px solid #ccc;
     background-color: #c1c1c1;
+    flex-grow: 0;
 }
 
-.form-section-contents {
+.form-view-form {
     flex-grow: 1;
-    overflow: auto;
+    z-index: 1;
 }
 
-canvas.form-section-contents {
-    cursor: crosshair;
-}
-
-.form-tab-button-unselected {
-    font-weight: bolder;
-    font-size : 24px;
-    background-color: #c1c1c1;
-    float: left;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: 14px 16px;
-    transition: 0.3s;
-}
-
-.form-tab-button-selected {
-    font-weight: bolder;
-    font-size : 24px;
-    background-color: #ffffff;
-    float: left;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: 14px 16px;
-    transition: 0.3s;
-}
-
-/* Change background color of buttons on hover */
-.formtab button:hover {
-    background-color: #ddd;
-}
-
-/* Create an active/current tablink class */
-.formtab button.active {
-    background-color: #ccc;
-}
-
-/* Style the tab content */
-.formtabcontent {
-    display: none;
-    padding: 6px 12px;
+.form-view-tab {
     border: 1px solid #ccc;
-    border-top: none;
+    background-color: #c1c1c1;
+    flex-grow: 0;
 }
-
-.form-item-label {
-    font-size : 36px;
-}
-
-.form-item-text {
-    margin: 5px 20px ;
-    font-size : 36px;
-}
-
-.form-item-choice {
-    margin: 5px 20px ;
-    font-size : 36px;
-}
-
-.form-item-boolean {
-    margin: 5px 20px ;
-    width: 36px;
-    height: 36px ;
-}
-
-.form-item-updown {
-    margin: 5px 20px ;
-    font-size : 36px;
-}
-
-.form-item-updown-button {
-    margin: 5px 20px ;
-    width: 40px;
-    font-size : 36px;
-}
-
-.form-item-updown-div {
-    display:flex; 
-    flex-direction: row; 
-}
-

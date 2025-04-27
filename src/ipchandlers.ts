@@ -438,7 +438,6 @@ export async function getForm(cmd: string, ...args: any[]) {
         scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
         if (args.length === 1 && typeof args[0] === 'string') {
             if (scappbase.applicationType === XeroAppType.Central) {
-                scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
                 let central : SCCentral = scappbase as SCCentral ;
                 central.sendForm(args[0]) ;
             } 

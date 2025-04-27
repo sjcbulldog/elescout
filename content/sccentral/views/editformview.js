@@ -307,17 +307,6 @@ class EditFormTextDialog extends EditFormControlDialog {
         label.appendChild(this.text_color_) ;
         div.appendChild(label) ;
 
-        this.back_color_ = document.createElement('input') ;
-        this.back_color_.type = 'color' ;
-        this.back_color_.className = 'popup-form-edit-dialog-input' ;
-        this.back_color_.value = this.formctrl_.item.backcolor ;
-
-        label = document.createElement('label') ;
-        label.className = 'popup-form-edit-dialog-label' ;
-        label.innerText = 'Background Color' ;
-        label.appendChild(this.back_color_) ;
-        div.appendChild(label) ;
-        
         pdiv.appendChild(div) ;
     }
 
@@ -336,9 +325,6 @@ class EditFormTextDialog extends EditFormControlDialog {
 
         this.formctrl_.item.color = this.text_color_.value ;
         this.formctrl_.ctrl.style.color = this.text_color_.value ;
-
-        this.formctrl_.item.backcolor = this.back_color_.value ;
-        this.formctrl_.ctrl.style.backgroundColor = this.back_color_.value ;
     }
 }
 
@@ -408,6 +394,28 @@ class EditFormUpDownDialog extends EditFormControlDialog {
         label.appendChild(this.tag_) ;
         div.appendChild(label) ;        
 
+        this.min_value_ = document.createElement('input') ;
+        this.min_value_.type = 'number' ;
+        this.min_value_.className = 'popup-form-edit-dialog-input' ;
+        this.min_value_.value = this.formctrl_.item.minvalue ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Minimum Value' ;
+        label.appendChild(this.min_value_) ;
+        div.appendChild(label) ;  
+
+        this.max_value_ = document.createElement('input') ;
+        this.max_value_.type = 'number' ;
+        this.max_value_.className = 'popup-form-edit-dialog-input' ;
+        this.max_value_.value = this.formctrl_.item.maxvalue ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Minimum Value' ;
+        label.appendChild(this.max_value_) ;
+        div.appendChild(label) ;  
+
         this.font_name_ = document.createElement('select') ;
         this.font_name_.className = 'popup-form-edit-dialog-select' ;
         let fonts = await window.queryLocalFonts() ;
@@ -449,44 +457,29 @@ class EditFormUpDownDialog extends EditFormControlDialog {
         label.appendChild(this.text_color_) ;
         div.appendChild(label) ;
 
-        this.back_color_ = document.createElement('input') ;
-        this.back_color_.type = 'color' ;
-        this.back_color_.className = 'popup-form-edit-dialog-input' ;
-        this.back_color_.value = this.formctrl_.item.backcolor ;
-
-        label = document.createElement('label') ;
-        label.className = 'popup-form-edit-dialog-label' ;
-        label.innerText = 'Background Color' ;
-        label.appendChild(this.back_color_) ;
-        div.appendChild(label) ;        
-
-
         pdiv.appendChild(div) ;
     }
 
     extractData() {
         this.formctrl_.item.tag = this.tag_.value ;
         this.formctrl_.ctrl.tag = this.tag_.value ;
+
+        this.formctrl_.item.minvalue = parseInt(this.min_value_.value) ;
+        this.formctrl_.item.maxvalue = parseInt(this.max_value_.value) ;
         
         this.formctrl_.upbutton_.style.font = this.font_name_.value ;
         this.formctrl_.upbutton_.style.fontSize = this.font_size_.value + 'px' ;
         this.formctrl_.upbutton_.style.color = this.text_color_.value ;
-        this.formctrl_.upbutton_.style.backgroundColor = this.back_color_.value ;
 
         this.formctrl_.downbutton_.style.font = this.font_name_.value ;
         this.formctrl_.downbutton_.style.fontSize = this.font_size_.value + 'px' ;
         this.formctrl_.downbutton_.style.color = this.text_color_.value ;
-        this.formctrl_.downbutton_.style.backgroundColor = this.back_color_.value ;
 
         this.formctrl_.count_.style.font = this.font_name_.value ;
         this.formctrl_.count_.style.fontSize = this.font_size_.value + 'px' ;
         this.formctrl_.count_.style.color = this.text_color_.value ;
-        this.formctrl_.count_.style.backgroundColor = this.back_color_.value ;
-
-        this.formctrl_.ctrl.style.backgroundColor = this.back_color_.value ;
 
         this.formctrl_.item.color = this.text_color_.value ;
-        this.formctrl_.item.backcolor = this.back_color_.value ;
         this.formctrl_.item.font = this.font_name_.value ;
         this.formctrl_.item.fontsize = parseInt(this.font_size_.value) ;
     }
@@ -892,7 +885,6 @@ class EditFormView extends XeroView {
         this.scoutingAPI('get-images') ;
         this.scoutingAPI('get-form', this.type_);
 
-        this.nameToSectionMap_ = new Map() ;
         this.nameToImageMap = new Map() ;
 
         let ctrlitems = [
@@ -1661,6 +1653,25 @@ class EditFormView extends XeroView {
         this.setCurrentSectionByIndex(this.form_.sections.length - 1) ;
     }
 
+    deleteSection() {
+        if (this.currentSectionIndex_ === -1) {
+            return ;
+        }
+
+        if (this.form_.sections.length === 1) {
+            window.alert('You cannot delete the last section - there must be at least one section.') ;
+            return ;
+        }
+
+        let section = this.form_.sections[this.currentSectionIndex_] ;
+        this.form_.sections.splice(this.currentSectionIndex_, 1) ;
+
+        this.bardiv_.removeChild(this.bardiv_.children.item(this.currentSectionIndex_)) ;
+        this.currentSectionIndex_ = -1 ;
+        this.formViewUpdateTabBar() ;
+        this.setCurrentSectionByIndex(0) ;
+    }
+
     importImage() {
         this.scoutingAPI('import-image') ;
     }
@@ -1690,6 +1701,7 @@ class EditFormView extends XeroView {
         let items = [
             new PopupMenuItem('Import Image', this.importImage.bind(this)),
             new PopupMenuItem('Add Section', this.addSection.bind(this)),
+            new PopupMenuItem('Delete Section', this.deleteSection.bind(this)),
             new PopupMenuItem('Rename Section', this.renameSection.bind(this)),
             new PopupMenuItem('Add Control', undefined, this.ctrl_menu_),
             new PopupMenuItem('Select Background Image', undefined, this.image_menu_),

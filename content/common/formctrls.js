@@ -28,6 +28,9 @@ class FormControl {
     createForEdit(parent) {
     }
 
+    create(parent) {        
+    }
+
     edit(parent) {
     }
 
@@ -60,6 +63,25 @@ class LabelFormControl extends FormControl {
         let ret = new LabelFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
         ret.update(this.item, true) ;
         return ret ;
+    }
+
+    create(parent) {
+        let label = document.createElement('p') ;
+        label.className = 'form-view-label' ;
+        label.style.position = 'absolute' ;
+        label.style.left = this.item.x + 'px' ;
+        label.style.top = this.item.y + 'px' ;
+        label.style.width = this.item.width + 'px' ;
+        label.style.height = this.item.height + 'px' ;
+        label.innerText = this.item.text ;
+        label.style.font = this.item.font ;
+        label.style.fontSize = this.item.fontsize + 'px' ;
+        label.style.color = this.item.color ;
+        label.disabled = false ;
+        label.style.margin = '4px' ;
+
+        this.ctrl = label ;
+        parent.appendChild(label) ;
     }
 
     createForEdit(parent) {
@@ -100,7 +122,6 @@ class TextFormControl extends FormControl {
                 font: 'Arial',
                 fontsize: 36,
                 color: 'black',
-                backcolor: '#f0f0f0f',
                 tag: ptag,
                 placeholder: 'Enter text here',
             }) ;
@@ -110,6 +131,26 @@ class TextFormControl extends FormControl {
         let ret = new TextFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
         ret.update(this.item, true) ;
         return ret ;
+    }
+
+    create(parent) {
+        let input = document.createElement('input') ;
+        input.className = 'form-view-text-input' ;
+        input.type = 'text' ;
+        input.style.position = 'absolute' ;
+        input.style.left = this.item.x + 'px' ;
+        input.style.top = this.item.y + 'px' ;
+        input.style.width = this.item.width + 'px' ;
+        input.style.height = this.item.height + 'px' ;
+        input.placeholder = this.item.placeholder ;
+        input.style.font = this.item.font ;
+        input.style.fontSize = this.item.fontsize + 'px' ;
+        input.style.color = this.item.color ;
+        input.disabled = false ;
+        input.style.margin = '4px' ;
+
+        this.ctrl = input ;
+        parent.appendChild(input) ;
     }
 
     createForEdit(parent) {
@@ -125,7 +166,6 @@ class TextFormControl extends FormControl {
         input.style.font = this.item.font ;
         input.style.fontSize = this.item.fontsize + 'px' ;
         input.style.color = this.item.color ;
-        input.style.backgroundColor = this.item.backcolor ;
         input.disabled = true ;
         input.style.margin = '4px' ;
 
@@ -159,6 +199,26 @@ class BooleanFormControl extends FormControl {
         let ret = new BooleanFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
         ret.update(this.item, true) ;
         return ret ;
+    }
+
+    create(parent) {
+        let div = document.createElement('div') ;
+        div.className = 'form-view-checkbox-div' ;
+        div.style.position = 'absolute' ;
+        div.style.left = this.item.x + 'px' ;
+        div.style.top = this.item.y + 'px' ;
+        div.style.width = this.item.width + 'px' ;
+        div.style.height = this.item.height + 'px' ;
+        div.style.margin = '4px' ;
+
+        let input = document.createElement('input') ;
+        input.className = 'form-view-checkbox' ;
+        input.type = 'checkbox' ;
+        input.style.accentColor = this.item.color ;
+        div.appendChild(input) ;
+
+        this.ctrl = div ;
+        parent.appendChild(div) ;
     }
 
     createForEdit(parent) {
@@ -200,8 +260,9 @@ class UpDownFormControl extends FormControl {
                 width: pwidth,
                 height: pheight,
                 color: 'black',
-                backcolor: 'grey',
                 tag: ptag,
+                minvalue: 0,
+                maxvalue: 100,
             }) ;
     }
 
@@ -209,6 +270,62 @@ class UpDownFormControl extends FormControl {
         let ret = new UpDownFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
         ret.update(this.item, true)
         return ret ;
+    }
+
+    upButtonPressed() {
+        let count = parseInt(this.count_.innerText) + 1 ;
+        if (count > this.item.maxvalue) {
+            count = this.item.maxvalue ;
+        }
+        this.count_.innerText = count ;
+    }
+
+    downButtonPressed() {
+        let count = parseInt(this.count_.innerText) - 1 ;
+        if (count < this.item.minvalue) {
+            count = this.item.minvalue ;
+        }
+        this.count_.innerText = count ;
+    }
+
+    create(parent) {
+        let div = document.createElement('div') ;
+        div.style.position = 'absolute' ;
+        div.style.left = this.item.x + 'px' ;
+        div.style.top = this.item.y + 'px' ;
+        div.style.width = this.item.width + 'px' ;
+        div.style.height = this.item.height + 'px' ;
+        div.style.margin = '4px' ;
+        div.className = 'form-view-updown' ;
+
+        this.upbutton_ = document.createElement('button') ;
+        this.upbutton_.className = 'form-view-updown-button' ;
+        this.upbutton_.innerHTML = '&uarr;' ;
+        this.upbutton_.style.font = this.item.font ;
+        this.upbutton_.style.fontSize = this.item.fontsize + 'px' ;
+        this.upbutton_.style.color = this.item.color ;
+        this.upbutton_.addEventListener('click', this.upButtonPressed.bind(this)) ;
+        div.appendChild(this.upbutton_) ;
+
+        this.count_ = document.createElement('span') ;
+        this.count_.className = 'form-view-updown-count' ;
+        this.count_.innerHTML = this.item.minvalue ? this.item.minvalue : '0' ;
+        this.count_.style.font = this.item.font ;
+        this.count_.style.fontSize = this.item.fontsize + 'px' ;
+        this.count_.style.color = this.item.color ;
+        div.appendChild(this.count_) ;
+
+        this.downbutton_ = document.createElement('button') ;
+        this.downbutton_.className = 'form-view-updown-button' ;
+        this.downbutton_.innerHTML = '&darr;' ;
+        this.downbutton_.style.font = this.item.font ;
+        this.downbutton_.style.fontSize = this.item.fontsize + 'px' ;
+        this.downbutton_.style.color = this.item.color ;
+        this.downbutton_.addEventListener('click', this.downButtonPressed.bind(this)) ;
+        div.appendChild(this.downbutton_) ;
+
+        this.ctrl = div ;
+        parent.appendChild(div) ;
     }
 
     createForEdit(parent) {
@@ -219,19 +336,16 @@ class UpDownFormControl extends FormControl {
         div.style.width = this.item.width + 'px' ;
         div.style.height = this.item.height + 'px' ;
         div.style.margin = '4px' ;
-        div.style.backgroundColor = this.item.backcolor ;
         div.disabled = true ;
         div.className = 'form-edit-updown' ;
 
         this.upbutton_ = document.createElement('button') ;
         this.upbutton_.className = 'form-edit-updown-button' ;
         this.upbutton_.disabled = false ;
-        this.upbutton_.style.pointerEvents = 'none' ;
         this.upbutton_.innerHTML = '&uarr;' ;
         this.upbutton_.style.font = this.item.font ;
         this.upbutton_.style.fontSize = this.item.fontsize + 'px' ;
         this.upbutton_.style.color = this.item.color ;
-        this.upbutton_.style.backgroundColor = this.item.backcolor ;
         div.appendChild(this.upbutton_) ;
 
         this.count_ = document.createElement('span') ;
@@ -241,7 +355,6 @@ class UpDownFormControl extends FormControl {
         this.count_.style.font = this.item.font ;
         this.count_.style.fontSize = this.item.fontsize + 'px' ;
         this.count_.style.color = this.item.color ;
-        this.count_.style.backgroundColor = this.item.backcolor ;
         div.appendChild(this.count_) ;
 
         this.downbutton_ = document.createElement('button') ;
@@ -251,7 +364,6 @@ class UpDownFormControl extends FormControl {
         this.downbutton_.style.font = this.item.font ;
         this.downbutton_.style.fontSize = this.item.fontsize + 'px' ;
         this.downbutton_.style.color = this.item.color ;
-        this.downbutton_.style.backgroundColor = this.item.backcolor ;
         div.appendChild(this.downbutton_) ;
 
         this.ctrl = div ;
@@ -310,21 +422,21 @@ class MultipleChoiceFormControl extends FormControl {
         if (this.table_ && this.ctrl.contains(this.table_)) {
             this.ctrl.removeChild(this.table_) ;
         }
-        this.addAllChoices() ;
+        this.addAllChoices(true) ;
     }
 
-    addAllChoices() {
+    addAllChoices(editing) {
         this.table_ = document.createElement('table') ;
         this.ctrl.appendChild(this.table_) ;
 
         if (this.item.orientation === 'vertical') {
-            this.table_.className = 'form-edit-multiple-choice-table' ;
+            this.table_.className = editing ? 'form-edit-multiple-choice-table' : 'form-view-multiple-choice-table' ;
             for(let choice of this.item.choices) {
                 let tabrow = document.createElement('tr') ;
-                tabrow.className = 'form-edit-multiple-choice-item' ;
+                tabrow.className = editing ? 'form-edit-multiple-choice-item' : 'form-view-multiple-choice-item' ;
 
                 let label = document.createElement('td') ;
-                label.className = 'form-edit-multiple-choice-label' ;
+                label.className = editing ? 'form-edit-multiple-choice-label' : 'form-view-multiple-choice-label' ;
                 label.innerHTML = choice.text ;
                 label.style.font = this.item.font ;
                 label.style.fontSize = this.item.fontsize + 'px' ;
@@ -336,9 +448,9 @@ class MultipleChoiceFormControl extends FormControl {
 
                 let input = document.createElement('input') ;
                 input.type = 'radio' ;
-                input.className = 'form-edit-multiple-choice-radio' ;
+                input.className = editing ? 'form-edit-multiple-choice-radio' : 'form-view-multiple-choice-radio' ;
                 input.style.accentColor = this.item.color ;
-                input.disabled = true ;
+                input.disabled = editing ;
                 input.checked = true ;
                 input.name = this.item.tag ;
                 input.id = this.item.tag + '_' + choice.value ;
@@ -353,9 +465,9 @@ class MultipleChoiceFormControl extends FormControl {
             }
         }
         else {
-            this.table_.className = 'form-edit-multiple-choice-table-horizontal' ;
+            this.table_.className = editing ? 'form-edit-multiple-choice-table-horizontal' : 'form-view-multiple-choice-table-horizontal' ;
             let tabrow = document.createElement('tr') ;
-            tabrow.className = 'form-edit-multiple-choice-item-horizontal' ;
+            tabrow.className = editing ? 'form-edit-multiple-choice-item-horizontal' : 'form-view-multiple-choice-item-horizontal' ;
             tabrow.style.width = '100%' ;
             this.table_.appendChild(tabrow) ;
             let first = true ;
@@ -364,12 +476,12 @@ class MultipleChoiceFormControl extends FormControl {
                 if (!first) {
                     let sep = document.createElement('td') ;
                     sep.innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;' ;
-                    sep.className = 'form-edit-multiple-choice-separator-horizontal' ;
+                    sep.className = editing ? 'form-edit-multiple-choice-separator-horizontal' : 'form-view-multiple-choice-separator-horizontal' ;
                     tabrow.appendChild(sep) ;
                 }
 
                 let label = document.createElement('td') ;
-                label.className = 'form-edit-multiple-choice-label-horizontal' ;
+                label.className = editing ? 'form-edit-multiple-choice-label-horizontal' : 'form-view-multiple-choice-label-horizontal' ;
                 label.innerHTML = choice.text ;
                 label.style.font = this.item.font ;
                 label.style.fontSize = this.item.fontsize + 'px' ;
@@ -377,14 +489,14 @@ class MultipleChoiceFormControl extends FormControl {
                 tabrow.appendChild(label) ;
 
                 let iwrap = document.createElement('td') ;
-                iwrap.className = 'form-edit-multiple-choice-wrap-horizontal' ;
+                iwrap.className = editing ? 'form-edit-multiple-choice-wrap-horizontal' : 'form-view-multiple-choice-wrap-horizontal' ;
                 tabrow.appendChild(iwrap) ;
 
                 let input = document.createElement('input') ;
                 input.type = 'radio' ;
-                input.className = 'form-edit-multiple-choice-radio-horizontal' ;
+                input.className = editing ? 'form-edit-multiple-choice-radio-horizontal' : 'form-view-multiple-choice-radio-horizontal' ;
                 input.style.accentColor = this.item.color ;
-                input.disabled = true ;
+                input.disabled = editing ;
                 input.checked = true ;
                 input.name = this.item.tag ;
                 input.id = this.item.tag + '_' + choice.value ;
@@ -400,6 +512,23 @@ class MultipleChoiceFormControl extends FormControl {
         }
     }
 
+    create(parent) {
+        this.choices_ctrls_ = [] ;
+
+        let div = document.createElement('div') ;
+        div.className = 'form-view-multiple-choice' ;
+        div.style.position = 'absolute' ;
+        div.style.left = this.item.x + 'px' ;
+        div.style.top = this.item.y + 'px' ;
+        div.style.width = this.item.width + 'px' ;
+        div.style.height = this.item.height + 'px' ;
+        div.style.margin = '4px' ;
+        this.ctrl = div ;
+
+        this.addAllChoices(false) ;
+        parent.appendChild(div) ;
+    }  
+
     createForEdit(parent) {
         this.choices_ctrls_ = [] ;
 
@@ -411,12 +540,10 @@ class MultipleChoiceFormControl extends FormControl {
         div.style.width = this.item.width + 'px' ;
         div.style.height = this.item.height + 'px' ;
         div.style.margin = '4px' ;
-        div.style.backgroundColor = this.item.backcolor ;
-        div.style.flexDirection = this.item.orientation === 'vertical' ? 'column' : 'row' ;
         div.disabled = true ;
         this.ctrl = div ;
 
-        this.addAllChoices() ;
+        this.addAllChoices(true) ;
         parent.appendChild(div) ;
     }    
 
@@ -469,12 +596,12 @@ class SelectFormControl extends FormControl {
         if (this.select_ && this.ctrl.contains(this.select_)) {
             this.ctrl.removeChild(this.select_) ;
         }
-        this.addAllChoices() ;
+        this.addAllEditChoices() ;
     }
 
-    addAllChoices() {
+    addAllEditChoices() {
         this.select_ = document.createElement('select') ;
-        this.select_.className = 'form-edit-multiple-select' ;
+        this.select_.className = 'form-edit-select-select' ;
         this.select_.style.font = this.item.font ;
         this.select_.style.fontSize = this.item.fontsize + 'px' ;
         this.select_.style.color = this.item.color ;
@@ -490,26 +617,59 @@ class SelectFormControl extends FormControl {
             this.select_.appendChild(opt) ;
         }
     }
-    
-    createForEdit(parent) {
+
+    addAllViewChoices() {
+        this.select_ = document.createElement('select') ;
+        this.select_.className = 'form-view-select-select' ;
+        this.select_.style.font = this.item.font ;
+        this.select_.style.fontSize = this.item.fontsize + 'px' ;
+        this.select_.style.color = this.item.color ;
+        this.ctrl.appendChild(this.select_) ;
+
+        for(let choice of this.item.choices) {
+            let opt = document.createElement('option') ;
+            opt.value = choice.value ;
+            opt.innerHTML = choice.text ;
+            opt.style.font = this.item.font ;
+            opt.style.fontSize = this.item.fontsize + 'px' ;
+            opt.style.color = this.item.color ;
+            this.select_.appendChild(opt) ;
+        }
+    }
+
+    create(parent) {
         this.choices_ctrls_ = [] ;
 
         let div = document.createElement('div') ;
-        div.className = 'form-edit-multiple-choice' ;
+        div.className = 'form-view-select' ;
         div.style.position = 'absolute' ;
         div.style.left = this.item.x + 'px' ;
         div.style.top = this.item.y + 'px' ;
         div.style.width = this.item.width + 'px' ;
         div.style.height = this.item.height + 'px' ;
         div.style.zIndex = 1000 ;
-        div.style.pointerEvents = 'none' ;
         div.style.margin = '4px' ;
-        div.style.backgroundColor = this.item.backcolor ;
-        div.style.flexDirection = this.item.orientation === 'vertical' ? 'column' : 'row' ;
+        this.ctrl = div ;
+
+        this.addAllViewChoices() ;
+        parent.appendChild(div) ;
+    }   
+    
+    createForEdit(parent) {
+        this.choices_ctrls_ = [] ;
+
+        let div = document.createElement('div') ;
+        div.className = 'form-edit-select' ;
+        div.style.position = 'absolute' ;
+        div.style.left = this.item.x + 'px' ;
+        div.style.top = this.item.y + 'px' ;
+        div.style.width = this.item.width + 'px' ;
+        div.style.height = this.item.height + 'px' ;
+        div.style.margin = '4px' ;
         div.disabled = true ;
         this.ctrl = div ;
 
-        this.addAllChoices() ;
+        this.addAllEditChoices() ;
         parent.appendChild(div) ;
     }    
 

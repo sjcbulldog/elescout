@@ -12,206 +12,180 @@ class FormView extends XeroView {
         this.buildInitialView('Waiting on form ...') ;
         this.registerCallback('send-form', this.formCallback.bind(this));
         this.registerCallback('request-results',this.requestResults.bind(this)) ;
-        this.registerCallback('send-initial-values',this.initializeForm.bind(this)) ;
+        this.registerCallback('initialize-form', this.initializeForm.bind(this)) ;
+        this.registerCallback('send-image-data', this.receiveImageData.bind(this)) ;
+
         this.scoutingAPI('get-form', this.type_);
 
-        this.nameToSectionMap_ = new Map() ;
+        this.currentSectionIndex_ = -1 
+        this.formctrlitems_ = [] ;
+        this.nameToImageMap = new Map() ;
     }
 
-    requestResults() {
-        let results = [] ;
-        for(let sect of this.sections_) {
-            results = [...results, ...sect.getValues()] ;
-        }
-        this.scoutingAPI("provide-result", results);
-    }
+    initDisplay() {
+        this.reset() ;
 
-    formCallback(args) {
-        let obj = args[0] ;
-        if (obj.message && obj.message.length > 0) {
-            this.top_.innerText = obj.message ;
-        }
-        else {
-            let color = 'blue' ;
-            let reversed = false ;
+        this.alltop_ = document.createElement('div') ;
+        this.alltop_.className = 'form-view-topmost' ;
 
-            if (obj.color) {
-                color = obj.color ;
-            }
+        this.titlediv_ = document.createElement('div') ;
+        let tname = this.type_.charAt(0).toUpperCase() + this.type_.slice(1) ;
+        this.titlediv_.innerText = tname + ' Form' ;
+        this.titlediv_.className = 'form-view-title' ;
+        this.alltop_.append(this.titlediv_) ;
 
-            if (obj.reversed) {
-                reversed = obj.reversed ;
-            }
-
-            this.reset() ;
-            this.image_descs_ = obj.form.images;
-            this.loadImages() ;
-
-            this.alltop_ = document.createElement('div') ;
-            this.alltop_.className = 'form-view-topmost' ;
-
-            this.titlediv_ = document.createElement('div') ;
-            this.titlediv_.innerText = obj.form.title ;
-            this.titlediv_.style.color = color ;
-            if (obj.form.type === 'preview') {
-                this.titlediv_.innerText += ' - ' + obj.form.json.form + (reversed ? ' - reversed' : '') ;
-            }
-            this.titlediv_.className = 'form-view-title' ;
-            this.alltop_.append(this.titlediv_) ;
-            this.alltop_.append(this.formViewJsonToForm(obj.form.json, color, reversed)) ;
-            this.top_.append(this.alltop_) ;
-            this.formViewSelect(this.sectnames_[0]) ;
-        }
-    }
-
-    imageLoadComplete(im) {
-        im.loaded_ = true ;
-
-        if (this.current_section_) {
-            this.formViewSelect(this.current_section_) ;
-        }
-    }
-    
-    findImage(name) {
-        if (this.image_descs_) {
-            for(let im of this.image_descs_) {
-                if (im.name === name) {
-                    return im ;
-                }
-            }
-        }
-
-        return undefined ;
-    }
-
-    loadImages() {
-        if (this.image_descs_) {
-            for(let im of this.image_descs_) {
-                let imagedata = im.data ;
-                im.image_ = document.createElement('img') ;
-                im.loaded_ = false ;
-                im.image_.src = `data:image/jpg;base64,${imagedata}`
-                im.image_.onload = this.imageLoadComplete.bind(this, im) ;
-            }
-        }
-    }
-    
-    formViewHideAll(sections) {
-        for(let sectname of this.sectnames_) {
-            let qstr = '#' + sectname + '-button' ;
-            $(qstr).css("border", "none" );
-        }
-
-        for(let section of this.sections_) {
-            section.top_.hidden = true ;
-        }
-    }
-    
-    formViewSelectButton(ev) {
-        this.formViewSelect(ev.target.xerosectname) ;
-    }
-
-    formViewSelect(sectname) {
-        let selsect = undefined ;
-        this.current_section_ = sectname ;
-
-        this.formViewHideAll() ;
-        for(let sect of this.sections_) {
-            if (sect.name_ === sectname) {
-                selsect = sect ;
-                break ; 
-            }
-        }
-
-        if (selsect) {
-            selsect.top_.hidden = false;
-            if (selsect.isimage_) {
-                selsect.drawImageSection(this) ;
-            }
-        }
-
-        let qstr = '#' + sectname + '-button' ;
-        $(qstr).css("border", "3px solid black" );
-    }
-
-    formViewCreateTabBar() {
         this.bardiv_ = document.createElement('div') ;
-        this.bardiv_.className = 'formtab' ;
-    
-        for(let section of this.sectnames_) {
+        this.bardiv_.className = 'form-view-tab' ;
+        this.alltop_.append(this.bardiv_) ;
+
+        this.formimg_ = document.createElement('img') ;
+        this.formimg_.className = 'form-view-form' ;
+        this.formimg_.style.pointerEvents = 'none' ;
+        this.alltop_.style.userSelect = 'none' ;
+        this.alltop_.append(this.formimg_) ;
+
+        this.top_.append(this.alltop_) ;
+        this.top_.style.userSelect = 'none' ;
+    }
+
+    formViewSelectButton(event) {
+        if (this.currentSectionIndex_ !== -1) {
+            this.bardiv_.children.item(this.currentSectionIndex_).className = FormView.buttonClassUnselected ;
+        }
+
+        if (event.target.section_index !== undefined) {
+            this.setCurrentSectionByIndex(event.target.section_index) ;
+        }
+    }
+
+    formViewUpdateTabBar() {
+        this.bardiv_.innerHTML = '' ;
+        let index = 0 ;
+        for(let section of this.form_.sections) {
             let button = document.createElement('button') ;
-            button.innerText = section ;
+            button.innerText = section.name ;
             button.className = FormView.buttonClassUnselected ;
             button.id = section + '-button' ;
+            button.section_index = index++ ;
             button.xerosectname = section;
             button.onclick = this.formViewSelectButton.bind(this) ;
             this.bardiv_.append(button) ;
-        }
-    
+        }  
         return this.bardiv_ ;
     }
 
-    formViewCreateSection(parent, section, color, reversed) {
-        let secobj ;
-
-        if (section.image) {
-            let info = this.findImage(section.image) ;
-            secobj = new XeroImageSection(parent, info, section, color, reversed) ;
-        }
-        else {
-            secobj = new XeroControlSection(section, color) ;
-        }
-
-        return secobj ;
-    }
-
-    formViewJsonToForm(form, color, reversed) {
-        this.formtop_ = document.createElement('div') ;
-        this.formtop_.className = 'form-top-div' ;
-        this.sectnames_ = [] ;
-        this.sections_ = [] ;
-
-        //
-        // Gather section names (normalized)
-        //
-        for(let section of form.sections) {
-            this.sectnames_.push(XeroBaseSection.formViewNormalizeName(section.name)) ;
-        }
-
-        //
-        // Create the tab bar
-        //
-        this.tabbar_ = this.formViewCreateTabBar() ;
-        this.formtop_.append(this.tabbar_) ;    
-
-        //
-        // Create the sections
-        //
-        for(let section of form.sections) {
-            let secobj = this.formViewCreateSection(this.formtop_, section, color, reversed) ;
-            for(let tag of secobj.tags_) {
-                this.nameToSectionMap_.set(tag, secobj) ;
-            }
-            secobj.top_.className = 'form-section-contents' ;
-            this.sections_.push(secobj) ;
-            this.formtop_.append(secobj.top_) 
-        }
-
-        return this.formtop_ ;
-    }
-    
-    initializeForm(arg) {
-        //
-        // Initialize the form with existing form values
-        //
-        for(let one of arg[0]) {
-            if (this.nameToSectionMap_.has(one.tag)) {
-                this.nameToSectionMap_.get(one.tag).setValue(one.tag, one.type, one.value) ;
+    removeExistingControls() {
+        for(let entry of this.formctrlitems_) {
+            if (entry.ctrl) {
+                if (this.alltop_.contains(entry.ctrl)) {
+                    this.alltop_.removeChild(entry.ctrl) ;
+                }
             }
         }
+        this.formctrlitems_ = [] ;
+    }
 
-        if (this.current_section_) {
-            this.formViewSelect(this.current_section_) ;
+    editdone(changed) {
+        // TODO: send scouting data changes to main process
+    }
+
+    updateControls() {
+        this.removeExistingControls() ;
+
+        let section = this.form_.sections[this.currentSectionIndex_] ;
+        if (section.items) {
+            for(let item of section.items) {
+                let formctrl ;
+                if (item.type === FormControl.ctrlTypeLabel) {
+                    formctrl = new LabelFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === FormControl.ctrlTypeText) {
+                    formctrl = new TextFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === FormControl.ctrlTypeBoolean) {  
+                    formctrl = new BooleanFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === FormControl.ctrlTypeUpDown) {
+                    formctrl = new UpDownFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === FormControl.ctrlTypeMultipleChoice) {
+                    formctrl = new MultipleChoiceFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === FormControl.ctrlTypeSelect) {
+                    formctrl = new SelectFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
+                    formctrl.update(item) ;
+                }
+
+                if (formctrl) {
+                    this.formctrlitems_.push(formctrl) ;
+                    formctrl.create(this.alltop_) ;
+                }
+            }
         }
+    }
+
+    updateSectionDisplay() {
+        let imname = this.form_.sections[this.currentSectionIndex_].image ;
+        let data = this.nameToImageMap.get(imname) ;
+        this.formimg_.src = `data:image/jpg;base64,${data}`
+        this.updateControls() ;
+    }
+
+    setCurrentSectionByIndex(sectionIndex) {
+        if (sectionIndex < 0 || sectionIndex >= this.form_.sections.length) {
+            return false ;
+        }
+        this.currentSectionIndex_ = sectionIndex ;
+        this.bardiv_.children.item(this.currentSectionIndex_).className = FormView.buttonClassSelected ;
+        this.updateSectionDisplay() ;
+        return true ;
+    }
+
+    receiveImageData(args) {
+        let name = args[0].name ;
+        let data = args[0].data ;
+
+        this.nameToImageMap.set(name, data) ;
+
+        if (this.form_ && this.form_.sections && this.form_.sections.length !== 0) {
+            let section = this.form_.sections[this.currentSectionIndex_] ;
+            if (section.image === name) {
+                this.updateSectionDisplay() ;
+            }
+        }
+    }
+
+    initializeForm(data) {
+    }
+
+    formCallback(data) {
+        let info = data[0] ;
+        if (info == null) {
+            this.buildInitialView('No form found') ;
+            return ;
+        }
+
+        if (info.form == null || info.form.json == null) {
+            this.buildInitialView('Invalid form data') ;
+            return ;
+        }
+        this.form_ = info.form.json ;
+
+        if (this.form_.form == null || this.form_.sections == null || !Array.isArray(this.form_.sections) || this.form_.sections.length == 0) {
+            this.buildInitialView('Invalid form data') ;
+            return ;
+        }
+
+        this.initDisplay() ;
+        this.formViewUpdateTabBar() ;
+        this.setCurrentSectionByIndex(0) ;
+    }
+
+    requestResults(data) {
     }
 }
