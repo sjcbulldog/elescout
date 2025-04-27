@@ -549,7 +549,7 @@ export class SCCentral extends SCBase {
 		}
 		else if (arg === 'match') {
 			if (this.project_ && this.project_.isInitialized() && this.project_.form_mgr_!.hasForms()) {
-				filename = this.project_.form_mgr_!.getTeamFormFullPath()! ;
+				filename = this.project_.form_mgr_!.getMatchFormFullPath()! ;
 				title = 'Match Form' ;
 			}
 			else {

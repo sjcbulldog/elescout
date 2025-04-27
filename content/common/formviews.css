@@ -26,7 +26,7 @@
 
 .formtab {
     border: 1px solid #ccc;
-    background-color: #f1f1f1;
+    background-color: #c1c1c1;
 }
 
 .form-section-contents {
@@ -41,7 +41,7 @@ canvas.form-section-contents {
 .form-tab-button-unselected {
     font-weight: bolder;
     font-size : 24px;
-    background-color: #f1f1f1;
+    background-color: #c1c1c1;
     float: left;
     border: none;
     outline: none;

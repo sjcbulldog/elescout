@@ -2,6 +2,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
 }
 
 .form-edit-title {
@@ -13,7 +14,7 @@
 
 .form-edit-tab {
     border: 1px solid #ccc;
-    background-color: #f1f1f1;
+    background-color: #c1c1c1;
     flex-grow: 0;
 }
 
@@ -21,3 +22,121 @@
     flex-grow: 1;
     z-index: 1;
 }
+
+.form-edit-text-control {
+    display: flex;
+    flex-direction: row ;
+}
+
+.form-edit-updown {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;   
+}
+
+.form-edit-updown-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.form-edit-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;   
+}
+
+.form-edit-multiple-choice {
+    display: flex;
+    justify-content: center;
+    align-items: center;   
+}
+
+.form-edit-multiple-choice-item {
+    display: flex;
+    flex-direction: row;
+}
+
+.form-edit-multiple-choice-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;   
+}
+
+.popup-form-edit-dialog {
+    z-index: 1000;
+    position: absolute;
+    background-color: white;
+    border: gray 4px solid;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    padding: 10px;
+}
+
+.popup-form-content {
+    display: flex;
+    flex-direction: column;
+    background-color: lightgoldenrodyellow;
+    width: 400px;
+    height: 300px;
+}
+
+.popup-form-edit-dialog-client {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.popup-form-edit-dialog-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    flex-grow: 0;
+}
+
+.popup-form-edit-dialog-buttons button {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 24px;
+}
+
+.popup-form-edit-dialog-rowdiv {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.popup-form-edit-dialog-input {
+    background-color: wheat;
+    font: arial;
+    font-size: 24px;
+    border: 1px solid black;
+    margin-left: 10px;
+}
+
+.popup-form-edit-dialog-select {
+    background-color: wheat;
+    font: arial;
+    font-size: 24px;
+    border: 1px solid black;
+    margin-left: 10px;
+}
+
+.popup-form-edit-dialog-label {
+    font: arial;
+    font-size: 32px;
+    color: black;
+    margin-top: 10px ;
+}
+

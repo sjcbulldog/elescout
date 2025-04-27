@@ -9,8 +9,6 @@ class PopupMenuItem {
 class PopupMenu {
     constructor(items) {
         this.items_ = items ;
-        this.top_ = document.createElement('div') ;
-        this.top_.className = 'popup-menu' ;
         this.child_menu_ = undefined ;
     }
 
