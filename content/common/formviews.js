@@ -189,7 +189,7 @@ class FormView extends XeroView {
             if (item) {
                 let frmctrl = this.findFormControlFromItem(item) ;
                 if (frmctrl) {
-                    frmctrl.setValue(one.value) ;
+                    frmctrl.setData(one.value) ;
                 }
             }
         }

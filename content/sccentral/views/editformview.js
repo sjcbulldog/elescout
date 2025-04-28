@@ -146,19 +146,9 @@ class EditFormLabelDialog extends EditFormControlDialog {
     }
 
     async populateDialog(pdiv) {
+        let label ;
         let div = document.createElement('div') ;
         div.className = 'popup-form-edit-dialog-rowdiv' ;
-
-        this.tag_ = document.createElement('input') ;
-        this.tag_.type = 'text' ;
-        this.tag_.className = 'popup-form-edit-dialog-input' ;
-        this.tag_.value = this.formctrl_.item.tag ;
-
-        let label = document.createElement('label') ;
-        label.className = 'popup-form-edit-dialog-label' ;
-        label.innerText = 'Tag' ;
-        label.appendChild(this.tag_) ;
-        div.appendChild(label) ;
 
         this.text_string_ = document.createElement('input') ;
         this.text_string_.type = 'text' ;
@@ -176,7 +166,7 @@ class EditFormLabelDialog extends EditFormControlDialog {
         let fonts = await window.queryLocalFonts() ;
         for(let font of fonts) {
             let option = document.createElement('option') ;
-            option.value = font ;
+            option.value = font.fullName ;
             option.innerText = font.fullName ;
             this.font_name_.appendChild(option) ;
         }
@@ -217,14 +207,11 @@ class EditFormLabelDialog extends EditFormControlDialog {
     }
 
     extractData() {
-        this.formctrl_.item.tag = this.tag_.value ;
-        this.formctrl_.ctrl.tag = this.tag_.value ;
-
         this.formctrl_.item.text = this.text_string_.value ;
         this.formctrl_.ctrl.innerText = this.text_string_.value ;
 
         this.formctrl_.item.font = this.font_name_.value ;
-        this.formctrl_.ctrl.style.font = this.font_name_.value ;
+        this.formctrl_.ctrl.style.fontFamily = this.font_name_.value ;
 
         this.formctrl_.item.fontsize = parseInt(this.font_size_.value) ;
         this.formctrl_.ctrl.style.fontSize = this.font_size_.value + 'px' ;
@@ -272,7 +259,7 @@ class EditFormTextDialog extends EditFormControlDialog {
         let fonts = await window.queryLocalFonts() ;
         for(let font of fonts) {
             let option = document.createElement('option') ;
-            option.value = font ;
+            option.value = font.fullName ;
             option.innerText = font.fullName ;
             this.font_name_.appendChild(option) ;
         }
@@ -319,7 +306,7 @@ class EditFormTextDialog extends EditFormControlDialog {
         this.formctrl_.ctrl.value = this.placeholder_.value ;
 
         this.formctrl_.item.font = this.font_name_.value ;
-        this.formctrl_.ctrl.style.font = this.font_name_.value ;
+        this.formctrl_.ctrl.style.fontFamily = this.font_name_.value ;
 
         this.formctrl_.item.fontsize = parseInt(this.font_size_.value) ;
         this.formctrl_.ctrl.style.fontSize = this.font_size_.value + 'px' ;
@@ -422,7 +409,7 @@ class EditFormUpDownDialog extends EditFormControlDialog {
         let fonts = await window.queryLocalFonts() ;
         for(let font of fonts) {
             let option = document.createElement('option') ;
-            option.value = font ;
+            option.value = font.fullName ;
             option.innerText = font.fullName ;
             this.font_name_.appendChild(option) ;
         }
@@ -468,15 +455,15 @@ class EditFormUpDownDialog extends EditFormControlDialog {
         this.formctrl_.item.minvalue = parseInt(this.min_value_.value) ;
         this.formctrl_.item.maxvalue = parseInt(this.max_value_.value) ;
         
-        this.formctrl_.upbutton_.style.font = this.font_name_.value ;
+        this.formctrl_.upbutton_.style.fontFamily = this.font_name_.value ;
         this.formctrl_.upbutton_.style.fontSize = this.font_size_.value + 'px' ;
         this.formctrl_.upbutton_.style.color = this.text_color_.value ;
 
-        this.formctrl_.downbutton_.style.font = this.font_name_.value ;
+        this.formctrl_.downbutton_.style.fontFamily = this.font_name_.value ;
         this.formctrl_.downbutton_.style.fontSize = this.font_size_.value + 'px' ;
         this.formctrl_.downbutton_.style.color = this.text_color_.value ;
 
-        this.formctrl_.count_.style.font = this.font_name_.value ;
+        this.formctrl_.count_.style.fontFamily = this.font_name_.value ;
         this.formctrl_.count_.style.fontSize = this.font_size_.value + 'px' ;
         this.formctrl_.count_.style.color = this.text_color_.value ;
 
@@ -532,7 +519,7 @@ class EditFormMultipleSelectDialog extends EditFormControlDialog {
         let fonts = await window.queryLocalFonts() ;
         for(let font of fonts) {
             let option = document.createElement('option') ;
-            option.value = font ;
+            option.value = font.fullName ;
             option.innerText = font.fullName ;
             this.font_name_.appendChild(option) ;
         }
@@ -736,7 +723,7 @@ class EditFormSelectDialog extends EditFormControlDialog {
         let fonts = await window.queryLocalFonts() ;
         for(let font of fonts) {
             let option = document.createElement('option') ;
-            option.value = font ;
+            option.value = font.fullName ;
             option.innerText = font.fullName ;
             this.font_name_.appendChild(option) ;
         }
@@ -861,7 +848,7 @@ class EditFormSelectDialog extends EditFormControlDialog {
 }
 
 class EditFormView extends XeroView {
-    static fuzzyEdgeSpacing = 20 ;
+    static fuzzyEdgeSpacing = 10 ;
 
     constructor(div, type, args) {
         super(div, type) ;
@@ -958,15 +945,13 @@ class EditFormView extends XeroView {
     }
 
     onGlobalKey(event) {
-        if (event.key === 'Escape') {
-            this.unselectCurrent() ;
-            this.editing_ = false ;
-        }
-        else if (event.key === 'Delete') {
-            this.deleteSelectedItem() ;
-        }
-        else if (event.key === 'v' && event.ctrlKey) {
-            this.pasteSelectedItem() ;
+        if (!this.editing_) {
+            if (event.key === 'Delete') {
+                this.deleteSelectedItem() ;
+            }
+            else if (event.key === 'v' && event.ctrlKey) {
+                this.pasteSelectedItem() ;
+            }
         }
     }
 
@@ -1327,7 +1312,7 @@ class EditFormView extends XeroView {
     
     addNewUpDownCtrl(type) {
         let imgrect = this.formimg_.getBoundingClientRect() ;
-        let formctrl = new UpDownFormControl(this.editdone.bind(this), this.getUniqueTagName(), 0, imgrect.top, 250, 70) ;
+        let formctrl = new UpDownFormControl(this.editdone.bind(this), this.getUniqueTagName(), 0, imgrect.top, 250, 100) ;
 
         this.addItemToCurrentSection(formctrl.item) ;
         this.formctrlitems_.push(formctrl) ;
@@ -1338,7 +1323,7 @@ class EditFormView extends XeroView {
 
     addNewBooleanCtrl(type) {
         let imgrect = this.formimg_.getBoundingClientRect() ;
-        let formctrl = new BooleanFormControl(this.editdone.bind(this), this.getUniqueTagName(), 0, imgrect.top, 250, 50) ;
+        let formctrl = new BooleanFormControl(this.editdone.bind(this), this.getUniqueTagName(), 0, imgrect.top, 50, 50) ;
 
         this.addItemToCurrentSection(formctrl.item) ;
         this.formctrlitems_.push(formctrl) ;
@@ -1349,7 +1334,7 @@ class EditFormView extends XeroView {
 
     addNewMultipleChoiceCtrl(type) {
         let imgrect = this.formimg_.getBoundingClientRect() ;
-        let formctrl = new MultipleChoiceFormControl(this.editdone.bind(this), this.getUniqueTagName(), 0, imgrect.top, 250, 50) ;
+        let formctrl = new MultipleChoiceFormControl(this.editdone.bind(this), this.getUniqueTagName(), 0, imgrect.top, 150, 100) ;
 
         this.addItemToCurrentSection(formctrl.item) ;
         this.formctrlitems_.push(formctrl) ;
@@ -1360,7 +1345,7 @@ class EditFormView extends XeroView {
 
     addNewSelectCtrl(type) {
         let imgrect = this.formimg_.getBoundingClientRect() ;
-        let formctrl = new SelectFormControl(this.editdone.bind(this), this.getUniqueTagName(), 0, imgrect.top, 250, 50) ;
+        let formctrl = new SelectFormControl(this.editdone.bind(this), this.getUniqueTagName(), 0, imgrect.top, 120, 35) ;
 
         this.addItemToCurrentSection(formctrl.item) ;
         this.formctrlitems_.push(formctrl) ;

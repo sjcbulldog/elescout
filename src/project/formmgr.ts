@@ -43,6 +43,8 @@ export class FormManager extends Manager {
     this.info_ = info;
     this.location_ = dir;
     this.data_mgr_ = datamgr;
+
+    this.checkForms() ;
   }
 
   public setTeamForm(filename: string): Error | undefined {
@@ -693,5 +695,23 @@ export class FormManager extends Manager {
     }
 
     return ret;
+  }
+
+  checkForms() {
+    if (this.info_.teamform_ && this.info_.teamform_.length > 0) {
+      let form = path.join(this.location_, this.info_.teamform_);
+      if (!fs.existsSync(form)) {
+        this.logger_.warn(`team form file '${this.info_.teamform_}' was referenced in the project file but does not exist.  Removing reference to file`); 
+        this.info_.teamform_ = undefined;
+      }
+    }
+
+    if (this.info_.matchform_ && this.info_.matchform_.length > 0) {
+      let form = path.join(this.location_, this.info_.matchform_);
+      if (!fs.existsSync(form)) {
+        this.logger_.warn(`match form file '${this.info_.matchform_}' was referenced in the project file but does not exist.  Removing reference to file`); 
+        this.info_.matchform_ = undefined;
+      }
+    }
   }
 }

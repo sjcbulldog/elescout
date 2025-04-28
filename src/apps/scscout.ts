@@ -272,8 +272,20 @@ export class SCScout extends SCBase {
         return ret;
     }
 
+    private filterResults(res: OneScoutField[]) : OneScoutField[] {
+        let ret: OneScoutField[] = [] ;
+
+        for(let r of res) {
+            if (r.value !== undefined) {
+                ret.push(r) ;
+            }
+        }
+
+        return ret ;
+    }
+
     public provideResults(res: OneScoutField[]) {
-        this.addResults(this.current_scout_!, res) ;
+        this.addResults(this.current_scout_!, this.filterResults(res)) ;
         this.writeEventFile() ;
         this.logger_.silly('provideResults:' + this.current_scout_, res) ;
 

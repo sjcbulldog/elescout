@@ -1,4 +1,3 @@
-
 class FormControl {
     static ctrlTypeText = 'text' ;
     static ctrlTypeBoolean = 'boolean' ;
@@ -42,9 +41,7 @@ class FormControl {
     }
 
     callback(changed) {
-        if (changed) {
-            this.editdone(changed) ;
-        }
+        this.editdone(changed) ;
     }
 }
 
@@ -62,7 +59,7 @@ class LabelFormControl extends FormControl {
                 fontsize: 36,
                 color: 'black',
                 tag: ptag,
-                text: 'Label'
+                text: 'Label',
             }) ;
     }
 
@@ -81,7 +78,7 @@ class LabelFormControl extends FormControl {
         label.style.width = this.item.width + 'px' ;
         label.style.height = this.item.height + 'px' ;
         label.innerText = this.item.text ;
-        label.style.font = this.item.font ;
+        label.style.fontFamily = this.item.font ;
         label.style.fontSize = this.item.fontsize + 'px' ;
         label.style.color = this.item.color ;
         label.disabled = false ;
@@ -100,7 +97,7 @@ class LabelFormControl extends FormControl {
         label.style.width = this.item.width + 'px' ;
         label.style.height = this.item.height + 'px' ;
         label.innerText = this.item.text ;
-        label.style.font = this.item.font ;
+        label.style.fontFamily = this.item.font ;
         label.style.fontSize = this.item.fontsize + 'px' ;
         label.style.color = this.item.color ;
         label.disabled = true ;
@@ -157,7 +154,7 @@ class TextFormControl extends FormControl {
         input.style.width = this.item.width + 'px' ;
         input.style.height = this.item.height + 'px' ;
         input.placeholder = this.item.placeholder ;
-        input.style.font = this.item.font ;
+        input.style.fontFamily = this.item.font ;
         input.style.fontSize = this.item.fontsize + 'px' ;
         input.style.color = this.item.color ;
         input.disabled = false ;
@@ -177,7 +174,7 @@ class TextFormControl extends FormControl {
         input.style.width = this.item.width + 'px' ;
         input.style.height = this.item.height + 'px' ;
         input.value = this.item.placeholder ;
-        input.style.font = this.item.font ;
+        input.style.fontFamily = this.item.font ;
         input.style.fontSize = this.item.fontsize + 'px' ;
         input.style.color = this.item.color ;
         input.disabled = true ;
@@ -295,6 +292,8 @@ class UpDownFormControl extends FormControl {
                 width: pwidth,
                 height: pheight,
                 color: 'black',
+                font: 'Arial',
+                fontsize: 24,
                 tag: ptag,
                 minvalue: 0,
                 maxvalue: 100,
@@ -336,7 +335,7 @@ class UpDownFormControl extends FormControl {
         this.upbutton_ = document.createElement('button') ;
         this.upbutton_.className = 'form-view-updown-button' ;
         this.upbutton_.innerHTML = '&uarr;' ;
-        this.upbutton_.style.font = this.item.font ;
+        this.upbutton_.style.fontFamily = this.item.font ;
         this.upbutton_.style.fontSize = this.item.fontsize + 'px' ;
         this.upbutton_.style.color = this.item.color ;
         this.upbutton_.addEventListener('click', this.upButtonPressed.bind(this)) ;
@@ -345,7 +344,7 @@ class UpDownFormControl extends FormControl {
         this.count_ = document.createElement('span') ;
         this.count_.className = 'form-view-updown-count' ;
         this.count_.innerHTML = this.item.minvalue ? this.item.minvalue : '0' ;
-        this.count_.style.font = this.item.font ;
+        this.count_.style.fontFamily = this.item.font ;
         this.count_.style.fontSize = this.item.fontsize + 'px' ;
         this.count_.style.color = this.item.color ;
         div.appendChild(this.count_) ;
@@ -353,7 +352,7 @@ class UpDownFormControl extends FormControl {
         this.downbutton_ = document.createElement('button') ;
         this.downbutton_.className = 'form-view-updown-button' ;
         this.downbutton_.innerHTML = '&darr;' ;
-        this.downbutton_.style.font = this.item.font ;
+        this.downbutton_.style.fontFamily = this.item.font ;
         this.downbutton_.style.fontSize = this.item.fontsize + 'px' ;
         this.downbutton_.style.color = this.item.color ;
         this.downbutton_.addEventListener('click', this.downButtonPressed.bind(this)) ;
@@ -378,7 +377,7 @@ class UpDownFormControl extends FormControl {
         this.upbutton_.className = 'form-edit-updown-button' ;
         this.upbutton_.disabled = false ;
         this.upbutton_.innerHTML = '&uarr;' ;
-        this.upbutton_.style.font = this.item.font ;
+        this.upbutton_.style.fontFamily = this.item.font ;
         this.upbutton_.style.fontSize = this.item.fontsize + 'px' ;
         this.upbutton_.style.color = this.item.color ;
         div.appendChild(this.upbutton_) ;
@@ -387,7 +386,7 @@ class UpDownFormControl extends FormControl {
         this.count_.className = 'form-edit-updown-count' ;
         this.count_.disabled = false ;
         this.count_.innerHTML = '12' ;
-        this.count_.style.font = this.item.font ;
+        this.count_.style.fontFamily = this.item.font ;
         this.count_.style.fontSize = this.item.fontsize + 'px' ;
         this.count_.style.color = this.item.color ;
         div.appendChild(this.count_) ;
@@ -396,7 +395,7 @@ class UpDownFormControl extends FormControl {
         this.downbutton_.className = 'form-edit-updown-button' ;
         this.downbutton_.disabled = false ;
         this.downbutton_.innerHTML = '&darr;' ;
-        this.downbutton_.style.font = this.item.font ;
+        this.downbutton_.style.fontFamily = this.item.font ;
         this.downbutton_.style.fontSize = this.item.fontsize + 'px' ;
         this.downbutton_.style.color = this.item.color ;
         div.appendChild(this.downbutton_) ;
@@ -412,7 +411,7 @@ class UpDownFormControl extends FormControl {
     setData(value) {
         try {
             let numval = parseInt(value) ;
-            this.count.innerText = numval ;
+            this.count_.innerText = numval ;
         }
         catch(err) {
             this.count_.innerText = this.item.minvalue ;
@@ -436,6 +435,8 @@ class MultipleChoiceFormControl extends FormControl {
                 width: pwidth,
                 height: pheight,
                 radiosize: 20,
+                font: 'Arial',
+                fontsize: 24,
                 tag: ptag,
                 data: 'integer',
                 orientation: 'vertical',
@@ -488,7 +489,7 @@ class MultipleChoiceFormControl extends FormControl {
                 let label = document.createElement('td') ;
                 label.className = editing ? 'form-edit-multiple-choice-label' : 'form-view-multiple-choice-label' ;
                 label.innerHTML = choice.text ;
-                label.style.font = this.item.font ;
+                label.style.fontFamily = this.item.font ;
                 label.style.fontSize = this.item.fontsize + 'px' ;
                 label.style.color = this.item.color ;
                 tabrow.appendChild(label) ;
@@ -505,7 +506,7 @@ class MultipleChoiceFormControl extends FormControl {
                 input.name = this.item.tag ;
                 input.id = this.item.tag + '_' + choice.value ;
                 input.choice_value = choice.value ;
-                input.style.font = this.item.font ;
+                input.style.fontFamily = this.item.font ;
                 input.style.fontSize = this.item.fontsize + 'px' ;
                 input.style.color = this.item.color ;
                 input.style.width = this.item.radiosize + 'px' ;
@@ -535,7 +536,7 @@ class MultipleChoiceFormControl extends FormControl {
                 let label = document.createElement('td') ;
                 label.className = editing ? 'form-edit-multiple-choice-label-horizontal' : 'form-view-multiple-choice-label-horizontal' ;
                 label.innerHTML = choice.text ;
-                label.style.font = this.item.font ;
+                label.style.fontFamily = this.item.font ;
                 label.style.fontSize = this.item.fontsize + 'px' ;
                 label.style.color = this.item.color ;
                 tabrow.appendChild(label) ;
@@ -553,7 +554,7 @@ class MultipleChoiceFormControl extends FormControl {
                 input.name = this.item.tag ;
                 input.choice_value = choice.value ;
                 input.id = this.item.tag + '_' + choice.value ;
-                input.style.font = this.item.font ;
+                input.style.fontFamily = this.item.font ;
                 input.style.fontSize = this.item.fontsize + 'px' ;
                 input.style.color = this.item.color ;
                 input.style.width = this.item.radiosize + 'px' ;
@@ -645,6 +646,8 @@ class SelectFormControl extends FormControl {
                 height: pheight,
                 tag: ptag,
                 data: 'integer',
+                font: 'Arial',
+                fontsize: 24,
                 choices: [
                     { text: 'Choice 1', value: 1},
                     { text: 'Choice 2', value: 2 },
@@ -682,7 +685,7 @@ class SelectFormControl extends FormControl {
     addAllEditChoices() {
         this.select_ = document.createElement('select') ;
         this.select_.className = 'form-edit-select-select' ;
-        this.select_.style.font = this.item.font ;
+        this.select_.style.fontFamily = this.item.font ;
         this.select_.style.fontSize = this.item.fontsize + 'px' ;
         this.select_.style.color = this.item.color ;
         this.ctrl.appendChild(this.select_) ;
@@ -691,7 +694,7 @@ class SelectFormControl extends FormControl {
             let opt = document.createElement('option') ;
             opt.value = choice.value ;
             opt.innerHTML = choice.text ;
-            opt.style.font = this.item.font ;
+            opt.style.fontFamily = this.item.font ;
             opt.style.fontSize = this.item.fontsize + 'px' ;
             opt.style.color = this.item.color ;
             this.select_.appendChild(opt) ;
@@ -701,7 +704,7 @@ class SelectFormControl extends FormControl {
     addAllViewChoices() {
         this.select_ = document.createElement('select') ;
         this.select_.className = 'form-view-select-select' ;
-        this.select_.style.font = this.item.font ;
+        this.select_.style.fontFamily = this.item.font ;
         this.select_.style.fontSize = this.item.fontsize + 'px' ;
         this.select_.style.color = this.item.color ;
         this.ctrl.appendChild(this.select_) ;
@@ -710,7 +713,7 @@ class SelectFormControl extends FormControl {
             let opt = document.createElement('option') ;
             opt.value = choice.value ;
             opt.innerHTML = choice.text ;
-            opt.style.font = this.item.font ;
+            opt.style.fontFamily = this.item.font ;
             opt.style.fontSize = this.item.fontsize + 'px' ;
             opt.style.color = this.item.color ;
             this.select_.appendChild(opt) ;
