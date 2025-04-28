@@ -108,7 +108,17 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('touchdown ' + e.target.className) ;
   }
 
+  const touchMoveHandler = function(e) {
+    console.log('touchmove ' + e.target.className) ;
+  }
+
+  const touchUpHandler = function(e) {
+    console.log('touchup ' + e.target.className) ;
+  }
+
   document.addEventListener('touchdown', touchDownHandler) ;
+  document.addEventListener('touchmove', touchMoveHandler) ;
+  document.addEventListener('touchup', touchUpHandler) ;
 
   updateNav();
   updateTabletTitle('Waiting ...')
@@ -129,5 +139,41 @@ function updateTabletTitle(title) {
   document.title = 'Xero Scout - ' + title ;
 }
 
+let ruler = undefined ;
+
+function resizeMe(e) {
+  if (e.target.which) {
+    const leftWidth = document.body.offsetWidth * e.target.which / 100;
+    let leftSide = document.body.firstElementChild.firstElementChild ;
+    leftSide.style.width = leftWidth + 'px';
+  }
+
+  if (document.body.contains(ruler)) {
+    document.body.removeChild(ruler) ;
+  }
+  document.body.style.pointerEvents = 'auto' ;
+}
+
+function resizeBar() {
+  let elem = document.getElementById('container') ;
+  elem.style.pointerEvents = 'none' ;
+
+  ruler = document.createElement('div') ;
+  ruler.className = 'ruler' ;
+  ruler.style.left = '0px' ;
+  ruler.style.top = (document.body.offsetHeight / 2) + 'px' ;
+  document.body.appendChild(ruler) ;
+
+  for(let i = 0 ; i < 100 ; i++) {
+    let line = document.createElement('div') ;
+    line.addEventListener('mousedown', resizeMe) ;
+    line.addEventListener('touchstart', resizeMe) ;
+    line.className = 'ruler-segment' ;
+    line.which = i ;
+    ruler.appendChild(line) ;
+  }
+}
+
 window.scoutingAPI.receive("update-main-window-view", (args) => updateView(args));
 window.scoutingAPI.receive("tablet-title", (args) => updateTabletTitle(args));
+window.scoutingAPI.receive("resize-window", (args) => resizeBar(args));

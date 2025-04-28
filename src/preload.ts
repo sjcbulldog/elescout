@@ -130,6 +130,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-match-list',
         'send-stored-graph-list',
         'tablet-title',
+        'resize-window',
         'send-picklist-data',
         'send-picklist-list',
         'send-picklist-columns',

@@ -39,6 +39,7 @@ export class SCScout extends SCBase {
     private static readonly syncEventLocal: string = "sync-event-local" ;
     private static readonly syncEventRemote: string = "sync-event-remote" ;
     private static readonly resetTablet: string = "reset-tablet" ;
+    private static readonly resizeWindow: string = "resize-window" ;
     private static readonly reverseImage: string = 'reverse' ;
 
     private info_ : SCScoutInfo = new SCScoutInfo() ;
@@ -186,6 +187,9 @@ export class SCScout extends SCBase {
         }
         else if (cmd === SCScout.resetTablet) {
             this.resetTabletCmd() ;
+        }
+        else if (cmd === SCScout.resizeWindow) {
+            this.sendToRenderer('resize-window') ;
         }
         else if (cmd === SCScout.reverseImage) {
             this.reverseImage() ;
@@ -791,6 +795,13 @@ export class SCScout extends SCBase {
             type: 'submenu',
             role: 'viewMenu'
         }) ;
+        viewmenu.submenu?.append(new MenuItem({type: 'separator'}));
+
+        viewmenu.submenu?.append(new MenuItem({
+            type: 'normal',
+            label: 'Resize Window',
+            click: () => { this.executeCommand(SCScout.resizeWindow)}
+        })) ;
         ret.append(viewmenu) ;
 
         let helpmenu: MenuItem = new MenuItem( {
