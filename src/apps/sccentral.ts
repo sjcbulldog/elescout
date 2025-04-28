@@ -2104,14 +2104,24 @@ export class SCCentral extends SCBase {
 		} else if (p.type_ === PacketType.ProvideResults) {
 			try {
 				let obj : ScoutingData = JSON.parse(p.payloadAsString()) as ScoutingData ;
-				this.project_!.data_mgr_?.processResults(obj);
+				this.project_!.data_mgr_?.processResults(obj)
+					.then(() => {
+						if (this.project_!.tablet_mgr_!.isTabletTeam(obj.tablet)) {
+							this.setView("teamstatus");
+						} else {
+							this.setView("matchstatus");
+						}
+					})
+					.catch((err) => {
+						let errobj: Error = err as Error;
+						dialog.showErrorBox(
+							"Internal Error #3",
+							"Error processing results: " + errobj.message
+						);
+					}) ;
 				resp = new PacketObj(PacketType.ReceivedResults);
 
-				if (this.project_!.tablet_mgr_!.isTabletTeam(obj.tablet)) {
-					this.setView("teamstatus");
-				} else {
-					this.setView("matchstatus");
-				}
+
 			} catch (err) {
 				resp = new PacketObj(
 					PacketType.Error,

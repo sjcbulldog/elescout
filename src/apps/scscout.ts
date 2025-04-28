@@ -199,6 +199,18 @@ export class SCScout extends SCBase {
     }
 
     private resetTabletCmd() {
+
+        let ans = dialog.showMessageBoxSync(
+            {
+              title: 'Reset Tablet',
+              type: 'question',
+              buttons: ['Yes', 'No'],
+              message: `This operation will reset the tablet and all data will be lost unless you have sync'ed with the central server.\nDo you want to continue?`,
+            }) ;
+        if (ans === 1) {
+            return ;
+        }
+
         this.unsetSettings(SCScout.last_event_setting) ;
         this.info_.purpose_ = undefined ;
         this.info_.tablet_ = undefined ;
