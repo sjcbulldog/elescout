@@ -34,7 +34,8 @@
         this.parent_.appendChild(this.popup_) ;
         this.onInit() ;
 
-        document.addEventListener('keydown', this.keyDown.bind(this)) ;
+        this.keydownbind_ = this.keyDown.bind(this) ;
+        document.addEventListener('keydown', this.keydownbind_) ;
     }
 
     keyDown(event) {
@@ -72,7 +73,7 @@
     }
 
     close(changed) {
-        document.removeEventListener('keydown', this.keyDown.bind(this)) ;
+        document.removeEventListener('keydown', this.keydownbind_) ;
 
         if (this.popup_ && this.parent_.contains(this.popup_)) {
             this.parent_.removeChild(this.popup_) ;
@@ -315,7 +316,7 @@ class EditFormTextDialog extends EditFormControlDialog {
         this.formctrl_.ctrl.tag = this.tag_.value ;
 
         this.formctrl_.item.placeholder = this.placeholder_.value ;
-        this.formctrl_.ctrl.placeholder = this.placeholder_.value ;
+        this.formctrl_.ctrl.value = this.placeholder_.value ;
 
         this.formctrl_.item.font = this.font_name_.value ;
         this.formctrl_.ctrl.style.font = this.font_name_.value ;
@@ -862,9 +863,10 @@ class EditFormSelectDialog extends EditFormControlDialog {
 class EditFormView extends XeroView {
     static fuzzyEdgeSpacing = 20 ;
 
-
     constructor(div, type, args) {
         super(div, type) ;
+
+        console.log(`EditFormView: creating new form view - type ${args[1]}`) ;
 
         this.formctrlitems_ = [] ;
 
@@ -878,6 +880,7 @@ class EditFormView extends XeroView {
         this.currentSectionIndex_ = -1 ;
 
         this.buildInitialView('Waiting on form ...') ;
+
         this.registerCallback('send-form', this.formCallback.bind(this));
         this.registerCallback('send-images', this.receiveImages.bind(this)) ;
         this.registerCallback('send-image-data', this.receiveImageData.bind(this)) ;
@@ -1374,14 +1377,24 @@ class EditFormView extends XeroView {
     }
 
     modified() {
+        console.log(`EditFormView: saving form - type ${this.type_}`) ;
         this.scoutingAPI('save-form', { type: this.type_, contents: this.form_}) ;
     }
 
     close() {
-        this.top_.removeEventListener('contextmenu', this.contextMenu.bind(this)) ;
-        document.removeEventListener('keydown', this.onGlobalKey.bind(this)) ;
-        document.removeEventListener('mouseup', this.mouseUp.bind(this)) ;
-        document.removeEventListener('mousemove', this.mouseMove.bind(this)) ;
+        super.close() ;
+        
+        console.log(`EditFormView: closing form view - type ${this.type_}`) ;
+
+        document.removeEventListener('contextmenu', this.ctxbind_) ;
+        document.removeEventListener('dblclick', this.dblclkbind_) ;
+        document.removeEventListener('keydown', this.keydownbind_) ;
+        document.removeEventListener('mouseup', this.mouseupbind_) ;
+        document.removeEventListener('mousemove', this.mousemovebind_) ;
+        document.removeEventListener('mousedown', this.mouusedownbind_) ;
+
+        this.type_ = undefined ;
+        this.form_ = undefined ;
     }
 
     selectBackgroundImage(image) {
@@ -1429,6 +1442,7 @@ class EditFormView extends XeroView {
             // This is an empty form, so we need to add a section.
             this.addSection() ;
             this.formViewUpdateTabBar() ;
+            this.modified() ;
         }
         else {
             // Make sure we have the images for the sections.
@@ -1466,12 +1480,23 @@ class EditFormView extends XeroView {
         this.alltop_.style.userSelect = 'none' ;
         this.alltop_.append(this.formimg_) ;
 
-        document.addEventListener('contextmenu', this.contextMenu.bind(this)) ;
-        document.addEventListener('dblclick', this.doubleClick.bind(this)) ;
-        document.addEventListener('keydown', this.onGlobalKey.bind(this)) ;
-        document.addEventListener('mouseup', this.mouseUp.bind(this)) ;
-        document.addEventListener('mousemove', this.mouseMove.bind(this)) ;
-        document.addEventListener('mousedown', this.mouseDown.bind(this)) ;
+        this.ctxbind_ = this.contextMenu.bind(this) ;
+        document.addEventListener('contextmenu', this.ctxbind_) ;
+
+        this.dblclkbind_ = this.doubleClick.bind(this) ;
+        document.addEventListener('dblclick', this.dblclkbind_) ;
+
+        this.keydownbind_ = this.onGlobalKey.bind(this) ;
+        document.addEventListener('keydown', this.keydownbind_) ;
+
+        this.mouseupbind_ = this.mouseUp.bind(this) ;
+        document.addEventListener('mouseup', this.mouseupbind_) ;
+
+        this.mousemovebind_ = this.mouseMove.bind(this) ;
+        document.addEventListener('mousemove', this.mousemovebind_) ;
+
+        this.mouusedownbind_ = this.mouseDown.bind(this) ;
+        document.addEventListener('mousedown', this.mouusedownbind_) ;
 
         this.top_.append(this.alltop_) ;
         this.top_.style.userSelect = 'none' ;

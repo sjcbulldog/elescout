@@ -12,7 +12,7 @@ class FormView extends XeroView {
         this.buildInitialView('Waiting on form ...') ;
         this.registerCallback('send-form', this.formCallback.bind(this));
         this.registerCallback('request-results',this.requestResults.bind(this)) ;
-        this.registerCallback('initialize-form', this.initializeForm.bind(this)) ;
+        this.registerCallback('send-initial-values', this.initializeForm.bind(this)) ;
         this.registerCallback('send-image-data', this.receiveImageData.bind(this)) ;
 
         this.scoutingAPI('get-form', this.type_);
@@ -160,7 +160,39 @@ class FormView extends XeroView {
         }
     }
 
-    initializeForm(data) {
+    findItemByTag(name) {
+        for(let section of this.form_.sections) {
+            if (section.items) {
+                for(let item of section.items) {
+                    if (item.tag === name) {
+                        return item ;
+                    }
+                }
+            }
+        }
+        return undefined ;
+    }
+
+    findFormControlFromItem(item) {
+        for(let entry of this.formctrlitems_) {
+            if (entry.item === item) {
+                return entry ;
+            }
+        }
+        return undefined ;
+    }
+
+    initializeForm(arg) {
+        let data = arg[0] ;
+        for(let one of data) {
+            let item = this.findItemByTag(one.tag) ;
+            if (item) {
+                let frmctrl = this.findFormControlFromItem(item) ;
+                if (frmctrl) {
+                    frmctrl.setValue(one.value) ;
+                }
+            }
+        }
     }
 
     formCallback(data) {

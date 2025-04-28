@@ -54,7 +54,7 @@ class InfoView extends XeroView {
 
         let evname = document.createElement('td')
         evname.className = "info-table-cell";
-        evname.innerHTML = info.uuid_ ? info.uuid_ : 'NONE' ;
+        evname.innerHTML = info.uuid_ ? info.uuid_ : 'NONE (created when locked)' ;
 
         row.append(evname);
         return row;
@@ -193,7 +193,7 @@ class InfoView extends XeroView {
             icon.onclick = () => { this.scoutingAPI('execute-command', 'create-match-form'); };
             cell.append(icon) ;
 
-            if (info.teamform_) {
+            if (info.matchform_) {
                 icon = document.createElement('img');
                 icon.className = "info-table-icon-edit";
                 icon.src = `data:image/jpg;base64,${info.editicon}`

@@ -35,7 +35,10 @@ class FormControl {
     }
 
     getData() {
-        return 'No Data Provider In Place'
+        return 'No data provider for control class'
+    }
+
+    setData(value) {
     }
 
     callback(changed) {
@@ -109,6 +112,9 @@ class LabelFormControl extends FormControl {
 
     getData() {
         return undefined ;
+    }
+
+    setData(value) {
     }
     
     edit(parent) {
@@ -185,6 +191,10 @@ class TextFormControl extends FormControl {
         return this.ctrl.value ;
     }
 
+    setData(value) {
+        this.ctrl.value = value ;
+    }
+
     edit(parent) {
         let dialog = new EditFormTextDialog(this.callback.bind(this), this) ;
         dialog.showRelative(parent) ;
@@ -257,6 +267,15 @@ class BooleanFormControl extends FormControl {
 
     getData() {
         return this.input_.checked ? 1 : 0 ;
+    }
+
+    setData(value) {
+        if (value) {
+            this.input_.checked = true ;
+        }
+        else {
+            this.input_.checked = false ;
+        }
     }
 
     edit(parent) {
@@ -388,6 +407,16 @@ class UpDownFormControl extends FormControl {
 
     getData() {
         return parseInt(this.count_.innerText) ;
+    }
+
+    setData(value) {
+        try {
+            let numval = parseInt(value) ;
+            this.count.innerText = numval ;
+        }
+        catch(err) {
+            this.count_.innerText = this.item.minvalue ;
+        }
     }
 
     edit(parent) {
@@ -576,11 +605,26 @@ class MultipleChoiceFormControl extends FormControl {
         for(let choice of this.radios_) {
             if (choice.checked) {
                 return choice.choice_value ;
-
             }
         }
 
         return undefined ;
+    }
+
+    setData(value) {
+        let setone = false ;
+        for(let choice of this.radios_) {
+            if (choice.choice_value === value) {
+                setone = true ;
+                choice.checked = true ;
+                break ;
+            }
+        }
+
+        if (!setone) {
+            console.log('MultipleChoiceFormControl: value provided not found in choices - setting first choice') ;
+            this.radios_[0].checked = true ;
+        }
     }
 
     edit(parent) {
@@ -711,6 +755,10 @@ class SelectFormControl extends FormControl {
 
     getData() {
         return this.select_.value ;
+    }
+
+    setData(value) {
+        this.select_.value = value ;
     }
 
     edit(parent) {

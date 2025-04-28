@@ -255,6 +255,7 @@ export class FormManager extends Manager {
     }
 
     this.info_.teamform_ = this.createFormInternal('team', 'team.json') ;
+    this.write() ;
   }
 
   public saveForm(type: string, contents: any) {
@@ -279,6 +280,7 @@ export class FormManager extends Manager {
     }
 
     this.info_.matchform_ = this.createFormInternal('match', 'match.json') ;
+    this.write() ;
   }
 
   private createFormInternal(ftype: string, filename: string): string {
@@ -290,7 +292,6 @@ export class FormManager extends Manager {
 
     let jsonstr = JSON.stringify(jsonobj, null, 4);
     fs.writeFileSync(target, jsonstr);
-
     return filename ;
   }
 

@@ -313,8 +313,29 @@ export class Project {
             ret = new Error("the directory '" + dir + "' is not a valid event project, missing file '" + Project.event_file_name + "'") ;
         }
         else {
-            const rawData = fs.readFileSync(projfile, 'utf-8');
-            ret = JSON.parse(rawData) as ProjectInfo ;
+            try {
+                const rawData = fs.readFileSync(projfile, 'utf-8');
+                ret = JSON.parse(rawData) as ProjectInfo ;
+
+                if (ret.form_info_.matchform_ && !fs.existsSync(ret.form_info_.matchform_)) {
+                    //
+                    // If the event file calls out a match form, check to see if it exists.
+                    // If it does not exist, remove the reference to it in the event file.
+                    //
+                    ret.form_info_.matchform_ = undefined ;
+                }
+
+                if (ret.form_info_.teamform_ && !fs.existsSync(ret.form_info_.teamform_)) {
+                    //
+                    // If the event file calls out a team form, check to see if it exists.
+                    // If it does not exist, remove the reference to it in the event file.
+                    //
+                    ret.form_info_.teamform_ = undefined ;
+                }
+            }
+            catch(err) {
+                ret = err as Error ;
+            }
         }
         
         return ret ;

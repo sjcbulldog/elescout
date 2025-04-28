@@ -8,7 +8,16 @@ export class ImageManager {
     private imagemap_ : Map<string, string> = new Map() ;
 
     constructor(appname: string, appimagedir?: string) {
-        // Initialize the image manager
+        //
+        // This is for the central (server).  The application comes installed with the blank image
+        // and a set of field images.
+        //
+        this.appimagedir_ = appimagedir ;
+
+        //
+        // This is for any user imported images.  This is also used on the scouter side to store all
+        // images received during the sync from the central server.
+        //
         this.imagedir_ = this.findUserImageDir(appname) ;
         if (this.imagedir_) {
             this.createImageDir() ;
