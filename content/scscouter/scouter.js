@@ -44,7 +44,6 @@ function updateView(args) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  resizeCreate() ;
 
   // Query the element
   const resizer = document.getElementById('dragMe');
@@ -104,6 +103,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Attach the handler
   resizer.addEventListener('mousedown', mouseDownHandler);
+
+  const touchDownHandler = function(e) {
+    console.log('touchdown ' + e.target.className) ;
+  }
+
+  document.addEventListener('touchdown', touchDownHandler) ;
 
   updateNav();
   updateTabletTitle('Waiting ...')

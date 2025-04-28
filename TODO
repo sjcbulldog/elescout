@@ -13,15 +13,7 @@ View: spider graph - adapt to new dataset model
 
 Scout
 -----
-When you click into a new scouting form, prompt to see if the user really wants to scout
-- yes: all data (even empty) is valid
-- no: form is read-only
-
 Fix the ugly resize window/methodology
-
-Sync
-----
-Sync scouting data from central back to tablet when needed
 
 Attributions
 ------------

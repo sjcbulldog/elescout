@@ -242,7 +242,7 @@ export class SCScout extends SCBase {
                     }) ;
                 if (ans === 1) {
                     this.sendToRenderer('send-nav-highlight', undefined) ;
-                    this.setView('empty') ;
+                    this.setViewString() ;
                     return ;
                 }
             }
@@ -284,7 +284,7 @@ export class SCScout extends SCBase {
                         }) ;
                     if (ans === 1) {
                         this.sendToRenderer('send-nav-highlight', undefined) ;
-                        this.setView('empty') ;
+                        this.setViewString() ;
                         return ;
                     }
                 }
@@ -840,7 +840,6 @@ export class SCScout extends SCBase {
         const rawData = fs.readFileSync(fullpath, 'utf-8');
         this.info_ = JSON.parse(rawData) as SCScoutInfo ;
 
-        
         return ret ;
     }
 
