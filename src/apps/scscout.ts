@@ -678,12 +678,15 @@ export class SCScout extends SCBase {
         }
         else if (!this.match_results_received_ && this.needMatchResults().length > 0) {
             this.conn_?.send(new PacketObj(PacketType.RequestMatchResults, Buffer.from(JSON.stringify(this.needMatchResults())))) ;
+            ret = true ;
         }
         else if (!this.team_results_received_ && this.needTeamResults().length > 0) {
             this.conn_?.send(new PacketObj(PacketType.RequestTeamResults, Buffer.from(JSON.stringify(this.needTeamResults())))) ;
+            ret = true ;
         }
         else if (this.needImages().length > 0) {
-            this.conn_?.send(new PacketObj(PacketType.RequestImages, Buffer.from(JSON.stringify(this.needImages())))) ;1
+            this.conn_?.send(new PacketObj(PacketType.RequestImages, Buffer.from(JSON.stringify(this.needImages())))) ;
+            ret = true ;
         }
         
         if (!ret) {
