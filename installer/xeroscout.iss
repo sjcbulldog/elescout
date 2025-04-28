@@ -4,7 +4,7 @@
 #define MyAppName "XeroCentral2"
 #define MyCoachName "XeroCoach2"
 #define MyScoutName "XeroScout2"
-#define MyAppVersion "2.1.16"
+#define MyAppVersion "3.0.0"
 #define MyAppPublisher "ErrorCodeXero"
 #define MyAppURL "https://www.xerosw.org/"
 #define MyAppExeName "xeroscout2.exe"
@@ -44,7 +44,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#MyAppSourceDir}\out\xeroscout2-win32-x64\*.*"; DestDir: "{app}"; Flags: ignoreversion 64bit recursesubdirs
-Source: "{#MyAppSourceDir}\content\fields\*.*"; DestDir: "{app}\content\fields"; Flags: ignoreversion 64bit recursesubdirs
 Source: "{#MyAppSourceDir}\content\images\*.*"; DestDir: "{app}\content\images"; Flags: ignoreversion 64bit recursesubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
