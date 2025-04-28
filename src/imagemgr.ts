@@ -4,20 +4,28 @@ import * as fs from 'fs' ;
 
 export class ImageManager {
     private imagedir_? : string ;
+    private appimagedir_? : string ;
     private imagemap_ : Map<string, string> = new Map() ;
 
-    constructor(appimagedir?: string) {
+    constructor(appname: string, appimagedir?: string) {
         // Initialize the image manager
-        this.imagedir_ = this.findUserImageDir() ;
+        this.imagedir_ = this.findUserImageDir(appname) ;
         if (this.imagedir_) {
             this.createImageDir() ;
         }
 
+        this.rescanImageDirs() ;
+    }
+
+    public rescanImageDirs() {
+        this.imagemap_.clear() ;
+
         if (this.imagedir_) {
-            if (appimagedir) {
-                this.scanImageDir(appimagedir) ;
-            }
             this.scanImageDir(this.imagedir_) ;
+        }
+
+        if (this.appimagedir_) {
+            this.scanImageDir(this.appimagedir_) ;
         }
     }
 
@@ -55,7 +63,7 @@ export class ImageManager {
         }
     }
 
-    private findUserImageDir() : string | undefined{
+    private findUserImageDir(appname: string) : string | undefined{
         // Find the user data directory for the application
         let appDataDir : string | undefined ;
         if (process.platform === 'win32') {
@@ -75,6 +83,9 @@ export class ImageManager {
             }
         }
 
+        if (appDataDir) {
+            appDataDir = path.join(appDataDir, appname) ;
+        }
         return appDataDir ;
     }
 

@@ -378,7 +378,6 @@ export class SCScout extends SCBase {
     }
     
     private addResults(scout: string, result: OneScoutField[]) {
-
         let resobj : OneScoutResult = {
             item: scout,
             data: result
@@ -542,6 +541,7 @@ export class SCScout extends SCBase {
 
     private needImages() : string[] {
         let ret : string[] = [] ;
+        this.image_mgr_.rescanImageDirs() ;
         for(let im of [ ...this.info_.matchform_!.images, ...this.info_.teamform_!.images]) {
             if (!this.image_mgr_.getImage(im)) {
                 if (ret.indexOf(im) < 0) {

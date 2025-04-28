@@ -475,11 +475,13 @@ class MultipleChoiceFormControl extends FormControl {
                 input.checked = true ;
                 input.name = this.item.tag ;
                 input.id = this.item.tag + '_' + choice.value ;
+                input.choice_value = choice.value ;
                 input.style.font = this.item.font ;
                 input.style.fontSize = this.item.fontsize + 'px' ;
                 input.style.color = this.item.color ;
                 input.style.width = this.item.radiosize + 'px' ;
                 input.style.height = this.item.radiosize + 'px' ;
+                this.radios_.push(input) ;
                 iwrap.appendChild(input) ;
 
                 this.table_.appendChild(tabrow) ;

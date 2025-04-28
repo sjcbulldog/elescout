@@ -187,17 +187,14 @@ class FormView extends XeroView {
     }
 
     requestResults(data) {
-        let formdata = {} ;
+        let formdata = [] ;
         for(let entry of this.formctrlitems_) {
             if (entry) {
                 let value = entry.getData() ;
-                if (value) {
-                    formdata[entry.tag] = value ;
-                }
+                formdata.push({ tag: entry.item.tag, value: value }) ;
             }
         }
 
-        let form = { form: this.form_, data: formdata } ;
-        this.scoutingAPI('send-form', form) ;
+        this.scoutingAPI('provide-result', formdata) ;
     }
 }
