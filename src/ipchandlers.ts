@@ -283,19 +283,6 @@ export async function getTeamList(cmd: string, ...args: any[]) {
     } 
 }
 
-// get-preferences
-export async function getPreferences(cmd: string, ...args: any[]) {
-    if (scappbase && scappbase.applicationType === XeroAppType.Scouter) {
-        scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
-        let scout : SCScout = scappbase as SCScout ;
-        if (args.length === 0) {
-            scout.sendPreferences() ;
-        } else {
-            scappbase.logger_.error({ message: 'renderer -> main invalid args', args: {cmd: cmd, cmdargs: args}});
-        }            
-    } 
-}
-
 // get-stored-graph-list
 export async function getStoredGraphList(cmd: string, ...args: any[]) {
     if (scappbase && scappbase.applicationType === XeroAppType.Central) {
@@ -753,19 +740,8 @@ export async function getSingleTeamData(cmd: string, ...args: any[]) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
-
-
-export async function updatePreferences(cmd: string, ...args: any[]) {
-    if (scappbase && scappbase.applicationType === XeroAppType.Scouter) {
-        scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
-        let scout : SCScout = scappbase as SCScout ;
-        scout.updatePreferences(args[0]) ;
-    } 
-}
-
 export async function clientLog(cmd: string, ...args: any[]) {
     if (scappbase) {
         scappbase.logClientMessage(args[0]) ;
     }
 }
-

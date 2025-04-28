@@ -69,8 +69,6 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'delete-picklist',
         'get-picklist-columns',
         'get-picklist-col-data',
-        'get-preferences',
-        'update-preferences',
         'update-picklist-columns',
         'update-picklist-notes',
         'get-picklist-notes',
@@ -137,7 +135,6 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-picklist-columns',
         'send-picklist-col-data',
         'send-picklist-notes',
-        'send-preferences',
         'send-single-team-data',
         'send-single-team-fields'
       ];

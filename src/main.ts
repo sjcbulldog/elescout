@@ -22,8 +22,6 @@ import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventDa
          deleteStoredGraph,
          getForm,
          getPicklistData,
-         getPreferences,
-         updatePreferences,
          getPicklistList,
          createNewPicklist,
          deletePicklist,
@@ -155,8 +153,6 @@ app.on("ready", () => {
     ipcMain.on('delete-picklist', (event, ...args) => { deletePicklist('delete-picklist', ...args)}) ;
     ipcMain.on('update-picklist-notes', (event, ...args) => { updatePicklistNotes('update-picklist-notes', ...args)}) ;
     ipcMain.on('get-picklist-notes', (event, ...args) => { getPicklistNotes('get-picklist-notes', ...args)}) ;
-    ipcMain.on('get-preferences', (event, ...args) => { getPreferences('get-preferences', ...args)}) ;
-    ipcMain.on('update-preferences', (event, ...args) => { updatePreferences('update-preferences', ...args)}) ;
     ipcMain.on('client-log', (event, ...args) => { clientLog('client-log', ...args)}) ;
     ipcMain.on('get-single-team-data', (event, ...args) => { getSingleTeamData('get-single-team-data', ...args)}) ;
     createWindow() ;

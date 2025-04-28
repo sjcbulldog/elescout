@@ -7,7 +7,7 @@ import { FormulaManager } from "./formulamgr";
 import { parseExpression, ParseResult } from '@babel/parser';
 import evaluate, { registerFunction } from 'ts-expression-evaluator'
 import { Expression } from "ts-expression-evaluator/build/main/lib/t";
-import { ScoutingData } from "../comms/resultsifc";
+import { OneScoutResult, ScoutingData } from "../comms/resultsifc";
 import { BAMatch, BAOprData, BARankingData, BATeam } from "../extnet/badata";
 import { FieldAndType } from "../model/datamodel";
 import { MatchSet } from "./datasetmgr";
@@ -31,6 +31,8 @@ export class DataInfo {
     public scouted_match_: string[] = [] ;              // The list of matches that have scouring data
     public team_db_fields_ : FieldAndType[] = [] ;            // The list of fields from the team form currently in the database
     public match_db_fields_ : FieldAndType[] = [] ;           // The list of fields from the match form currently in the database
+    public match_results_ : OneScoutResult[] = [] ;           // The list of match results that have been processed
+    public team_results_ : OneScoutResult[] = [] ;            // The list of team results that have been processed
 } ;
 
 export class DataManager extends Manager {
@@ -55,7 +57,15 @@ export class DataManager extends Manager {
 
         filename = path.join(dir, 'match.db') ;
         this.matchdb_ = new MatchDataModel(filename, logger) ;
-        this.matchdb_.on('column-added', this.matchColumnAdded.bind(this));        
+        this.matchdb_.on('column-added', this.matchColumnAdded.bind(this));
+
+        if (!this.info_.match_results_) {
+            this.info_.match_results_ = [] ;
+        }
+
+        if (!this.info_.team_results_) {
+            this.info_.team_results_ = [] ;
+        }
     }
 
     public init() : Promise<void> {
@@ -172,6 +182,12 @@ export class DataManager extends Manager {
         else {
             if (obj.purpose) {
                 if (obj.purpose === 'match') {
+                    for(let res of obj.results) {
+                        if (res.item) {
+                            this.info_.match_results_.push(res) ;
+                        }
+                    }
+
                     let status = await this.matchdb_.processScoutingResults(obj) ;
                     for(let st of status) {
                         if (!this.info_.scouted_match_.includes(st)) {
@@ -180,6 +196,12 @@ export class DataManager extends Manager {
                     }
                 }
                 else {
+                    for(let res of obj.results) {
+                        if (res.item) {
+                            this.info_.team_results_.push(res) ;
+                        }
+                    }
+
                     let teams = await this.teamdb_.processScoutingResults(obj) ;
                     for (let st of teams) {
                         if (!this.info_.scouted_team_.includes(st)) {
@@ -293,6 +315,8 @@ export class DataManager extends Manager {
     
     // #endregion
 
+    // region misc methods
+
     public exportToCSV(filename: string, table: string) : Promise<void> {
         let ret : Promise<void> ;
         if (table === TeamDataModel.TeamTableName) {
@@ -303,6 +327,26 @@ export class DataManager extends Manager {
 
         return ret ;
     }
+
+    public getMatchResult(match: string) : OneScoutResult | undefined {
+        for(let res of this.info_.match_results_) {
+            if (res.item === match) {
+                return res ;
+            }
+        }
+        return undefined ;
+    }
+
+    public getTeamResult(team: string) : OneScoutResult | undefined {
+        for(let res of this.info_.team_results_) {
+            if (res.item === team) {
+                return res ;
+            }
+        }
+        return undefined ;
+    }
+
+    // #endregion
 
     private getMatchData(m: MatchSet, field: string, team: number) : Promise<number | string | Error> {
         let ret = new Promise<any>(async (resolve, reject) => {
@@ -519,7 +563,6 @@ export class DataManager extends Manager {
         
         return data ;
     }
-
 
     private getDataType(field: string, data: any[]) : string {
         let ret: string = typeof (data[0][field]) ;

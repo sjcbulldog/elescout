@@ -17,5 +17,9 @@ export enum PacketType {
     ReceivedResults = 0x0d,
     RequestImages = 0x0e,
     ProvideImages = 0x0f,
-    Goodbye = 0x10
+    RequestMatchResults = 0x010,
+    ProvideMatchResults = 0x011,
+    RequestTeamResults = 0x012,
+    ProvideTeamResults = 0x013,
+    Goodbye = 0x14
 } ;

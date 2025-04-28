@@ -10,7 +10,7 @@ import { BAEvent, BAMatch, BATeam } from "../extnet/badata";
 import { TeamDataModel } from "../model/teammodel";
 import { StatBotics } from "../extnet/statbotics";
 import { FormInfo } from "../comms/formifc";
-import { ScoutingData } from "../comms/resultsifc";
+import { OneScoutResult, ScoutingData } from "../comms/resultsifc";
 import { DataSet, MatchSet } from "../project/datasetmgr";
 import { TabletData } from "../project/tabletmgr";
 import { ProjColConfig } from "../project/datamgr";
@@ -2002,6 +2002,31 @@ export class SCCentral extends SCBase {
 			let msg : string = JSON.stringify(retdata) ;
 			data = Buffer.from(msg, "utf-8");
 			resp = new PacketObj(PacketType.ProvideImages, data);
+		}
+		else if (p.type_ === PacketType.RequestMatchResults) {
+			let obj : string[] = JSON.parse(p.payloadAsString()) as string[] ;
+			let results : OneScoutResult[] = [] ;
+
+			for(let match of obj) {
+				let one = this.project_!.data_mgr_!.getMatchResult(match) ;
+				if (one) {
+					results.push(one) ;
+				}
+			}
+			let msg: string = JSON.stringify(results) ;
+			resp = new PacketObj(PacketType.ProvideMatchResults, Buffer.from(msg, "utf-8"));
+		} else if (p.type_ === PacketType.RequestTeamResults) {
+			let obj : string[] = JSON.parse(p.payloadAsString()) as string[] ;
+			let results : OneScoutResult[] = [] ;
+
+			for(let team of obj) {
+				let one = this.project_!.data_mgr_!.getTeamResult(team) ;
+				if (one) {
+					results.push(one) ;
+				}
+			}
+			let msg: string = JSON.stringify(results) ;
+			resp = new PacketObj(PacketType.ProvideTeamResults, Buffer.from(msg, "utf-8"));
 		} else if (p.type_ === PacketType.RequestTablets) {
 			let data: Uint8Array = new Uint8Array(0);
 			if (this.project_ && this.project_.tablet_mgr_?.areTabletsValid()) {

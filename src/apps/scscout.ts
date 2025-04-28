@@ -16,14 +16,6 @@ export class MatchInfo {
     public number_? : number ;
 } ;
 
-export class Preferences {
-    public ipaddr_ : string ;
-
-    constructor() {
-        this.ipaddr_ = '192.168.1.1' ;
-    }
-}
-
 export class SCScoutInfo {
     public tablet_? : string ;
     public purpose_? : string ;
@@ -44,9 +36,9 @@ export class SCScout extends SCBase {
     private static readonly last_event_setting = "lastevent" ;
     private static readonly SYNC_IPADDR = 'SYNC_IPADDR' ;
 
-    private static readonly syncEvent: string = "sync-event" ;
+    private static readonly syncEventLocal: string = "sync-event-local" ;
+    private static readonly syncEventRemote: string = "sync-event-remote" ;
     private static readonly resetTablet: string = "reset-tablet" ;
-    private static readonly preferences: string = 'preferences' ;
     private static readonly reverseImage: string = 'reverse' ;
 
     private info_ : SCScoutInfo = new SCScoutInfo() ;
@@ -60,17 +52,14 @@ export class SCScout extends SCBase {
     private reversed_ : boolean = false ;
     private reverseImage_: MenuItem | undefined ;
     private sync_client_? : SyncClient ;
-    public preferences_ : Preferences ;
+
+    private match_results_received_ : boolean = false ;
+    private team_results_received_ : boolean = false ;
 
     public constructor(win: BrowserWindow, args: string[]) {
         super(win, 'scout') ;
 
         this.checkLastEvent() ;
-
-        this.preferences_ = new Preferences() ;
-        if (this.hasSetting(SCScout.SYNC_IPADDR)) {
-            this.preferences_.ipaddr_ = this.getSetting(SCScout.SYNC_IPADDR) ;
-        }
     }
 
     public get applicationType() : XeroAppType { 
@@ -173,20 +162,30 @@ export class SCScout extends SCBase {
             this.next_cmd_ = cmd ;
             this.sendToRenderer('request-results') ;
         }
-        else if (cmd === SCScout.syncEvent) {
+        else if (cmd === SCScout.syncEventLocal) {
             this.setViewString() ;
             this.current_scout_ = undefined ;
-            this.sync_client_ = new TCPClient(this.logger_, this.preferences_.ipaddr_) ;
+            this.sync_client_ = new TCPClient(this.logger_, '127.0.0.1') ;
             this.sync_client_.on('close', this.syncDone.bind(this)) ; 
             this.sync_client_.on('error', this.syncError.bind(this)) ;
 
+            this.match_results_received_ = false ;
+            this.team_results_received_ = false ;
+            this.syncClient(this.sync_client_) ;
+        }
+        else if (cmd === SCScout.syncEventRemote) {
+            this.setViewString() ;
+            this.current_scout_ = undefined ;
+            this.sync_client_ = new TCPClient(this.logger_, '192.168.1.1') ;
+            this.sync_client_.on('close', this.syncDone.bind(this)) ; 
+            this.sync_client_.on('error', this.syncError.bind(this)) ;
+
+            this.match_results_received_ = false ;
+            this.team_results_received_ = false ;
             this.syncClient(this.sync_client_) ;
         }
         else if (cmd === SCScout.resetTablet) {
             this.resetTabletCmd() ;
-        }
-        else if (cmd === SCScout.preferences) {
-            this.setView('preferences');
         }
         else if (cmd === SCScout.reverseImage) {
             this.reverseImage() ;
@@ -228,6 +227,26 @@ export class SCScout extends SCBase {
             this.sendToRenderer('request-results') ;
         }
         else {
+
+            //
+            // About to scout a new team, be sure that is what we want to do.
+            //
+            let data: OneScoutResult | undefined = this.getResults(team) ;
+            if (!data) {
+                let ans = dialog.showMessageBoxSync(
+                    {
+                      title: 'Scout New Team?',
+                      type: 'warning',
+                      buttons: ['Yes', 'No'],
+                      message: 'You are about to scout a new team.  Do you want to continue?',
+                    }) ;
+                if (ans === 1) {
+                    this.sendToRenderer('send-nav-highlight', undefined) ;
+                    this.setView('empty') ;
+                    return ;
+                }
+            }
+
             this.sendToRenderer('send-nav-highlight', team) ;
             this.current_scout_ = team;
             this.setView('formview', 'team') ;
@@ -243,8 +262,6 @@ export class SCScout extends SCBase {
             this.sendToRenderer('request-results') ;
         }
         else {
-            this.sendToRenderer('send-nav-highlight', match) ;
-            this.current_scout_ = match ;
             this.alliance_ = this.getAllianceFromMatch(match) ;
             if (!this.alliance_) {
                 dialog.showMessageBox(this.win_, {
@@ -253,6 +270,26 @@ export class SCScout extends SCBase {
                 }) ;
             }
             else {
+                //
+                // About to scout a new match, be sure that is what we want to do.
+                //
+                let data: OneScoutResult | undefined = this.getResults(match) ;
+                if (!data) {
+                    let ans = dialog.showMessageBoxSync(
+                        {
+                          title: 'Scout New Team?',
+                          type: 'warning',
+                          buttons: ['Yes', 'No'],
+                          message: 'You are about to scout a new team.  Do you want to continue?',
+                        }) ;
+                    if (ans === 1) {
+                        this.sendToRenderer('send-nav-highlight', undefined) ;
+                        this.setView('empty') ;
+                        return ;
+                    }
+                }
+                this.sendToRenderer('send-nav-highlight', match) ;
+                this.current_scout_ = match ;
                 this.setView('formview', 'match') ;
             }
         }
@@ -525,6 +562,32 @@ export class SCScout extends SCBase {
                 let imdata = obj[imname] ;
                 this.image_mgr_.addImageWithData(imname, imdata) ;
             }
+            ret = this.getMissingData() ;  
+        }
+        else if (p.type_ === PacketType.ProvideMatchResults) {
+            let obj = JSON.parse(p.payloadAsString()) ;
+            for(let res of obj) {
+                if (!this.getResults(res.item)) {
+                    this.addResults(res.item, res.data) ;
+                }
+            }
+            this.match_results_received_ = true ;
+            this.writeEventFile() ;
+            ret = this.getMissingData() ;  
+        }
+        else if (p.type_ === PacketType.ProvideTeamResults) {
+            let obj = JSON.parse(p.payloadAsString()) ;
+            for(let res of obj) {
+                if (!this.getResults(res.item)) {
+                    this.addResults(res.item, res.data) ;
+                }
+            }
+            this.team_results_received_ = true ;
+            this.writeEventFile() ;
+            ret = this.getMissingData() ;  
+        }
+        else if (p.type_ === PacketType.Goodbye) {
+            this.conn_?.close() ;
         }
         else if (p.type_ === PacketType.ReceivedResults) {
             this.conn_?.send(new PacketObj(PacketType.Goodbye, Buffer.from(this.info_.tablet_!))) ;
@@ -564,6 +627,36 @@ export class SCScout extends SCBase {
         return ret ;
     }
 
+    private needMatchResults() : string[] {
+        let ret : string[] = [] ;
+
+        for(let m of this.info_.matchlist_!) {
+            let cmd: string = 'sm-' + m.comp_level + '-' + m.set_number + '-' + m.match_number + '-' + m.teamkey ;
+            if (this.info_.results_) {
+                let res: OneScoutResult | undefined = this.getResults(cmd) ;
+                if (!res) {
+                    ret.push(cmd) ;
+                }
+            }
+        }
+        return ret ;
+    }
+
+    private needTeamResults() : string[] {
+        let ret : string[] = [] ;
+
+        for(let t of this.info_.teamlist_!) {
+            let cmd: string = 'st-' + t.team ;
+            if (this.info_.results_) {
+                let res: OneScoutResult | undefined = this.getResults(cmd) ;
+                if (!res) {
+                    ret.push(cmd) ;
+                }
+            }
+        }
+        return ret ;
+    }
+
     private getMissingData() {
         let ret: boolean = false ;
 
@@ -582,6 +675,12 @@ export class SCScout extends SCBase {
         else if (!this.info_.teamlist_) {
             this.conn_?.send(new PacketObj(PacketType.RequestTeamList)) ;
             ret = true ;
+        }
+        else if (!this.match_results_received_ && this.needMatchResults().length > 0) {
+            this.conn_?.send(new PacketObj(PacketType.RequestMatchResults, Buffer.from(JSON.stringify(this.needMatchResults())))) ;
+        }
+        else if (!this.team_results_received_ && this.needTeamResults().length > 0) {
+            this.conn_?.send(new PacketObj(PacketType.RequestTeamResults, Buffer.from(JSON.stringify(this.needTeamResults())))) ;
         }
         else if (this.needImages().length > 0) {
             this.conn_?.send(new PacketObj(PacketType.RequestImages, Buffer.from(JSON.stringify(this.needImages())))) ;1
@@ -628,19 +727,19 @@ export class SCScout extends SCBase {
 
         let synctcpitem: MenuItem = new MenuItem( {
             type: 'normal',
-            label: 'Sync Event (TCP)',
-            click: () => { this.executeCommand(SCScout.syncEvent)}
+            label: 'Sync Event Local (127.0.0.1)',
+            click: () => { this.executeCommand(SCScout.syncEventLocal)}
+        }) ;
+        filemenu.submenu?.insert(0, synctcpitem) ;
+
+        synctcpitem = new MenuItem( {
+            type: 'normal',
+            label: 'Sync Event Remote (192.168.1.1)',
+            click: () => { this.executeCommand(SCScout.syncEventRemote)}
         }) ;
         filemenu.submenu?.insert(0, synctcpitem) ;
 
         filemenu.submenu?.insert(1, new MenuItem({type: 'separator'}));
-
-        let preferences: MenuItem = new MenuItem( {
-            type: 'normal',
-            label: 'Preferences',
-            click: () => { this.executeCommand(SCScout.preferences)}
-        }) ;
-        filemenu.submenu?.insert(2, preferences) ;        
 
         ret.append(filemenu) ;
 
@@ -759,13 +858,4 @@ export class SCScout extends SCBase {
         });
         return ret;
     } 
-
-    public sendPreferences() {
-        this.sendToRenderer('send-preferences', this.preferences_) ;
-    }
-
-    public updatePreferences(prefs: Preferences) {
-        this.preferences_ = prefs;
-        this.setSetting(SCScout.SYNC_IPADDR, this.preferences_.ipaddr_);
-    }
 }

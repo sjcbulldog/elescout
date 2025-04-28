@@ -3,17 +3,13 @@ GitHub Issues
 
 Central
 -------
-Generate random data
 Provide access to max, min, stddev for numeric match data
 View: dataset mgr - add/remove icons
-View: dataset mgr - 
-View: picklist editor
 View: single team view - add video links
+View: picklist editor - adapt to new dataset model
 View: multi team view - adapt to new dataset model
 View: team graph - adapt to new dataset model
 View: spider graph - adapt to new dataset model
-
-
 
 Scout
 -----
@@ -21,10 +17,11 @@ When you click into a new scouting form, prompt to see if the user really wants 
 - yes: all data (even empty) is valid
 - no: form is read-only
 
+Fix the ugly resize window/methodology
+
 Sync
 ----
 Sync scouting data from central back to tablet when needed
-
 
 Attributions
 ------------
