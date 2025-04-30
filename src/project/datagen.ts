@@ -1,11 +1,11 @@
 import * as fs from 'fs' ;
 import { OneScoutResult, ScoutingData } from '../comms/resultsifc';
+import { DataValue } from '../model/datavalue';
 
 export class DataGenerator
 {
     public formtype: string | undefined ;
     private formpath_ : string ;
-    private desc_: Object | undefined ;
     private items_ : any[] = [] ;
 
     private static randomStrings = [
@@ -19,12 +19,23 @@ export class DataGenerator
         'hotwire',
         'tbd',
         'jesuit',
-        'flaming chickens'
+        'flaming chickens',
+        'team 1540',
+        'cheesy poofs',
+        'orbit',
+        'team 254',
+        'team 1114',
+        'team 1678',
+        'team 2056',
+        'team 3309',
+        'team 118',
+        'team 987',
+        'team 111',
+        'team 148'
     ] ;
 
-    constructor(formpath: string, desc: Object) {
+    constructor(formpath: string) {
         this.formpath_ = formpath;
-        this.desc_ = desc ;
     }
 
     public generateData(ids: string[]) : ScoutingData | null {
@@ -52,11 +63,13 @@ export class DataGenerator
         let result = [] ;
         for(let item of this.items_) {
             let value = this.generateItemValue(item) ;
-            let obj = {
-                tag: item.tag,
-                value: value
+            if (value !== undefined) {
+                let obj = {
+                    tag: item.tag,
+                    value: value
+                }
+                result.push(obj) ;
             }
-            result.push(obj) ;
         }
         return result ;
     }
@@ -65,37 +78,35 @@ export class DataGenerator
         return Math.floor(Math.random() * max);
     }
 
-    private generateItemValue(item: any) : any {
+    private generateItemValue(item: any) : DataValue | undefined {
         let value = undefined ;
 
         if (item.type === 'text') {
-            let descf : any = this.desc_?.[item.tag as keyof typeof this.desc_] ;
-            if (descf !== undefined) {
-                let choices = descf.choices ;
-                let i = this.getRandomInt(choices.length) ;
-                value = choices[i] ;
+            let index = this.getRandomInt(DataGenerator.randomStrings.length) ;
+            value = DataValue.fromString(DataGenerator.randomStrings[index]) ;
+        }
+        else if (item.type === 'choice' || item.type === 'select') {
+            let i = this.getRandomInt(item.choices.length) ;
+            let v = item.choices[i].value ;
+
+            if (item.datatype === 'integer') {
+                value = DataValue.fromInteger(v) ;
+            }
+            else if (item.datatype === 'real') {
+                value = DataValue.fromReal(v) ;
+            }
+            else if (item.datatype === 'text') {
+                value = DataValue.fromString(v) ;
             }
             else {
-                let index = this.getRandomInt(DataGenerator.randomStrings.length) ;
-                value = DataGenerator.randomStrings[index] ;
+                value = DataValue.fromError(new Error('invalid datatype for a choice or select')) ;
             }
-        }
-        else if (item.type === 'choice') {
-            let i = this.getRandomInt(item.choices.length) ;
-            value = item.choices[i] ;
-        }
-        else if (item.type === 'multi') {
-            let i = this.getRandomInt(item.choices.length) ;
-            value = item.choices[i].value ;
         }
         else if (item.type === 'boolean') {
-            value = true ;
-            if (this.getRandomInt(100) < 50) {
-                value = false ;
-            }
+            value = DataValue.fromBoolean(this.getRandomInt(100) < 50) ;
         }
         else if (item.type === 'updown') {
-            value = this.getRandomInt(item.maximum  - item.minimum) + item.minimum ;
+            value = DataValue.fromInteger(this.getRandomInt(item.maxvalue  - item.minvalue) + item.minvalue) ;
         }
 
         return value ;

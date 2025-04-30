@@ -1,36 +1,23 @@
-import { FieldAndType } from "../model/datamodel";
+import { ColumnDesc } from "../model/datamodel";
 import { Manager } from "./manager";
 import winston from "winston";
 import fs from "fs";
 import path from "path";
 import { DataManager } from "./datamgr";
-import { DataValueType } from "../expr/datavalue";
+import { DataValueType } from "../model/datavalue";
 import { dialog } from "electron";
 
 export class FormInfo {
   public teamform_?: string; // The path to the form for team scouting
   public matchform_?: string; // The path to the form for match scouting
-  public team_form_columns_: FieldAndType[] = []; // The list of columns that came from the team form
-  public match_form_columns_: FieldAndType[] = []; // The list of columns that came from the match form
-}
-
-interface FieldTypeMapEntry {
-  itemtype: string;
-  datatype: DataValueType | undefined;
+  public team_form_columns_: ColumnDesc[] = []; // The list of columns that came from the team form
+  public match_form_columns_: ColumnDesc[] = []; // The list of columns that came from the match form
 }
 
 export class FormManager extends Manager {
   private location_: string;
   private info_: FormInfo;
   private data_mgr_: DataManager;
-
-  private static itemTypeToDataTypeMap: FieldTypeMapEntry[] = [
-    { itemtype: "text", datatype: "string" },
-    { itemtype: "boolean", datatype: "boolean" },
-    { itemtype: "updown", datatype: "integer" },
-    { itemtype: "choice", datatype: undefined },
-    { itemtype: "multi", datatype: undefined },
-  ];
 
   constructor(
     logger: winston.Logger,
@@ -47,21 +34,31 @@ export class FormManager extends Manager {
     this.checkForms() ;
   }
 
+  public lock() : undefined | Error{
+    let result = this.extractTeamFormFields();
+    if (result instanceof Error) {
+      this.logger_.error("Error getting team form fields: " + result.message);
+      return result;
+    }
+    this.info_.team_form_columns_ = result as ColumnDesc[];
+
+    result = this.extractMatchFormFields();
+    if (result instanceof Error) {
+      this.logger_.error("Error getting team form fields: " + result.message);
+      return result;
+    }
+    this.info_.match_form_columns_ = result as ColumnDesc[];
+
+    this.write() ;    
+    return undefined ;
+  }
+
   public setTeamForm(filename: string): Error | undefined {
     let target = path.join(this.location_, path.basename(filename));
     fs.copyFileSync(filename, target);
 
     this.info_.teamform_ = path.basename(filename);
 
-    let result = this.extractTeamFormFields();
-    if (result instanceof Error) {
-      fs.rmSync(target);
-      this.logger_.error("Error getting team form fields: " + result.message);
-      this.info_.teamform_ = undefined;
-      return result;
-    }
-
-    this.info_.team_form_columns_ = result as FieldAndType[];
     this.write();
     return undefined;
   }
@@ -73,7 +70,7 @@ export class FormManager extends Manager {
     return undefined;
   }
 
-  public getTeamFormFields(): FieldAndType[] {
+  public getTeamFormFields(): ColumnDesc[] {
     return this.info_.team_form_columns_;
   }
 
@@ -141,16 +138,6 @@ export class FormManager extends Manager {
     fs.copyFileSync(filename, target);
 
     this.info_.matchform_ = path.basename(filename);
-
-    let result = this.extractMatchFormFields();
-    if (result instanceof Error) {
-      fs.rmSync(target);
-      this.logger_.error("Error getting match form fields: " + result.message);
-      this.info_.matchform_ = undefined;
-      return result;
-    }
-
-    this.info_.match_form_columns_ = result as FieldAndType[];
     this.write();
     return undefined;
   }
@@ -162,7 +149,7 @@ export class FormManager extends Manager {
     return undefined;
   }
 
-  public getMatchFormFields(): FieldAndType[] {
+  public getMatchFormFields(): ColumnDesc[] {
     return this.info_.match_form_columns_;
   }
 
@@ -195,7 +182,7 @@ export class FormManager extends Manager {
     return this.hasTeamForm() || this.hasMatchForm();
   }
 
-  public extractTeamFormFields(): FieldAndType[] | Error {
+  public extractTeamFormFields(): ColumnDesc[] | Error {
     if (this.info_.teamform_ && this.info_.teamform_.length > 0) {
       return this.getFormColumnNamesTypes(this.info_.teamform_);
     }
@@ -203,7 +190,7 @@ export class FormManager extends Manager {
     return new Error("No team form found");
   }
 
-  public extractMatchFormFields(): FieldAndType[] | Error {
+  public extractMatchFormFields(): ColumnDesc[] | Error {
     if (this.info_.matchform_ && this.info_.matchform_.length > 0) {
       return this.getFormColumnNamesTypes(this.info_.matchform_);
     }
@@ -219,7 +206,7 @@ export class FormManager extends Manager {
       }
 
       // Remove any old columns from an old team scouting form
-      this.data_mgr_!.removeFormColumns()
+      this.data_mgr_!.removeFormColumns(this.info_.team_form_columns_, this.info_.match_form_columns_)
         .then(() => {
           this.write();
           this.data_mgr_!.createFormColumns(
@@ -640,28 +627,8 @@ export class FormManager extends Manager {
     return jsonobj;
   }
 
-  private mapItemTypeToFieldType(
-    type: string,
-    dtype?: string
-  ): DataValueType | undefined {
-    let ret: DataValueType | undefined = undefined;
-
-    for (let one of FormManager.itemTypeToDataTypeMap) {
-      if (one.itemtype === type) {
-        if (one.datatype) {
-          ret = one.datatype;
-          break;
-        } else if (dtype) {
-          ret = dtype as DataValueType;
-        }
-      }
-    }
-
-    return ret;
-  }
-
-  private getFormColumnNamesTypes(filename: string): FieldAndType[] | Error {
-    let ret: FieldAndType[] = [];
+  private getFormColumnNamesTypes(filename: string): ColumnDesc[] | Error {
+    let ret: ColumnDesc[] = [];
 
     let formfile = path.join(this.location_, filename);
 
@@ -669,25 +636,11 @@ export class FormManager extends Manager {
       let jsonobj = FormManager.readJSONFile(formfile);
       for (let section of jsonobj.sections) {
         for (let item of section.items) {
-          let t = this.mapItemTypeToFieldType(item.type, item.datatype);
-          if (t === undefined) {
-            return new Error(
-              "Unknown item type for field '" +
-                item.tag +
-                " type: " +
-                item.type +
-                "'"
-            );
-          } else {
-            let obj = {
-              name: item.tag,
-              type: this.mapItemTypeToFieldType(
-                item.type,
-                item.datatype
-              ) as DataValueType,
-            };
-            ret.push(obj);
-          }
+          let field: ColumnDesc = {
+            name: item.tag,
+            type: item.datatype
+          };
+          ret.push(field);
         }
       }
     } catch (err) {

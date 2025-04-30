@@ -1,6 +1,7 @@
 import winston from "winston" ;
 import { Manager } from "./manager";
 import { DataManager } from "./datamgr";
+import { DataValue } from "../model/datavalue";
 
 //
 // MatchSet -
@@ -70,8 +71,8 @@ export class DataSetManager extends Manager {
         return ret ;
     }
 
-    public async getData(ds: DataSet, field: string, team: number) : Promise <string | number | Error> {
-        let ret = new Promise<string | number | Error>(async (resolve, reject) => {
+    public async getData(ds: DataSet, field: string, team: number) : Promise <DataValue> {
+        let ret = new Promise<DataValue>(async (resolve, reject) => {
             if (this.containsField(ds, field)) {
                 try {
                     let data = await this.datamgr_.getData(ds.matches, field, team) ;
@@ -82,7 +83,7 @@ export class DataSetManager extends Manager {
                 }
             }
             else {
-                resolve(new Error("field '" + field + "' not found in data set '" + ds.name + "'")) ;
+                resolve(DataValue.fromError(new Error("field '" + field + "' not found in data set '" + ds.name + "'"))) ;
             }
         }) ;
 

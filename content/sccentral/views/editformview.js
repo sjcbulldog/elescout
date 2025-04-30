@@ -250,7 +250,7 @@ class EditFormTextDialog extends EditFormControlDialog {
 
         label = document.createElement('label') ;
         label.className = 'popup-form-edit-dialog-label' ;
-        label.innerText = 'Text' ;
+        label.innerText = 'Placeholder' ;
         label.appendChild(this.placeholder_) ;
         div.appendChild(label) ;
 
@@ -514,6 +514,13 @@ class EditFormMultipleSelectDialog extends EditFormControlDialog {
         this.tag_.className = 'popup-form-edit-dialog-input' ;
         this.tag_.value = this.formctrl_.item.tag ;
 
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Tag' ;
+        label.appendChild(this.tag_) ;
+        div.appendChild(label) ;        
+
+
         this.font_name_ = document.createElement('select') ;
         this.font_name_.className = 'popup-form-edit-dialog-select' ;
         let fonts = await window.queryLocalFonts() ;
@@ -661,21 +668,25 @@ class EditFormMultipleSelectDialog extends EditFormControlDialog {
         this.formctrl_.item.fontsize = parseInt(this.font_size_.value) ;
         this.formctrl_.item.orientation = this.orientation_.value ;
         this.formctrl_.item.radiosize = parseInt(this.radio_size_.value) ;
+        
 
         this.formctrl_.item.choices = [] ;
+        let values = [] ;
         for(let rows of this.table_.getRows()) {
             let choice = rows.getData().choice ;
             if (choice === EditFormMultipleSelectDialog.addNewChoiceValue) {
                 break ;
             }
             let value = rows.getData().value ;
+            values.push(value) ;
             this.formctrl_.item.choices.push({ text: choice, value: value }) ;
         }
+
+        this.formctrl_.item.datatype = this.formctrl_.deduceDataType(values) ;
 
         this.formctrl_.updateChoices() ;
     }
 }
-
 
 class EditFormSelectDialog extends EditFormControlDialog {
     static addNewChoiceValue = 'Add New Choice Value' ;
@@ -717,6 +728,12 @@ class EditFormSelectDialog extends EditFormControlDialog {
         this.tag_.type = 'text' ;
         this.tag_.className = 'popup-form-edit-dialog-input' ;
         this.tag_.value = this.formctrl_.item.tag ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Tag' ;
+        label.appendChild(this.tag_) ;
+        div.appendChild(label) ;    
 
         this.font_name_ = document.createElement('select') ;
         this.font_name_.className = 'popup-form-edit-dialog-select' ;
@@ -834,13 +851,30 @@ class EditFormSelectDialog extends EditFormControlDialog {
         this.formctrl_.item.fontsize = parseInt(this.font_size_.value) ;
 
         this.formctrl_.item.choices = [] ;
+        let values = [] ;
         for(let rows of this.table_.getRows()) {
             let choice = rows.getData().choice ;
             if (choice === EditFormMultipleSelectDialog.addNewChoiceValue) {
                 break ;
             }
             let value = rows.getData().value ;
-            this.formctrl_.item.choices.push({ text: choice, value: value }) ;
+            values.push(value) ;
+            this.formctrl_.item.choices.push(
+                { 
+                    text: choice, 
+                    value: value 
+                }) ;
+        }
+
+        this.formctrl_.item.datatype = this.formctrl_.deduceDataType(values) ;
+
+        if (this.formctrl_.item.datatype !== 'string') {
+            //
+            // Make sure all of the choice values are numbers
+            //
+            for(let choice of this.formctrl_.item.choices) {
+                choice.value = parseFloat(choice.value) ;
+            }
         }
 
         this.formctrl_.updateChoices() ;
@@ -951,6 +985,55 @@ class EditFormView extends XeroView {
             }
             else if (event.key === 'v' && event.ctrlKey) {
                 this.pasteSelectedItem() ;
+            }
+            else if (event.key === 'ArrowRight') {
+                if (event.ctrlKey) {
+                    this.moveSelectedItem(1, 0) ;
+                }
+                else {
+                    this.moveSelectedItem(10, 0) ;
+                }
+            }
+            else if (event.key === 'ArrowLeft') {
+                if (event.ctrlKey) {
+                    this.moveSelectedItem(-1, 0) ;
+                }
+                else {
+                    this.moveSelectedItem(-10, 0) ;
+                }
+            }
+            else if (event.key === 'ArrowUp') {
+                if (event.ctrlKey) {
+                    this.moveSelectedItem(0, -1) ;
+                }
+                else {
+                    this.moveSelectedItem(0, -10) ;
+                }
+            }
+            else if (event.key === 'ArrowDown') {
+                if (event.ctrlKey) {
+                    this.moveSelectedItem(0, 1) ;
+                }
+                else {
+                    this.moveSelectedItem(0, 10) ;
+                }
+            }
+        }
+    }
+
+    moveSelectedItem(dx, dy) {
+        if (this.selected_) {
+            let frmctrl = this.findFormControlFromCtrl(this.selected_) ;
+            if (frmctrl) {
+                let x = parseInt(this.selected_.style.left) ;
+                let y = parseInt(this.selected_.style.top) ;
+                this.selected_.style.left = (x + dx) + 'px' ;
+                this.selected_.style.top = (y + dy) + 'px' ;
+
+                frmctrl.item.x = x + dx ;
+                frmctrl.item.y = y + dy ;
+
+                this.modified() ;
             }
         }
     }

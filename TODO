@@ -4,6 +4,9 @@ GitHub Issues
 All
 ---
 Image relative control coordinates
+Web based syncing
+Integer text entry field
+Real text entry field
 
 Central
 -------
@@ -17,7 +20,6 @@ View: spider graph - adapt to new dataset model
 
 Scout
 -----
-Fix the ugly resize window/methodology
 
 Attributions
 ------------

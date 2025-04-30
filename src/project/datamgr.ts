@@ -9,8 +9,9 @@ import evaluate, { registerFunction } from 'ts-expression-evaluator'
 import { Expression } from "ts-expression-evaluator/build/main/lib/t";
 import { OneScoutResult, ScoutingData } from "../comms/resultsifc";
 import { BAMatch, BAOprData, BARankingData, BATeam } from "../extnet/badata";
-import { FieldAndType } from "../model/datamodel";
+import { ColumnDesc } from "../model/datamodel";
 import { MatchSet } from "./datasetmgr";
+import { DataValue, DataValueType } from "../model/datavalue";
 
 export interface ProjectOneColCfg {
     name: string,
@@ -29,8 +30,8 @@ export class DataInfo {
     public teamdb_col_config_? : ProjColConfig ;        // List of hidden columns in team data
     public scouted_team_: number[] = [] ;               // The list of teams that have scouting data
     public scouted_match_: string[] = [] ;              // The list of matches that have scouring data
-    public team_db_fields_ : FieldAndType[] = [] ;            // The list of fields from the team form currently in the database
-    public match_db_fields_ : FieldAndType[] = [] ;           // The list of fields from the match form currently in the database
+    public team_db_cols_ : ColumnDesc[] = [] ;            // The list of fields from the team form currently in the database
+    public match_db_cols_ : ColumnDesc[] = [] ;           // The list of fields from the match form currently in the database
     public match_results_ : OneScoutResult[] = [] ;           // The list of match results that have been processed
     public team_results_ : OneScoutResult[] = [] ;            // The list of team results that have been processed
 } ;
@@ -52,12 +53,14 @@ export class DataManager extends Manager {
         let filename: string ;
 
         filename = path.join(dir, 'team.db') ;
-        this.teamdb_ = new TeamDataModel(filename, logger) ;
+        this.teamdb_ = new TeamDataModel(filename, info.team_db_cols_, logger) ;
         this.teamdb_.on('column-added', this.teamColumnAdded.bind(this)) ;
+        this.teamdb_.on('column-removed', this.teamColumnRemoved.bind(this)) ;
 
         filename = path.join(dir, 'match.db') ;
-        this.matchdb_ = new MatchDataModel(filename, logger) ;
+        this.matchdb_ = new MatchDataModel(filename, info.match_db_cols_, logger) ;
         this.matchdb_.on('column-added', this.matchColumnAdded.bind(this));
+        this.matchdb_.on('column-removed', this.matchColumnRemoved.bind(this));
 
         if (!this.info_.match_results_) {
             this.info_.match_results_ = [] ;
@@ -110,11 +113,8 @@ export class DataManager extends Manager {
         this.matchdb_.remove() ;
     }
 
-    public createFormColumns(teamfields: FieldAndType[], matchfields: FieldAndType[]) : Promise<void> {
+    public createFormColumns(teamfields: ColumnDesc[], matchfields: ColumnDesc[]) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
-            this.info_.team_db_fields_ = teamfields;
-            this.info_.match_db_fields_ = matchfields;
-
             try {
                 await this.teamdb_.addNecessaryCols(TeamDataModel.TeamTableName, teamfields) ;
             }
@@ -141,8 +141,8 @@ export class DataManager extends Manager {
     // field.  For match fields, the data is processes over all matches to get
     // an average.
     //   
-    public getData(m: MatchSet, field: string, team: number) : Promise<number | string | Error> {
-        let ret = new Promise<number | string | Error>(async (resolve, reject) => {
+    public getData(m: MatchSet, field: string, team: number) : Promise<DataValue> {
+        let ret = new Promise<DataValue>(async (resolve, reject) => {
             let found = false ;
 
             let tcols = await this.teamdb_.getColumnNames(TeamDataModel.TeamTableName) ;
@@ -169,7 +169,9 @@ export class DataManager extends Manager {
             }
 
             if (!found) {
-                resolve(new Error('Field ' + field + ' is not a valid team, match, or formula field')) ;
+                let v = DataValue.fromError(new Error('Field ' + field + ' is not a valid team, match, or formula field')) ;
+                resolve(v) ;
+                return ;
             }
         }) ;
         return ret;
@@ -182,6 +184,7 @@ export class DataManager extends Manager {
         else {
             if (obj.purpose) {
                 if (obj.purpose === 'match') {
+                    this.info_.match_results_ = [] ;
                     for(let res of obj.results) {
                         if (res.item) {
                             this.info_.match_results_.push(res) ;
@@ -196,6 +199,7 @@ export class DataManager extends Manager {
                     }
                 }
                 else {
+                    this.info_.team_results_ = [] ;
                     for(let res of obj.results) {
                         if (res.item) {
                             this.info_.team_results_.push(res) ;
@@ -214,14 +218,12 @@ export class DataManager extends Manager {
         }
     }     
     
-    public async removeFormColumns() : Promise<void> {
+    public async removeFormColumns(teamcols: ColumnDesc[], matchcols: ColumnDesc[]) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
-            this.teamdb_.removeColumns(TeamDataModel.TeamTableName, this.info_.team_db_fields_.map((one) => one.name))
+            this.teamdb_.removeColumns(TeamDataModel.TeamTableName, teamcols.map((one) => one.name), this.info_.team_db_cols_)
                 .then(async () => {
-                    this.info_.team_db_fields_ = [] ;
-                    this.matchdb_.removeColumns(MatchDataModel.MatchTableName, this.info_.match_db_fields_.map((one) => one.name))
+                    this.matchdb_.removeColumns(MatchDataModel.MatchTableName, matchcols.map((one) => one.name), this.info_.match_db_cols_)
                         .then(() => {
-                            this.info_.match_db_fields_ = [] ;
                             resolve() ;
                         })
                         .catch((err) => {
@@ -348,7 +350,7 @@ export class DataManager extends Manager {
 
     // #endregion
 
-    private getMatchData(m: MatchSet, field: string, team: number) : Promise<number | string | Error> {
+    private getMatchData(m: MatchSet, field: string, team: number) : Promise<DataValue> {
         let ret = new Promise<any>(async (resolve, reject) => {
             let fields = field + ', comp_level, set_number, match_number' ;
             let teamkey = 'frc' + team ;
@@ -385,8 +387,8 @@ export class DataManager extends Manager {
         return ret ;
     }	
 
-    private getTeamData(field: string, team: number) : Promise<number> {
-        let ret = new Promise<number>(async (resolve, reject) => {
+    private getTeamData(field: string, team: number) : Promise<DataValue> {
+        let ret = new Promise<DataValue>(async (resolve, reject) => {
             let query = 'select ' + field + ' from ' + TeamDataModel.TeamTableName + ' where team_number = ' + team + ' ;' ;
             this.teamdb_.all(query)
                 .then((data) => {
@@ -395,15 +397,15 @@ export class DataManager extends Manager {
                     resolve(v) ;
                 })
                 .catch((err) => {
-                    resolve(NaN);
+                    resolve(DataValue.fromError(err)) ;
                 }) ;
         }) ;
 
         return ret ;
     }    
     
-    private teamColumnAdded(colname: string) {
-        this.logger_.silly('added new column \'' + colname + '\' to team database') ;
+    private teamColumnAdded(coldesc: ColumnDesc) {
+        this.logger_.silly('added new column \'' + coldesc.name + '\' to team database') ;
 
         if (!this.info_.teamdb_col_config_) {
             this.info_.teamdb_col_config_ = {
@@ -413,15 +415,29 @@ export class DataManager extends Manager {
         }
         
         let colcfg = {
-            name: colname,
+            name: coldesc.name,
             width: -1,
             hidden: false
         } ;
         this.info_.teamdb_col_config_?.columns.push(colcfg) ;
+        this.info_.team_db_cols_.push(coldesc) ;
     }
 
-    private matchColumnAdded(colname: string) {
-        this.logger_.silly('added new column \'' + colname + '\' to match database') ;
+    private teamColumnRemoved(coldesc: ColumnDesc) {
+        this.logger_.silly('removed column \'' + coldesc.name + '\' from the team database') ;
+        let i = this.info_.teamdb_col_config_?.columns.findIndex((one) => one.name === coldesc.name) ;
+        if (i !== undefined && i >= 0) {
+            this.info_.teamdb_col_config_?.columns.splice(i, 1) ;
+        }
+
+        i = this.info_.team_db_cols_.findIndex((one) => one.name === coldesc.name) ;
+        if (i !== undefined && i >= 0) {
+            this.info_.team_db_cols_.splice(i, 1) ;
+        }
+    }    
+
+    private matchColumnAdded(coldesc: ColumnDesc) {
+        this.logger_.silly('added new ColumnDesc \'' + coldesc.name + '\' to match database') ;
 
         if (!this.info_.matchdb_col_config_) {
             this.info_.matchdb_col_config_ = {
@@ -431,17 +447,32 @@ export class DataManager extends Manager {
         }
 
         let colcfg = {
-            name: colname,
+            name: coldesc.name,
             width: -1,
             hidden: false
         } ;
         this.info_.matchdb_col_config_?.columns.push(colcfg) ;
+        this.info_.match_db_cols_.push(coldesc) ;
     }    
+
+    private matchColumnRemoved(coldesc: ColumnDesc) {
+        this.logger_.silly('removed column \'' + coldesc.name + '\' from the match database') ;
+
+        let i = this.info_.matchdb_col_config_?.columns.findIndex((one) => one.name === coldesc.name) ;
+        if (i !== undefined && i >= 0) {
+            this.info_.matchdb_col_config_?.columns.splice(i, 1) ;
+        }
+
+        i = this.info_.match_db_cols_.findIndex((one) => one.name === coldesc.name) ;
+        if (i !== undefined && i >= 0) {
+            this.info_.match_db_cols_.splice(i, 1) ;
+        }
+    }
     
-    private evalFormula(m: MatchSet, name: string, team: number) : Promise<number  | string | Error > {
-        let ret = new Promise<number | string | Error>(async (resolve, reject) => {
+    private evalFormula(m: MatchSet, name: string, team: number) : Promise<DataValue> {
+        let ret = new Promise<DataValue>(async (resolve, reject) => {
             let formula = this.formula_mgr_.findFormula(name) ;
-            let result = NaN ;
+            let result = DataValue.fromError(new Error('formula error')) ;
             let errors : Error[] = [] ;
             if (formula) {
                 let obj : any = {} ;
@@ -456,7 +487,7 @@ export class DataManager extends Manager {
                         obj[dep] = v ;
                     }
                     catch(err) {
-                        resolve('formula error') ;
+                        resolve(DataValue.fromError(new Error('formula error'))) ;
                     }
                 }
                 if (errors.length > 0) { 
@@ -467,7 +498,7 @@ export class DataManager extends Manager {
                         }
                         msg += e.message ;
                     }
-                    resolve(new Error(msg)) ;
+                    resolve(DataValue.fromError(new Error(msg))) ;
                 }
                 else {
                     result = evaluate(formula, obj) ;
@@ -475,7 +506,7 @@ export class DataManager extends Manager {
                 resolve(result) ;
             }
             else {
-                resolve(NaN) ;
+                resolve(DataValue.fromError(new Error('formula ' + name + ' not found'))) ;
             }
         }) ;
         return ret ;

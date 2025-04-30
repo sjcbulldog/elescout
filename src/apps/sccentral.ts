@@ -1,7 +1,7 @@
 import { SCBase, XeroAppType, XeroVersion } from "./scbase";
 import { BlueAlliance } from "../extnet/ba";
 import { Project } from "../project/project";
-import { BrowserWindow, dialog, Menu, MenuItem, shell } from "electron";
+import { BrowserWindow, Data, dialog, Menu, MenuItem, shell } from "electron";
 import { TCPSyncServer } from "../sync/tcpserver";
 import { PacketObj } from "../sync/packetobj";
 import { PacketType } from "../sync/packettypes";
@@ -23,6 +23,7 @@ import Papa from "papaparse";
 import * as fs from "fs";
 import * as path from "path";
 import { FormManager } from "../project/formmgr";
+import { DataValue } from "../model/datavalue";
 
 export interface GraphDataRequest {
 	ds: string,
@@ -37,7 +38,7 @@ export interface GraphDataRequest {
 export interface PickListColData {
 	field: string,
 	teams: number[],
-	data: (number|string|Error)[]
+	data: DataValue[]
 };
 
 export class SCCentral extends SCBase {
@@ -2199,25 +2200,11 @@ export class SCCentral extends SCBase {
 	public generateRandomData() {
 		if (this.lastview_ && this.lastview_ === 'info') {
 			if (this.project_ && this.project_.isInitialized() && this.project_.isLocked()) {
-				dialog.showOpenDialog(this.win_, {
-					title: 'Random data descriptor file',
-					filters: [
-						{ name: 'JSON Files', extensions: ['json'] },
-						{ name: 'All Files', extensions: ['*']}
-					],
-					properties: [
-						'openFile',
-					]
-				}).then(result => {	
-					if (!result.canceled) {
-						this.project_!.generateRandomData(result.filePaths[0]);
-						dialog.showMessageBox(this.win_, {
-							title: "Generated Random Form Data",
-							message: "Generated Random Form Data",
-						});
-					}
-				}) ;
-
+				this.project_!.generateRandomData() ;
+				dialog.showMessageBox(this.win_, {
+					title: "Random Data",
+					message: "Random data generated",
+				});
 			} else {
 				dialog.showMessageBox(this.win_, {
 					title: "Random Data Error",
@@ -2501,7 +2488,7 @@ export class SCCentral extends SCBase {
 	}
 
 	public async sendPicklistColData(m:MatchSet, field: string) {
-		let values: (number|string|Error)[] = [];
+		let values: DataValue[] = [] ;
 		let teams: number[] = [] ;
 
 		if (this.project_ && this.project_.isInitialized()) {

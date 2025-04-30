@@ -103,15 +103,12 @@ export class Project {
         return this.location_ ;
     }
 
-    public generateRandomData(descfile: string) {
-        let str = fs.readFileSync(descfile) ;
-        let desc = JSON.parse(str.toString()) ;
-
+    public generateRandomData() {
         if (this.team_mgr_ && this.match_mgr_ && this.form_mgr_ && this.form_mgr_.hasForms()) {
             if (this.team_mgr_.hasTeams()) {
                 let teams = this.team_mgr_.getTeams().map((v)=> { return 'st-' + v.team_number}) ;
 
-                let gendata: DataGenerator = new DataGenerator(this.form_mgr_.getTeamFormFullPath()!, desc.team) ;
+                let gendata: DataGenerator = new DataGenerator(this.form_mgr_.getTeamFormFullPath()!) ;
                 let results : ScoutingData | null = gendata.generateData(teams) ;
                 if (results) {
                     results.purpose = "team" ;
@@ -132,7 +129,7 @@ export class Project {
                     }
                 }
 
-                let gendata: DataGenerator = new DataGenerator(this.form_mgr_.getMatchFormFullPath()!, desc.match) ;
+                let gendata: DataGenerator = new DataGenerator(this.form_mgr_.getMatchFormFullPath()!) ;
                 let results : ScoutingData | null  = gendata.generateData(matches) ;
                 if (results) {
                     results.purpose = "match" ;
@@ -161,6 +158,12 @@ export class Project {
                     catch(err) {
                         this.data_mgr_!.removeDatabases() ;
                         reject(err) ;
+                    }
+
+                    let res = this.form_mgr_.lock() ;
+                    if (res) {
+                        this.data_mgr_!.removeDatabases() ;
+                        reject(res as Error) ;                        
                     }
 
                     if (this.tablet_mgr_.generateTabletSchedule()) {

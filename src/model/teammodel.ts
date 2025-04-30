@@ -1,9 +1,11 @@
 import * as sqlite3 from 'sqlite3' ;
-import { DataModel, DataRecord, ValueType } from "./datamodel";
+import { DataModel, ColumnDesc } from "./datamodel";
 import winston from 'winston';
 import { BAOprData, BARankingData, BARankings, BATeam } from '../extnet/badata';
 import { SCBase } from '../apps/scbase';
 import { ScoutingData } from '../comms/resultsifc';
+import { DataRecord } from './datarecord';
+import { DataValue } from './datavalue';
 
 interface scoutvalue {
     tag: string,
@@ -14,8 +16,8 @@ interface scoutvalue {
 export class TeamDataModel extends DataModel {
     public static readonly TeamTableName: string = 'teams' ;
 
-    public constructor(dbname: string, logger: winston.Logger) {
-        super(dbname, logger) ;
+    public constructor(dbname: string, fields: ColumnDesc[], logger: winston.Logger) {
+        super(dbname, fields, logger) ;
     }
 
     public getColumns() : Promise<string[]> {
@@ -42,8 +44,12 @@ export class TeamDataModel extends DataModel {
         return ret;
     }
 
-    protected initialTableColumns() : string[] {
-        return ['team_number'] ;
+    protected initialTableColumns() : ColumnDesc[] {
+        return [
+            {
+                name: 'team_number',
+                type: 'integer'
+            }] ;
     }
 
     protected createTableQuery() : string {
@@ -58,23 +64,23 @@ export class TeamDataModel extends DataModel {
     private convertTeamToRecord(team: BATeam) : DataRecord {
         let dr = new DataRecord() ;
 
-        dr.addfield('key', team.key) ;
-        dr.addfield('team_number', team.team_number) ;
-        dr.addfield('nickname', team.nickname) ;
-        dr.addfield('name', team.name) ;
-        dr.addfield('school_name', team.school_name) ;
-        dr.addfield('city', team.city) ;
-        dr.addfield('state_prov', team.state_prov) ;
-        dr.addfield('country', team.country) ;
-        dr.addfield('address', team.address) ;
-        dr.addfield('postal_code', team.postal_code) ;
-        dr.addfield('gmaps_place_id', team.gmaps_place_id) ;
-        dr.addfield('gmaps_url', team.gmaps_url) ;
-        dr.addfield('lat', team.lat) ;
-        dr.addfield('lng', team.lng) ;
-        dr.addfield('location_name', team.location_name) ;
-        dr.addfield('website', team.website) ;
-        dr.addfield('rookie_year', team.rookie_year) ;
+        dr.addfield('key', DataValue.fromString(team.key)) ;
+        dr.addfield('team_number', DataValue.fromInteger(team.team_number)) ;
+        dr.addfield('nickname', DataValue.fromString(team.nickname)) ;
+        dr.addfield('name', DataValue.fromString(team.name)) ;
+        dr.addfield('school_name', DataValue.fromString(team.school_name)) ;
+        dr.addfield('city', DataValue.fromString(team.city)) ;
+        dr.addfield('state_prov', DataValue.fromString(team.state_prov)) ;
+        dr.addfield('country', DataValue.fromString(team.country)) ;
+        dr.addfield('address', DataValue.fromString(team.address)) ;
+        dr.addfield('postal_code', DataValue.fromString(team.postal_code)) ;
+        dr.addfield('gmaps_place_id', DataValue.fromString(team.gmaps_place_id)) ;
+        dr.addfield('gmaps_url', DataValue.fromString(team.gmaps_url)) ;
+        dr.addfield('lat', DataValue.fromReal(team.lat)) ;
+        dr.addfield('lng', DataValue.fromReal(team.lng)) ;
+        dr.addfield('location_name', DataValue.fromString(team.location_name)) ;
+        dr.addfield('website', DataValue.fromString(team.website)) ;
+        dr.addfield('rookie_year', DataValue.fromInteger(team.rookie_year)) ;
 
         return dr ;
     }
@@ -102,12 +108,12 @@ export class TeamDataModel extends DataModel {
 	
     private convertRankingToRecord(ranking: any) : DataRecord {
         let dr = new DataRecord() ;
-        dr.addfield('rank', ranking.rank);
-        dr.addfield('wins', ranking.record.wins) ;
-        dr.addfield('losses', ranking.record.losses);
-        dr.addfield('ties', ranking.record.ties) ;
-        dr.addfield('team_key', ranking.team_key) ;
-        dr.addfield('team_number', SCBase.keyToTeamNumber(ranking.team_key)) ;
+        dr.addfield('rank', DataValue.fromInteger(ranking.rank));
+        dr.addfield('wins', DataValue.fromInteger(ranking.record.wins)) ;
+        dr.addfield('losses', DataValue.fromInteger(ranking.record.losses));
+        dr.addfield('ties', DataValue.fromInteger(ranking.record.ties)) ;
+        dr.addfield('team_key', DataValue.fromString(ranking.team_key)) ;
+        dr.addfield('team_number', DataValue.fromInteger(SCBase.keyToTeamNumber(ranking.team_key))) ;
         return dr ;
     }
 
@@ -233,10 +239,10 @@ export class TeamDataModel extends DataModel {
 
             for(let key of Object.keys(opr.oprs)) {
                 let dr = new DataRecord() ;
-                dr.addfield('team_number', this.keyToTeamNumber(key)) ;
-                dr.addfield('ba_opr', opr.oprs[key] as number) ;
-                dr.addfield('ba_dpr', opr.dprs[key] as number) ;
-                dr.addfield('ba_ccwms', opr.ccwms[key] as number) ;
+                dr.addfield('team_number', DataValue.fromInteger(this.keyToTeamNumber(key))) ;
+                dr.addfield('ba_opr', DataValue.fromReal(opr.oprs[key])) ;
+                dr.addfield('ba_dpr', DataValue.fromReal(opr.dprs[key])) ;
+                dr.addfield('ba_ccwms', DataValue.fromReal(opr.ccwms[key])) ;
                 records.push(dr) ;
             }
 
@@ -281,7 +287,7 @@ export class TeamDataModel extends DataModel {
             teamnumber = +tstr.substring(3) ;
         }
 
-        dr.addfield('team_number', teamnumber) ;
+        dr.addfield('team_number', DataValue.fromInteger(teamnumber)) ;
 
         for(let field of data) {
             dr.addfield(field.tag, field.value) ;
@@ -295,7 +301,7 @@ export class TeamDataModel extends DataModel {
             let records: DataRecord[] = [] ;
             for(let record of data.results) {
                 let dr = this.convertScoutDataToRecord(record.item, record.data) ;
-                ret.push(dr.value('team_number')! as number);
+                ret.push(dr.value('team_number')!.toInteger()) ;
                 records.push(dr) ;
             }
             await this.addColsAndData(TeamDataModel.TeamTableName, ['team_number'], records) ;

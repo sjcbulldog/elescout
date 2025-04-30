@@ -1,17 +1,19 @@
 import * as sqlite3 from 'sqlite3' ;
-import { DataModel, DataRecord, ValueType } from "./datamodel";
+import { ColumnDesc, DataModel } from "./datamodel";
 import winston from 'winston';
 import { BAMatch } from '../extnet/badata';
 import { ScoutingData } from '../comms/resultsifc';
 import { SCBase } from '../apps/scbase';
+import { DataRecord } from './datarecord';
+import { DataValue } from './datavalue';
 
 export class MatchDataModel extends DataModel {
     public static readonly MatchTableName: string = 'matches' ;
     private static readonly BlueAlliancePrefix: string = 'ba_' ;
     private static readonly fixedcols = ['comp_level', 'match_number', 'set_number'] ;
 
-    public constructor(dbname: string, logger: winston.Logger) {
-        super(dbname, logger) ;
+    public constructor(dbname: string, coldescs: ColumnDesc[], logger: winston.Logger) {
+        super(dbname, coldescs, logger) ;
     }
 
     public getColumns() : Promise<string[]> {
@@ -72,8 +74,25 @@ export class MatchDataModel extends DataModel {
         return ret;
     }
 
-    protected initialTableColumns() : string[] {
-        return ['comp_level', 'set_number', 'match_number', 'team_key'] ;
+    protected initialTableColumns() : ColumnDesc[] {
+        return [
+            {
+                name: 'comp_level',
+                type: 'string'
+            },
+            {
+                name: 'set_number',
+                type: 'integer'
+            }, 
+            {
+                name: 'match_number',
+                type: 'integer'
+            }, 
+            {
+                name: 'team_key',
+                type: 'string'
+            }
+        ] ;
     }
 
     protected createTableQuery() : string {
@@ -91,10 +110,32 @@ export class MatchDataModel extends DataModel {
         return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ;
     }
 
+    private getDataValueFromObject(obj: any) : DataValue {
+        let ret = DataValue.fromError(new Error('Invalid data type')) ;
+
+        if (typeof obj === 'string') {
+            ret = DataValue.fromString(obj) ;
+        }
+        else if (typeof obj === 'number') {
+            if (Number.isInteger(obj)) {
+                ret = DataValue.fromInteger(obj) ;
+            }
+            else {
+                ret = DataValue.fromReal(obj) ;
+            }
+        }
+        else if (typeof obj === 'boolean') {
+            ret = DataValue.fromBoolean(obj) ;
+        }
+
+        return ret ;
+    }
+
     private moveToRecord(obj: any, dr: DataRecord) {
         for(let key of Object.keys(obj)) {
-            if (this.isValidDataType(obj[key])) {
-                dr.addfield('ba_' + key, obj[key]) ;
+            let value = this.getDataValueFromObject(obj[key]) ;
+            if (!value.isError()) {
+                dr.addfield('ba_' + key, value) ;
             }
         }
     }
@@ -112,29 +153,29 @@ export class MatchDataModel extends DataModel {
     private convertToRecord(obj: BAMatch, tkey: string, alliance: string, results: boolean) : DataRecord {
         let dr = new DataRecord() ;
 
-        dr.addfield('key', obj.key) ;
-        dr.addfield('team_key', tkey) ;
-        dr.addfield('comp_level', obj.comp_level);
-        dr.addfield('set_number', obj.set_number) ;
-        dr.addfield('match_number', obj.match_number) ;
-        dr.addfield('r1', obj.alliances.red.team_keys[0]) ;
-        dr.addfield('r2', obj.alliances.red.team_keys[1]) ;
-        dr.addfield('r3', obj.alliances.red.team_keys[2]) ;
-        dr.addfield('b1', obj.alliances.blue.team_keys[0]) ;
-        dr.addfield('b2', obj.alliances.blue.team_keys[1]) ;
-        dr.addfield('b3', obj.alliances.blue.team_keys[2]) ;
+        dr.addfield('key', DataValue.fromString(obj.key)) ;
+        dr.addfield('team_key', DataValue.fromString(tkey)) ;
+        dr.addfield('comp_level', DataValue.fromString(obj.comp_level));
+        dr.addfield('set_number', DataValue.fromInteger(obj.set_number)) ;
+        dr.addfield('match_number', DataValue.fromInteger(obj.match_number)) ;
+        dr.addfield('r1', DataValue.fromString(obj.alliances.red.team_keys[0])) ;
+        dr.addfield('r2', DataValue.fromString(obj.alliances.red.team_keys[1])) ;
+        dr.addfield('r3', DataValue.fromString(obj.alliances.red.team_keys[2])) ;
+        dr.addfield('b1', DataValue.fromString(obj.alliances.blue.team_keys[0])) ;
+        dr.addfield('b2', DataValue.fromString(obj.alliances.blue.team_keys[1])) ;
+        dr.addfield('b3', DataValue.fromString(obj.alliances.blue.team_keys[2])) ;
 
         if (results) {
             if (obj.alliances.red.score) {
-                dr.addfield('ba_redscore', obj.alliances.red.score) ;
+                dr.addfield('ba_redscore', DataValue.fromInteger(obj.alliances.red.score)) ;
             }
 
             if (obj.alliances.blue.score) {
-                dr.addfield('ba_bluescore', obj.alliances.blue.score) ;
+                dr.addfield('ba_bluescore', DataValue.fromInteger(obj.alliances.blue.score)) ;
             }
 
             if (obj.winning_alliance) {
-                dr.addfield('ba_winning_alliance', obj.winning_alliance) ;
+                dr.addfield('ba_winning_alliance', DataValue.fromString(obj.winning_alliance)) ;
             }
 
             if (obj.score_breakdown) {
@@ -211,10 +252,10 @@ export class MatchDataModel extends DataModel {
 
         let item = this.parseMatchString(match as string) ;
 
-        dr.addfield('comp_level', item.type) ;
-        dr.addfield('set_number', item.set_number) ;
-        dr.addfield('match_number', item.match) ;
-        dr.addfield('team_key', item.teamkey) ;
+        dr.addfield('comp_level', DataValue.fromString(item.type)) ;
+        dr.addfield('set_number', DataValue.fromInteger(item.set_number)) ;
+        dr.addfield('match_number', DataValue.fromInteger(item.match)) ;
+        dr.addfield('team_key', DataValue.fromString(item.teamkey)) ;
 
         for(let field of data) {
             dr.addfield(field.tag, field.value) ;

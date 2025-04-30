@@ -49,7 +49,14 @@ class DBView extends TabulatorView {
 
         if (args) {
             cols = args[0].cols ;
-            data = args[0].data ;
+            data = [] ;
+            for(let one of args[0].data) {
+                let record = {} ;
+                for(let col of cols) {
+                    record[col] = one.data_.get(col) ;
+                }
+                data.push(record) ;
+            }
         }
         else {
             cols = [] ;

@@ -3,45 +3,14 @@ import * as fs from 'fs' ;
 import winston from 'winston';
 import { format } from '@fast-csv/format';
 import { EventEmitter } from 'events';
+import { DataValueType } from './datavalue';
+import { DataRecord } from './datarecord';
 
-export type ValueType = string | number | boolean | null ;
-
-export interface FieldAndType
+export interface ColumnDesc
 {
     name: string ;
-    type: string ;
-    datatype?: string ;
+    type: DataValueType ;
 } ;
-
-export class DataRecord {
-    private data_ : Map<string, ValueType> ;
-
-
-    public constructor() {
-        this.data_ = new Map<string, ValueType>() ;
-    }
-
-    public addfield(name: string, value : ValueType) {
-        this.data_.set(name, value) ;
-    }
-
-    public keys() : string[] {
-        let ret: string[] = [] ;
-
-        for(let key of this.data_.keys()) {
-            ret.push(key) ;
-        }
-        return ret ;
-    }
-
-    public has(key: string) : boolean {
-        return this.data_.has(key) ;
-    }
-
-    public value(key: string) : ValueType | undefined {
-        return this.data_.get(key) ;
-    }
-}
 
 export abstract class DataModel extends EventEmitter {
     private static readonly ColummTableName: string = 'cols' ;
@@ -50,9 +19,11 @@ export abstract class DataModel extends EventEmitter {
     private dbname_ : string ;
     private db_? : sqlite3.Database ;
     private logger_ : winston.Logger ;
+    private col_descs_ : ColumnDesc[] = [] ;
 
-    constructor(dbname: string, logger: winston.Logger) {
+    constructor(dbname: string, coldescs: ColumnDesc[], logger: winston.Logger) {
         super() ;
+        this.col_descs_ = coldescs ;
         this.dbname_ = dbname ;
         this.logger_ = logger ;
     }
@@ -63,7 +34,7 @@ export abstract class DataModel extends EventEmitter {
         }
     }
 
-    public getData(table: string, field: string, fvalues: any[], data: string[]) : Promise<any[]> {
+    public getData(table: string, field: string, fvalues: any[], data: string[]) : Promise<DataRecord[]> {
         let ret = new Promise<any[]>(async (resolve, reject) => {
             let query = 'SELECT ' ;
             query += this.createCommaList(data) ;
@@ -90,12 +61,26 @@ export abstract class DataModel extends EventEmitter {
 
             try {
                 let result = await this.all(query) ;
-                resolve(result) ;
+                resolve(this.convertToDataRecords(result)) ;
             }
             catch(err) {
                 reject(err) ;
             }
         }) ;
+
+        return ret ;
+    }
+
+    private convertToDataRecords(rows: any[]) : DataRecord[] {
+        let ret: DataRecord[] = [] ;
+
+        for(let row of rows) {
+            let dr = new DataRecord() ;
+            for(let key of Object.keys(row)) {
+                dr.addfield(key, row[key]) ;
+            }
+            ret.push(dr) ;
+        }
 
         return ret ;
     }
@@ -194,12 +179,12 @@ export abstract class DataModel extends EventEmitter {
         return ret ;
     }
 
-    public getAllData(table: string) : Promise<any> {
+    public getAllData(table: string) : Promise<DataRecord[]> {
         let ret = new Promise<any>((resolve, reject) => {
             let query = 'select * from ' + table + ';' ;
             this.all(query)
                 .then((rows) => {
-                    resolve(rows as any) ;
+                    resolve(this.convertToDataRecords(rows)) ;
                 })
                 .catch((err) => {
                     reject(err) ;
@@ -289,7 +274,7 @@ export abstract class DataModel extends EventEmitter {
         return ret ;
     }
 
-    private containsField(fields: FieldAndType[], name: string) {
+    private containsField(fields: ColumnDesc[], name: string) {
         for(let f of fields) {
             if (f.name === name)
                 return true ;
@@ -299,7 +284,7 @@ export abstract class DataModel extends EventEmitter {
     }
 
     protected addColsAndData(table: string, keys: string[], records: DataRecord[]) : Promise<void> {
-        let fields: FieldAndType[] = [] ;
+        let fields: ColumnDesc[] = [] ;
 
         //
         // Find the unique set of fields across all records and associated type
@@ -344,7 +329,7 @@ export abstract class DataModel extends EventEmitter {
         return field ;
     }
 
-    public addNecessaryCols(table: string, fields: FieldAndType[]) : Promise<void> {
+    public addNecessaryCols(table: string, fields: ColumnDesc[]) : Promise<void> {
         let ret = new Promise<void>(async (resolve, reject) => {
             let existing: string[] = [] ;
                 
@@ -355,7 +340,7 @@ export abstract class DataModel extends EventEmitter {
                 reject(err) ;
             }
 
-            let toadd: FieldAndType[] = [] ;
+            let toadd: ColumnDesc[] = [] ;
             for(let key of fields) {
                 if (!existing.includes(key.name)) {
                     toadd.push(key) ;
@@ -377,26 +362,17 @@ export abstract class DataModel extends EventEmitter {
         return ret;
     }
 
-    protected extractType(key: string, records: DataRecord[]) {
-        let type: string = '' ;
+    protected extractType(key: string, records: DataRecord[]) : DataValueType {
+        let type: DataValueType = 'error' ;
 
         for(let record of records) {
             if (record.has(key)) {
-                let v = record.value(key) ;
-
-                if (v === null) {
-                    type = 'TEXT' ;
-                }
-                else if (typeof v === 'string') {
-                    type = 'TEXT' ;
-                }
-                else if (typeof v === 'number') {
-                    type = 'REAL' ;
-                }
-                else if (typeof v === 'boolean') {
-                    type = 'INTEGER'
-                }
+                let v = record.value(key)! ;
+                type = v.type ;
                 break ;
+            }
+            else {
+                type = 'error' ;
             }
         }
 
@@ -442,42 +418,21 @@ export abstract class DataModel extends EventEmitter {
         return ret ;
     }
     
-    private valueToString(v: ValueType) {
-        let ret: string ;
-
-        if (typeof v === 'string') {
-            ret = '\'' ;
-            for(let ch of v) {
-                if (ch === '\'') {
-                    ret += '\'\'' ;
-                }
-                else {
-                    ret += ch ;
-                }
-            }
-            ret += '\'' ;
-        }
-        else if (v === null) {
-            ret = 'NULL' ;
-        }
-        else {
-            ret = v!.toString() ;
-        }
-
-        return ret ;
-    }
-
     private generateWhereClause(keys: string[], dr: DataRecord) : string {
         let query = ' WHERE ' ;
         let first = true ;
 
         for(let i = 0 ; i < keys.length ; i++) {
+            if (!dr.has(keys[i])) {    
+                continue ;
+            }
+
             if (!first) {
                 query += ' AND ' ;
             }
             query += keys[i] ;
             query += ' = ' ;
-            query += this.valueToString(dr.value(keys[i])!) ;
+            query += dr.value(keys[i])!.toValueString() ;
 
             first = false ;
         }
@@ -497,7 +452,7 @@ export abstract class DataModel extends EventEmitter {
                         query += ', ' ;
                     }
 
-                    query += key + '=' + this.valueToString(v!) ;
+                    query += key + '=' + v!.toValueString() ;
                     first = false ;
                 }
             }
@@ -529,7 +484,7 @@ export abstract class DataModel extends EventEmitter {
                 }
 
                 query += key ;
-                valstr += this.valueToString(v!) ;
+                valstr += v!.toValueString() ;
                 first = false ;
             }
 
@@ -573,33 +528,40 @@ export abstract class DataModel extends EventEmitter {
         return ret;
     }
 
-    public removeColumns(table: string, cols: string[]): Promise<void> {
+    public removeColumns(table: string, cols: string[], desc: ColumnDesc[]): Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
-            let allpromises = [] ;
+            let all : Promise<sqlite3.RunResult>[] = [] ;
 
             for(let one of cols) {
-                let query: string = 'alter table ' + table + ' drop column ' + one + ';' ;
-                let pr = this.runQuery(query) ;
-                allpromises.push(pr) ;
+                if (desc.find((col => col.name === one)) !== undefined) {
+                    let query: string = 'alter table ' + table + ' drop column ' + one + ';' ;
+                    let pr = this.runQuery(query) ;
+                    all.push(pr) ;
+                }
             }
 
-            Promise.all(allpromises)
-                .then(() => {
-                    for(let col of cols) {
-                        this.emit('column-added', col) ;
-                    }
-                    resolve();
-                })
-                .catch((err) => {
-                    this.logger_.error('error removing columns in table \'' + table + '\'', err) ;
-                    reject(err)
-                }) ;            
+            if (all.length === 0) {
+                resolve() ;
+            }
+            else {
+                Promise.all(all)
+                    .then(() => {
+                        for(let col of cols) {
+                            this.emit('column-removed', col) ;
+                        }
+                        resolve();
+                    })
+                    .catch((err) => {
+                        this.logger_.error('error removing columns in table \'' + table + '\'', err) ;
+                        reject(err)
+                    }) ;      
+                }      
         }) ;
         return ret ;
     }
 
 
-    public createColumns(table: string, toadd:FieldAndType[]) : Promise<void> {
+    public createColumns(table: string, toadd:ColumnDesc[]) : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
             let allpromises = [] ;
 
@@ -612,7 +574,7 @@ export abstract class DataModel extends EventEmitter {
             Promise.all(allpromises)
                 .then(() => {
                     for(let col of toadd) {
-                        this.emit('column-added', col.name) ;
+                        this.emit('column-added', col) ;
                     }
                     resolve();
                 })
@@ -626,7 +588,7 @@ export abstract class DataModel extends EventEmitter {
     }
 
     protected abstract createTableQuery() : string ;
-    protected abstract initialTableColumns() : string[] ;
+    protected abstract initialTableColumns() : ColumnDesc[] ;
 
     protected createTableIfNecessary(table: string) : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {

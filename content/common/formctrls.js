@@ -43,6 +43,32 @@ class FormControl {
     callback(changed) {
         this.editdone(changed) ;
     }
+
+    deduceDataType(opts) {
+        let datatype = 'integer' ;
+        for(let opt of opts) {
+            if (!Number.isInteger(opt)) {
+                datatype = undefined ;
+                break ;
+            }
+        }
+
+        if (!datatype) {
+            datatype = 'real' ;
+            for(let opt of opts) {
+                let f = Number.parseFloat(opt) ;
+                if (Number.isNaN(f)) {
+                    datatype = undefined ;
+                    break ;
+                }
+            }
+        }
+
+        if (!datatype) {
+            datatype = 'text' ;
+        }
+        return datatype ;
+    }
 }
 
 class LabelFormControl extends FormControl {
@@ -60,6 +86,7 @@ class LabelFormControl extends FormControl {
                 color: 'black',
                 tag: ptag,
                 text: 'Label',
+                datatype: 'none',
             }) ;
     }
 
@@ -135,6 +162,7 @@ class TextFormControl extends FormControl {
                 color: 'black',
                 tag: ptag,
                 placeholder: 'Enter text here',
+                datatype: 'text',
             }) ;
     }
 
@@ -211,6 +239,7 @@ class BooleanFormControl extends FormControl {
                 color: 'blue',
                 backcolor: 'white',
                 tag: ptag,
+                datatype: 'boolean',
             }) ;
     }
 
@@ -297,6 +326,7 @@ class UpDownFormControl extends FormControl {
                 tag: ptag,
                 minvalue: 0,
                 maxvalue: 100,
+                datatype: 'integer',
             }) ;
     }
 
@@ -438,13 +468,13 @@ class MultipleChoiceFormControl extends FormControl {
                 font: 'Arial',
                 fontsize: 24,
                 tag: ptag,
-                data: 'integer',
                 orientation: 'vertical',
                 choices: [
                     { text: 'Choice 1', value: 1},
                     { text: 'Choice 2', value: 2 },
                     { text: 'Choice 3', value: 3 },
                 ],
+                datatype: 'integer',
             }) ;
 
         this.choices_ctrls_ = [] ;
@@ -645,7 +675,6 @@ class SelectFormControl extends FormControl {
                 width: pwidth,
                 height: pheight,
                 tag: ptag,
-                data: 'integer',
                 font: 'Arial',
                 fontsize: 24,
                 choices: [
@@ -653,6 +682,7 @@ class SelectFormControl extends FormControl {
                     { text: 'Choice 2', value: 2 },
                     { text: 'Choice 3', value: 3 },
                 ],
+                datatype: 'integer',
             }) ;
         this.select_ctrls_ = [] ;
     }
