@@ -92,21 +92,26 @@ export abstract class DataModel extends EventEmitter {
 
                 if (col) {
                     try {
-                        switch(col.type) {
-                            case 'integer':
-                                v = DataValue.fromInteger(row[key]) ;
-                                break ;
-                            case 'real':
-                                v = DataValue.fromReal(row[key]) ;
-                                break ;
-                            case 'string':
-                                v = DataValue.fromString(row[key]) ;
-                                break ;
-                            case 'boolean':
-                                v = DataValue.fromBoolean(row[key]) ;
-                                break ;
-                            default:
-                                v = DataValue.fromError(new Error('Unknown type \'' + col.type + '\' for column \'' + key + '\'')) ;
+                        if (row[key] === null) {
+                            v = DataValue.nullValue() ;
+                        }
+                        else {
+                            switch(col.type) {
+                                case 'integer':
+                                    v = DataValue.fromInteger(row[key]) ;
+                                    break ;
+                                case 'real':
+                                    v = DataValue.fromReal(row[key]) ;
+                                    break ;
+                                case 'string':
+                                    v = DataValue.fromString(row[key]) ;
+                                    break ;
+                                case 'boolean':
+                                    v = DataValue.fromBoolean(row[key]) ;
+                                    break ;
+                                default:
+                                    v = DataValue.fromError(new Error('Unknown type \'' + col.type + '\' for column \'' + key + '\'')) ;
+                            }
                         }
                     }
                     catch(err) {
@@ -235,11 +240,11 @@ export abstract class DataModel extends EventEmitter {
     }
 
     public getAllData(table: string) : Promise<DataRecord[]> {
-        let ret = new Promise<any>((resolve, reject) => {
+        let ret = new Promise<DataRecord[]>((resolve, reject) => {
             let query = 'select * from ' + table + ';' ;
             this.all(query)
                 .then((rows) => {
-                    resolve(this.convertToDataRecords(rows)) ;
+                    resolve(rows) ;
                 })
                 .catch((err) => {
                     reject(err) ;

@@ -210,6 +210,10 @@ class XeroView {
     static formatDataValue(v) {
         let ret = '?' ;
         switch(v.type) {
+            case 'null' : 
+                ret = '<NULL>' ;
+                break ;
+                
             case 'integer':
                 ret = v.value_.toString() ;
                 break ;

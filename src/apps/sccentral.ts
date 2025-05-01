@@ -95,6 +95,7 @@ export class SCCentral extends SCBase {
 	private ba_?: BlueAlliance = undefined;
 	private statbotics_?: StatBotics = undefined;
 	private baloading_: boolean;
+	private bacount_ : number ;
 	private tcpsyncserver_?: TCPSyncServer = undefined;
 	private previewfile_?: string = undefined;
 	private baevents_?: BAEvent[];
@@ -113,6 +114,8 @@ export class SCCentral extends SCBase {
 
 		this.color_ = 'blue' ;
 		this.reversed_ = false ;
+		this.baloading_ = false ;
+		this.bacount_ = 0 ;
 
 		for (let arg of args) {
 			if (arg.startsWith('--year:')) {
@@ -126,21 +129,34 @@ export class SCCentral extends SCBase {
 		}
 
 		this.statbotics_ = new StatBotics(this.year_);
+		this.tryConnectBlueAlliance() ;
+	}
 
+	private tryAgain() {
+		setTimeout(() => {
+			this.logger_.info(`trying to connect (${this.bacount_}) to blue alliance again`) ;
+			this.tryConnectBlueAlliance() ;
+		}, 5000) ;
+	}
+
+	private async tryConnectBlueAlliance() {
 		this.baloading_ = true;
 		this.ba_ = new BlueAlliance(this.year_);
+		this.bacount_++ ;
 		this.ba_
 			.init()
 			.then((up) => {
 				if (!up) {
 					this.ba_ = undefined;
+					this.tryAgain() ;
 				} else {
+					this.logger_.info('connected to the blue alliance site') ;
 					this.baloading_ = false;
 				}
 			})
 			.catch((err) => {
-				this.ba_ = undefined;
-			});
+				this.tryAgain() ;
+			});		
 	}
 
 	public get applicationType(): XeroAppType {
@@ -931,7 +947,7 @@ export class SCCentral extends SCBase {
 						.then((data) => {
 							let dataobj = {
 								cols: cols,
-								data: data,
+								data: data
 							};
 							this.sendToRenderer('send-team-col-config', this.project_!.data_mgr_!.getTeamColConfig()) ;
 							this.sendToRenderer('send-team-db', dataobj);
@@ -987,19 +1003,23 @@ export class SCCentral extends SCBase {
 					this.sendToRenderer('send-event-data', frcevs);
 				})
 				.catch((err) => {
+					this.ba_ = undefined ;
+					this.tryConnectBlueAlliance() ;
+					this.setView('info');
+					
 					let errobj: Error = err as Error;
 					dialog.showMessageBoxSync(this.win_, {
 						title: 'Load Blue Alliance Event',
 						message: errobj.message,
 					});
-					this.setView('info');
+
 				});
 		} else {
 			dialog.showErrorBox(
 				'Load Blue Alliance Event',
 				'The Blue Alliance site is not available'
 			);
-			this.sendToRenderer('send-event-data', null);
+			this.setView('info') ;
 		}
 	}
 
@@ -1183,7 +1203,7 @@ export class SCCentral extends SCBase {
 		}
 
 		if (!this.isBAAvailable()) {
-			let html = "The Blue Alliance site is not available.";
+			let html = "The Statbotics site is not available.";
 			this.sendToRenderer("set-status-visible", true);
 			this.sendToRenderer("set-status-title", "Error Importing Match Data");
 			this.sendToRenderer("set-status-html", html);

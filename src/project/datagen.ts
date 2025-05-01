@@ -82,8 +82,16 @@ export class DataGenerator
         let value = undefined ;
 
         if (item.type === 'text') {
-            let index = this.getRandomInt(DataGenerator.randomStrings.length) ;
-            value = DataValue.fromString(DataGenerator.randomStrings[index]) ;
+            if (item.datatype === 'integer') {
+                value  = DataValue.fromInteger(this.getRandomInt(1000)) ;
+            }
+            else if (item.datatype === 'real') {
+                value = DataValue.fromReal(Math.random() * 1000.0) ;
+            }
+            else if (item.datatype === 'string') {
+                let index = this.getRandomInt(DataGenerator.randomStrings.length) ;
+                value = DataValue.fromString(DataGenerator.randomStrings[index]) ;
+            }
         }
         else if (item.type === 'choice' || item.type === 'select') {
             let i = this.getRandomInt(item.choices.length) ;

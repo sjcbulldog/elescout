@@ -38,6 +38,24 @@ class DBView extends TabulatorView {
         }
     }
 
+    
+	convertDataRecord(data) {
+		let ret = {} ;
+		for (let key of Object.keys(data)) {
+            ret[key] = data[key].value_ ;
+        }
+		return ret ;
+	}
+
+	convertDataSet(dataset) {
+		let ret = [] ;
+		for (let one of dataset) {
+			let obj = this.convertDataRecord(one) ;
+			ret.push(obj) ;
+		}
+		return ret ;
+	}
+
     //
     // Called when the data for the table shows up.
     //
@@ -68,7 +86,7 @@ class DBView extends TabulatorView {
 
         this.table_ = new Tabulator(this.table_div_, 
             {
-                data:data,
+                data:this.convertDataSet(data),
                 layout:"fitData",
                 resizableColumnFit:true,
                 columns: this.generateColDesc(cols),

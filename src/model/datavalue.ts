@@ -1,4 +1,4 @@
-export type DataValueType = "integer" | "real" | "string" | "boolean" | "array" | "error"  ;
+export type DataValueType = "integer" | "real" | "string" | "boolean" | "array" | "null" | "error"  ;
 
 export class DataValue {
     private value_: unknown ;
@@ -11,6 +11,10 @@ export class DataValue {
 
     static isValidType(type: DataValueType): boolean {
         return ['integer', 'real', 'string', 'boolean', 'error', 'array'].includes(type);
+    }
+
+    static nullValue() {
+        return new DataValue(null, 'null') ;
     }
 
     static fromArray(value: Array<DataValue>): DataValue {
@@ -42,6 +46,10 @@ export class DataValue {
 
     static fromBoolean(value: boolean): DataValue {
         return new DataValue(value, 'boolean');
+    }
+
+    public isNull() : boolean {
+        return this.type === 'null' ;
     }
 
     public isInteger() : boolean {

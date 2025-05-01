@@ -4,14 +4,14 @@ import { TeamDataModel } from "../model/teammodel";
 import * as path from 'path' ;
 import { Manager } from "./manager";
 import { FormulaManager } from "./formulamgr";
-import { parseExpression, ParseResult } from '@babel/parser';
-import evaluate, { registerFunction } from 'ts-expression-evaluator'
+import { parseExpression } from '@babel/parser';
+import evaluate from 'ts-expression-evaluator'
 import { Expression } from "ts-expression-evaluator/build/main/lib/t";
 import { OneScoutResult, ScoutingData } from "../comms/resultsifc";
 import { BAMatch, BAOprData, BARankingData, BATeam } from "../extnet/badata";
 import { ColumnDesc } from "../model/datamodel";
 import { MatchSet } from "./datasetmgr";
-import { DataValue, DataValueType } from "../model/datavalue";
+import { DataValue } from "../model/datavalue";
 
 export interface ProjectOneColCfg {
     name: string,

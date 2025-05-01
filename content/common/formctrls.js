@@ -24,6 +24,9 @@ class FormControl {
         }
     }
 
+    updateFromItem() {
+    }
+
     createForEdit(parent) {
     }
 
@@ -96,6 +99,13 @@ class LabelFormControl extends FormControl {
         return ret ;
     }
 
+    updateFromItem() {
+        this.ctrl.innerText = this.item.text ;
+        this.ctrl.style.fontFamily = this.item.font ;
+        this.ctrl.style.fontSize = this.item.fontsize + 'px' ;
+        this.ctrl.style.color = this.item.color ;
+    }
+
     create(parent) {
         let label = document.createElement('p') ;
         label.className = 'form-view-label' ;
@@ -166,13 +176,25 @@ class TextFormControl extends FormControl {
             }) ;
     }
 
+    updateFromItem() {
+        this.ctrl.tag = this.item.tag ;
+        this.ctrl.value = this.item.placeholder ;
+        this.ctrl.style.fontFamily = this.item.font ;
+        this.ctrl.style.fontSize = this.item.fontsize + 'px' ;
+        this.ctrl.style.color = this.item.color ;
+    }
+
     clone(tag) {
         let ret = new TextFormControl(this.editdone, tag, this.item.x, this.item.y, this.item.width, this.item.height) ;
         ret.update(this.item, true) ;
         return ret ;
     }
 
-    updateControl() {
+    create(parent) {
+        let input = document.createElement('input') ;
+        input.className = 'form-view-text-input' ;
+        this.ctrl = input ;
+
         if (this.item.datatype === 'integer') {
             this.ctrl.type = 'number' ;
             this.ctrl.step = '1' ;
@@ -184,14 +206,7 @@ class TextFormControl extends FormControl {
         else if (this.item.datatype === 'string') {
             this.ctrl.type = 'text' ;
         }
-    }
-
-    create(parent) {
-        let input = document.createElement('input') ;
-        input.className = 'form-view-text-input' ;
-        this.ctrl = input ;
         
-        this.updateControl() ;
         input.style.position = 'absolute' ;
         input.style.left = this.item.x + 'px' ;
         input.style.top = this.item.y + 'px' ;
@@ -257,6 +272,11 @@ class BooleanFormControl extends FormControl {
                 tag: ptag,
                 datatype: 'boolean',
             }) ;
+    }
+
+    updateFromItem() {
+        this.formctrl_.ctrl.tag = this.item.tag ;
+        this.formctrl_.ctrl.firstElementChild.style.accentColor = this.item.color ;
     }
 
     clone(tag) {
@@ -344,6 +364,21 @@ class UpDownFormControl extends FormControl {
                 maxvalue: 100,
                 datatype: 'integer',
             }) ;
+    }
+
+    updateFromItem() {
+        this.formctrl_.ctrl.tag = this.item.tag ;
+        this.formctrl_.upbutton_.style.fontFamily = this.item.font ;
+        this.formctrl_.upbutton_.style.fontSize = this.item.fontsize + 'px' ;
+        this.formctrl_.upbutton_.style.color = this.item.color ;
+
+        this.formctrl_.downbutton_.style.fontFamily = this.item.font ;
+        this.formctrl_.downbutton_.style.fontSize = this.item.fontsize + 'px' ;
+        this.formctrl_.downbutton_.style.color = this.item.color ;
+
+        this.formctrl_.count_.style.fontFamily = this.item.font ;
+        this.formctrl_.count_.style.fontSize = this.item.fontsize + 'px' ;
+        this.formctrl_.count_.style.color = this.item.color ;
     }
 
     clone(tag) {
@@ -505,6 +540,12 @@ class MultipleChoiceFormControl extends FormControl {
                 this.item.choices.push({ text: choice.text, value: choice.value }) ;
             }
         }
+    }
+
+    updateFromItem() {
+        this.formctrl_.ctrl.tag = this.item.tag ;
+        this.formctrl_.item.choices = [] ;
+        this.formctrl_.updateChoices() ;        
     }
 
     clone(tag) {
@@ -712,6 +753,11 @@ class SelectFormControl extends FormControl {
                 this.item.choices.push({ text: choice.text, value: choice.value }) ;
             }
         }
+    }
+
+    updateFromitem() {
+        this.formctrl_.ctrl.tag = this.item.tag ;
+        this.formctrl_.updateChoices() ;
     }
 
     clone(tag) {
