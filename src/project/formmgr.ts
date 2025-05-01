@@ -44,7 +44,7 @@ export class FormManager extends Manager {
 
     result = this.extractMatchFormFields();
     if (result instanceof Error) {
-      this.logger_.error("Error getting team form fields: " + result.message);
+      this.logger_.error("Error getting match form fields: " + result.message);
       return result;
     }
     this.info_.match_form_columns_ = result as ColumnDesc[];
@@ -387,7 +387,7 @@ export class FormManager extends Manager {
           itemno +
           "the field 'type' is " +
           item.type +
-          " which is not valid.  Must be 'boolean', 'text', 'updown', or 'choice'"
+          " which is not valid.  Must be 'boolean', 'text', 'updown', 'choice', or 'select'"
       );
     }
 
@@ -635,12 +635,14 @@ export class FormManager extends Manager {
     try {
       let jsonobj = FormManager.readJSONFile(formfile);
       for (let section of jsonobj.sections) {
-        for (let item of section.items) {
-          let field: ColumnDesc = {
-            name: item.tag,
-            type: item.datatype
-          };
-          ret.push(field);
+        if (section.items && Array.isArray(section.items)) {
+          for (let item of section.items) {
+            let field: ColumnDesc = {
+              name: item.tag,
+              type: item.datatype
+            };
+            ret.push(field);
+          }
         }
       }
     } catch (err) {

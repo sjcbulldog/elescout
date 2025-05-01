@@ -1,7 +1,9 @@
  class EditFormDialog {
 
-    constructor(close) {
+    constructor(close, title) {
+        this.title_ = title ;
         this.closecb = close ;
+        this.moving_ = false ;
     }
 
     showRelative(win) {
@@ -10,7 +12,12 @@
         this.popup_.enabled = true ;
         this.popup_.className = 'popup-form-edit-dialog' ;
 
-        this.popup_.style.zIndex = 1000 ;
+        this.topbar_ = document.createElement('div') ;
+        this.topbar_.className = 'popup-form-edit-dialog-topbar' ;
+        if (this.title_) {
+            this.topbar_.innerHTML = this.title_ ;
+        }
+        this.popup_.appendChild(this.topbar_) ;
 
         this.client_area_ = document.createElement('div') ;
         this.client_area_.className = 'popup-form-edit-dialog-client' ;
@@ -26,7 +33,7 @@
         let prect = win.getBoundingClientRect() ;
         let drect = this.popup_.getBoundingClientRect() ;
         let x = (prect.width - drect.width) / 2 ;
-        let y = (prect.height - drect.height) / 2 ;
+        let y = (prect.height - drect.height) / 8 ;
 
         this.popup_.style.left = x + 'px' ;
         this.popup_.style.top = y + 'px' ;
@@ -36,6 +43,40 @@
 
         this.keydownbind_ = this.keyDown.bind(this) ;
         document.addEventListener('keydown', this.keydownbind_) ;
+        this.topbar_.addEventListener('mousedown', this.mouseDown.bind(this)) ;
+    }
+
+    mouseDown(event) {
+        if (event.button === 0) {
+            this.moving_ = true ;
+            this.startx_ = event.clientX ;
+            this.starty_ = event.clientY ;
+
+            this.startleft_ = parseInt(this.popup_.style.left) ;
+            this.starttop_ = parseInt(this.popup_.style.top) ;
+
+            document.addEventListener('mousemove', this.mouseMove.bind(this)) ;
+            document.addEventListener('mouseup', this.mouseUp.bind(this)) ;
+        }
+    }
+
+    mouseMove(event) {
+        if (this.moving_) {
+            let dx = event.clientX - this.startx_ ;
+            let dy = event.clientY - this.starty_ ;
+            let left = this.startleft_ + dx ;
+            let top = this.starttop_ + dy ;
+            this.popup_.style.left = left + 'px' ;
+            this.popup_.style.top = top + 'px' ;
+        }
+    }
+
+    mouseUp(event) {
+        if (this.moving_) {
+            this.moving_ = false ;
+            document.removeEventListener('mousemove', this.mouseMove.bind(this)) ;
+            document.removeEventListener('mouseup', this.mouseUp.bind(this)) ;
+        }
     }
 
     keyDown(event) {
@@ -125,8 +166,8 @@ class EditSectionNameDialog extends EditFormDialog {
 }
 
 class EditFormControlDialog extends EditFormDialog {
-    constructor(close) {
-        super(close) ;
+    constructor(close, title) {
+        super(close, title) ;
     }
 
     okButton(event) {
@@ -140,7 +181,7 @@ class EditFormControlDialog extends EditFormDialog {
 
 class EditFormLabelDialog extends EditFormControlDialog {
     constructor(close, formctrl) {
-        super(close) ;
+        super(close, 'Edit Label') ;
 
         this.formctrl_ = formctrl ;
     }
@@ -229,6 +270,8 @@ class EditFormTextDialog extends EditFormControlDialog {
     }
 
     async populateDialog(pdiv) {
+        let label , option ;
+
         let div = document.createElement('div') ;
         div.className = 'popup-form-edit-dialog-rowdiv' ;
 
@@ -237,10 +280,32 @@ class EditFormTextDialog extends EditFormControlDialog {
         this.tag_.className = 'popup-form-edit-dialog-input' ;
         this.tag_.value = this.formctrl_.item.tag ;
 
-        let label = document.createElement('label') ;
+        label = document.createElement('label') ;
         label.className = 'popup-form-edit-dialog-label' ;
         label.innerText = 'Tag' ;
         label.appendChild(this.tag_) ;
+        div.appendChild(label) ;
+
+        this.data_type_ = document.createElement('select') ;
+        this.data_type_.className = 'popup-form-edit-dialog-select' ;
+        option = document.createElement('option') ;
+        option.value = 'string' ;
+        option.innerText = 'String' ;
+        this.data_type_.appendChild(option) ;
+        option = document.createElement('option') ;
+        option.value = 'integer' ;
+        option.innerText = 'Integer' ;
+        this.data_type_.appendChild(option) ;
+        option = document.createElement('option') ;
+        option.value = 'real' ;
+        option.innerText = 'Float' ;
+        this.data_type_.appendChild(option) ;
+        this.data_type_.value = this.formctrl_.item.datatype ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Data Type' ;
+        label.appendChild(this.data_type_) ;
         div.appendChild(label) ;
 
         this.placeholder_ = document.createElement('input') ;
@@ -258,7 +323,7 @@ class EditFormTextDialog extends EditFormControlDialog {
         this.font_name_.className = 'popup-form-edit-dialog-select' ;
         let fonts = await window.queryLocalFonts() ;
         for(let font of fonts) {
-            let option = document.createElement('option') ;
+            option = document.createElement('option') ;
             option.value = font.fullName ;
             option.innerText = font.fullName ;
             this.font_name_.appendChild(option) ;
@@ -301,6 +366,9 @@ class EditFormTextDialog extends EditFormControlDialog {
     extractData() {
         this.formctrl_.item.tag = this.tag_.value ;
         this.formctrl_.ctrl.tag = this.tag_.value ;
+        
+        this.formctrl_.item.datatype = this.data_type_.value ;
+        this.formctrl_.updateControl() ;
 
         this.formctrl_.item.placeholder = this.placeholder_.value ;
         this.formctrl_.ctrl.value = this.placeholder_.value ;
@@ -887,8 +955,6 @@ class EditFormView extends XeroView {
     constructor(div, type, args) {
         super(div, type) ;
 
-        console.log(`EditFormView: creating new form view - type ${args[1]}`) ;
-
         this.formctrlitems_ = [] ;
 
         this.popup_ = undefined ;
@@ -1445,15 +1511,12 @@ class EditFormView extends XeroView {
     }
 
     modified() {
-        console.log(`EditFormView: saving form - type ${this.type_}`) ;
         this.scoutingAPI('save-form', { type: this.type_, contents: this.form_}) ;
     }
 
     close() {
         super.close() ;
         
-        console.log(`EditFormView: closing form view - type ${this.type_}`) ;
-
         document.removeEventListener('contextmenu', this.ctxbind_) ;
         document.removeEventListener('dblclick', this.dblclkbind_) ;
         document.removeEventListener('keydown', this.keydownbind_) ;

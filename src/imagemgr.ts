@@ -101,7 +101,7 @@ export class ImageManager {
     private createImageDir() {
         // Create the image directory if it doesn't exist
         if (this.imagedir_ && !fs.existsSync(this.imagedir_)) {
-            fs.mkdirSync(this.imagedir_) ;
+            fs.mkdirSync(this.imagedir_, { recursive : true}) ;
             if (!fs.existsSync(this.imagedir_)) {
                 this.imagedir_ = undefined ;
             }

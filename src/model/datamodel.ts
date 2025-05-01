@@ -3,7 +3,7 @@ import * as fs from 'fs' ;
 import winston from 'winston';
 import { format } from '@fast-csv/format';
 import { EventEmitter } from 'events';
-import { DataValueType } from './datavalue';
+import { DataValue, DataValueType } from './datavalue';
 import { DataRecord } from './datarecord';
 
 export interface ColumnDesc
@@ -71,13 +71,52 @@ export abstract class DataModel extends EventEmitter {
         return ret ;
     }
 
+    private getColumnDesc(field: string) : ColumnDesc | undefined {
+        for(let col of this.col_descs_) {
+            if (col.name === field) {
+                return col ;
+            }
+        }
+
+        return undefined ;
+    }
+
     private convertToDataRecords(rows: any[]) : DataRecord[] {
         let ret: DataRecord[] = [] ;
 
         for(let row of rows) {
             let dr = new DataRecord() ;
             for(let key of Object.keys(row)) {
-                dr.addfield(key, row[key]) ;
+                let col = this.getColumnDesc(key) ;
+                let v : DataValue | undefined = undefined ;
+
+                if (col) {
+                    try {
+                        switch(col.type) {
+                            case 'integer':
+                                v = DataValue.fromInteger(row[key]) ;
+                                break ;
+                            case 'real':
+                                v = DataValue.fromReal(row[key]) ;
+                                break ;
+                            case 'string':
+                                v = DataValue.fromString(row[key]) ;
+                                break ;
+                            case 'boolean':
+                                v = DataValue.fromBoolean(row[key]) ;
+                                break ;
+                            default:
+                                v = DataValue.fromError(new Error('Unknown type \'' + col.type + '\' for column \'' + key + '\'')) ;
+                        }
+                    }
+                    catch(err) {
+                        v = DataValue.fromError(err as Error) ;
+                    }
+                }
+                else {
+                    v = DataValue.fromError(new Error('Column \'' + key + '\' not found in column descriptions')) ;
+                }
+                dr.addfield(key, v) ;
             }
             ret.push(dr) ;
         }
@@ -163,7 +202,7 @@ export abstract class DataModel extends EventEmitter {
         return ret ;
     }
 
-    public all(query: string) : Promise<unknown[]> {
+    public allRaw(query: string) : Promise<unknown[]> {
         let ret = new Promise<unknown[]>((resolve, reject) => {
             let qno = DataModel.queryno_++ ;
             this.logger_.debug('DATABASE: ' + qno + ': all \'' + query + '\'') ;
@@ -173,6 +212,22 @@ export abstract class DataModel extends EventEmitter {
                 }
                 else {
                     resolve(rows) ;
+                }
+            }) ;
+        }) ;
+        return ret ;
+    }
+
+    public all(query: string) : Promise<DataRecord[]> {
+        let ret = new Promise<DataRecord[]>((resolve, reject) => {
+            let qno = DataModel.queryno_++ ;
+            this.logger_.debug('DATABASE: ' + qno + ': all \'' + query + '\'') ;
+            this.db_?.all(query, (err, rows) => {
+                if (err) {
+                    reject(err) ;
+                }
+                else {
+                    resolve(this.convertToDataRecords(rows)) ;
                 }
             }) ;
         }) ;
@@ -224,7 +279,7 @@ export abstract class DataModel extends EventEmitter {
     public getTableNames() : Promise<string[]> {
         let ret = new Promise<string[]>((resolve, reject) => {
             let query = 'SELECT name FROM sqlite_schema WHERE type =\'table\' AND name NOT LIKE \'sqlite_%\';' ;
-            this.all(query)
+            this.allRaw(query)
                 .then((rows) => {
                     let tables: string[] = [] ;
                     for(let row of rows) {
@@ -243,7 +298,7 @@ export abstract class DataModel extends EventEmitter {
     public getColumnNames(table: string, comparefn? : ((a: string, b: string) => number)) : Promise<string[]> {
         let ret = new Promise<string[]>((resolve, reject) => {
             let query = 'SELECT * FROM sqlite_schema where name=\'' + table + '\';' ;
-            this.all(query)
+            this.allRaw(query)
                 .then((rows) => {
                     let one = rows[0] as any ;
                     let cols = this.parseSql(one.sql) ;
@@ -560,13 +615,36 @@ export abstract class DataModel extends EventEmitter {
         return ret ;
     }
 
+    private translateColumnType(type: DataValueType) : string {
+        let ret: string = '' ;
+            
+        switch(type) {
+            case 'integer':
+                ret = 'integer' ;
+                break ;
+            case 'real':
+                ret = 'real' ;
+                break ;
+            case 'string':
+                ret = 'text' ;
+                break ;
+            case 'boolean':
+                ret = 'integer' ;
+                break ;
+            default:
+                ret = 'error' ;
+        }
+    
+        return ret ;
+    }
 
     public createColumns(table: string, toadd:ColumnDesc[]) : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
             let allpromises = [] ;
 
             for(let one of toadd) {
-                let query: string = 'alter table ' + table + ' add column ' + one.name + ' ' + one.type + ';' ;
+                let ctype
+                let query: string = 'alter table ' + table + ' add column ' + one.name + ' ' + this.translateColumnType(one.type) + ';' ;
                 let pr = this.runQuery(query) ;
                 allpromises.push(pr) ;
             }

@@ -65,7 +65,7 @@ class FormControl {
         }
 
         if (!datatype) {
-            datatype = 'text' ;
+            datatype = 'string' ;
         }
         return datatype ;
     }
@@ -162,7 +162,7 @@ class TextFormControl extends FormControl {
                 color: 'black',
                 tag: ptag,
                 placeholder: 'Enter text here',
-                datatype: 'text',
+                datatype: 'string',
             }) ;
     }
 
@@ -172,10 +172,26 @@ class TextFormControl extends FormControl {
         return ret ;
     }
 
+    updateControl() {
+        if (this.item.datatype === 'integer') {
+            this.ctrl.type = 'number' ;
+            this.ctrl.step = '1' ;
+        }
+        else if (this.item.datatype === 'real') {
+            this.ctrl.type = 'number' ;
+            this.ctrl.step = 'any' ;
+        }
+        else if (this.item.datatype === 'string') {
+            this.ctrl.type = 'text' ;
+        }
+    }
+
     create(parent) {
         let input = document.createElement('input') ;
         input.className = 'form-view-text-input' ;
-        input.type = 'text' ;
+        this.ctrl = input ;
+        
+        this.updateControl() ;
         input.style.position = 'absolute' ;
         input.style.left = this.item.x + 'px' ;
         input.style.top = this.item.y + 'px' ;
@@ -188,7 +204,7 @@ class TextFormControl extends FormControl {
         input.disabled = false ;
         input.style.margin = '4px' ;
 
-        this.ctrl = input ;
+
         parent.appendChild(input) ;
     }
 

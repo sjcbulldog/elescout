@@ -207,6 +207,49 @@ class XeroView {
         this.callbacks_ = [];
     }
 
+    static formatDataValue(v) {
+        let ret = '?' ;
+        switch(v.type) {
+            case 'integer':
+                ret = v.value_.toString() ;
+                break ;
+
+            case 'real':
+                ret = v.value_.toFixed(3) ;
+                break ;
+
+            case 'string':
+                ret = v.value_ ;
+                break ;
+
+            case 'boolean':
+                if (v.value_) {
+                    ret = 'true' ;
+                }
+                else {
+                    ret = 'false' ;
+                }
+                break ;
+
+            case 'array':
+                ret = '[' ;
+                for (let i = 0; i < v.value_.length; i++) {
+                    if (i > 0) {
+                        ret += ',' ;
+                    }
+                    ret += XeroView.formatDataValue(v.value_[i]) ;
+                }
+                ret += ']' ;
+                break ;
+
+            case 'error':
+                ret = v.value_.message;
+                break ;
+        }
+
+        return ret ;
+    }
+
     getAbsPosition(element) {
         let offset = {
             x: 0,

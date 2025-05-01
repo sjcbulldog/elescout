@@ -361,26 +361,20 @@ export class DataManager extends Manager {
                         let sorted = this.sortData(data) ;
                         let filtered = this.filterMatchData(m, sorted) ;
 
-                        let dt = this.getDataType(field, filtered) ;
-                        if (dt === 'string') {
-                            resolve(this.processStringData(filtered, field)) ;
+                        let value : DataValue[] = [] ;
+                        for(let row of filtered) {
+                            if (row.has(field)) {
+                                value.push(row.value(field)) ;
+                            }
                         }
-                        else if (dt === 'number') {
-                            resolve(this.processNumberData(filtered, field)) ;
-                        }
-                        else if (dt == 'null') {
-                            resolve(new Error('no data found for field ' + field)) ;
-                        }
-                        else {
-                            resolve(new Error('invalid data type for field ' + field)) ;
-                        }
+                        resolve (DataValue.fromArray(value)) ;
                     }
                     else {
                         resolve(new Error('no data found for field ' + field)) ;
                     }
                 })
                 .catch((err) => {
-                    resolve(NaN);
+                    resolve(DataValue.fromError(err)) ;
                 }) ;
         }) ;
 

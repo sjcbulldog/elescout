@@ -1,4 +1,4 @@
-export type DataValueType = "integer" | "real" | "string" | "boolean" | "error"  ;
+export type DataValueType = "integer" | "real" | "string" | "boolean" | "array" | "error"  ;
 
 export class DataValue {
     private value_: unknown ;
@@ -10,7 +10,11 @@ export class DataValue {
     }
 
     static isValidType(type: DataValueType): boolean {
-        return ['integer', 'real', 'string', 'boolean', 'error', 'list'].includes(type);
+        return ['integer', 'real', 'string', 'boolean', 'error', 'array'].includes(type);
+    }
+
+    static fromArray(value: Array<DataValue>): DataValue {
+        return new DataValue(value, 'array');
     }
 
     static fromError(err: Error) {
@@ -56,6 +60,10 @@ export class DataValue {
         return this.type === 'boolean';
     }
 
+    public isArray() : boolean {
+        return this.type === 'array';
+    }
+
     public isError() : boolean {
         return this.type === 'error';
     }
@@ -88,6 +96,13 @@ export class DataValue {
         return this.value_ as number;
     }
 
+    public toArray() : Array<DataValue> {
+        if (this.type !== 'array') {
+            throw new Error(`Cannot convert ${this.type} to array`);
+        }
+        return this.value_ as Array<DataValue>;
+    }
+
     public toValueString() {
         let ret = '' ;
 
@@ -114,6 +129,16 @@ export class DataValue {
         }
         else if (this.type === 'real') {
             ret = this.toReal().toString() ;
+        }
+        else if (this.type === 'array') {
+            ret = '[' ;
+            for(const v of this.toArray()) {
+                ret += `${v.toValueString()},` ;
+            }
+            if (ret.length > 1) {
+                ret = ret.slice(0, -1) ; // remove last comma
+            }
+            ret += ']' ;
         }
         else if (this.type === 'error') {
             ret = `Error: ${this.toString()}`;

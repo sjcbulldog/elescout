@@ -364,13 +364,8 @@ class SingleTeamView extends XeroView {
     
             td = document.createElement('td') ;
             td.className = 'single-team-report-data-cell' ;
-            if (typeof value === 'number') {
-                td.textContent = value.toFixed(3) ;
-            } else if (value instanceof Error) {
-                td.innerHTML = value.message.replace(/\n/g, '<br>') ;
-            } else {
-                td.innerHTML = value.toString().replace(/\n/g, '<br>') ;
-            }
+            let str = XeroView.formatDataValue(value) ;
+            td.innerText = str ;
             tr.append(td) ;
     
             this.team_report_data_table_.append(tr) ;
