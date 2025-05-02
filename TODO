@@ -14,8 +14,6 @@ Provide access to max, min, stddev for numeric match data
 View: dataset mgr 
       - add/remove icons
       - search for fields
-View: single team view 
-      - add video links
 View: picklist editor 
       - adapt to new dataset model
 View: multi team view 
@@ -26,9 +24,12 @@ View: spider graph
       - adapt to new dataset model
 View: formula manager
       - understand functions, operator, etc.
+
 Scout
 -----
-
+- add sync with IP address option
+- test syncing w/ cable
+- test syncing w/ wi-fi
 
 Attributions
 ------------

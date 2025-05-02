@@ -42,7 +42,8 @@ import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventDa
          saveForm,
          getImages,
          importImage,
-         getImageData} from "./ipchandlers" ;
+         getImageData,
+         updatePicklistColumns} from "./ipchandlers" ;
 import { runUnitTests } from "./units/unittest";
 
 
@@ -94,7 +95,9 @@ function createWindow() : void {
       .loadFile(scappbase!.basePage())
       .then(() => {
       })
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        scappbase?.logger_.error("Error loading page: " + e) ;
+      }) ;
 
     Menu.setApplicationMenu(scappbase!.createMenu()) ;
 
@@ -158,6 +161,7 @@ app.on("ready", () => {
     ipcMain.on('delete-picklist', (event, ...args) => { deletePicklist('delete-picklist', ...args)}) ;
     ipcMain.on('update-picklist-notes', (event, ...args) => { updatePicklistNotes('update-picklist-notes', ...args)}) ;
     ipcMain.on('get-picklist-notes', (event, ...args) => { getPicklistNotes('get-picklist-notes', ...args)}) ;
+    ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('get-picklist-columns', ...args)}) ;
     ipcMain.on('client-log', (event, ...args) => { clientLog('client-log', ...args)}) ;
     ipcMain.on('get-single-team-data', (event, ...args) => { getSingleTeamData('get-single-team-data', ...args)}) ;
     createWindow() ;

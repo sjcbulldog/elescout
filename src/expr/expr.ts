@@ -495,12 +495,21 @@ export class Expr {
         return this.str_ ;
     }
 
+    static total = 0.0 ;
     public evaluate(varvalues: Map<string, DataValue>) : DataValue {
         if (this.hasError()) {
             return DataValue.fromError(this.err_!) ;
         }
 
-        return this.expr_!.getValue(varvalues) ;
+        let start = process.hrtime() ;
+        let ret = this.expr_!.getValue(varvalues) ;
+        let end = process.hrtime(start) ;
+        let delta = end[0] * 1000000 + end[1] / 1000;
+        Expr.total += delta ;
+        
+        console.log(`evaluate '${this.str_}' took ${delta} ms, total ${Expr.total} ms`) ;
+
+        return ret;
     }
 
     public variables() : string[] {

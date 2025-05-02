@@ -25,8 +25,6 @@ class PickListView extends TabulatorView {
 
         this.team_fields_loaded_ = false ;
         this.match_fields_loaded_ = false ;
-
-        this.picklist_name_ = '' ;
         this.change_ranking_ = true ;
 
         this.createInitialWindow() ;
@@ -146,37 +144,32 @@ class PickListView extends TabulatorView {
     }
 
     createInitialWindow() {
-        this.picklist_top_ = document.createElement('div') ;
-        this.picklist_top_.className = 'picklist-top' ;
+        this.reset() ;
 
         this.picklist_ctrls_ = document.createElement('div') ;
         this.picklist_ctrls_.className = 'picklist-ctrls' ;
-        this.picklist_top_.append(this.picklist_ctrls_) ;
+        this.top_.append(this.picklist_ctrls_) ;
 
         this.createSelect(this.picklist_ctrls_) ;
         this.createDelete(this.picklist_ctrls_) ;
         this.createNew(this.picklist_ctrls_) ;
 
-        this.reset() ;
+        this.picklist_top_ = document.createElement('div') ;
+        this.picklist_top_.className = 'picklist-top' ;
         this.top_.append(this.picklist_top_) ;
-    }
-
-    sendPicklistData(name) {
-        this.scoutingAPI('get-picklist-data', this.current_picklist_name_) ;
-        this.scoutingAPI('get-picklist-notes', this.current_picklist_name_) ;
     }
 
     selectedPicklistChanged() {
         //
         // This stores the data to the picklist with the name given by the
-        // value this.picklist_name_ ;
+        // value this.current_picklist_
         //
         this.updateTeamData() ;
 
         //
         // Now, ask for picklist data based on what is selected in the picklist selector
         //
-        this.sendPicklistData() ;
+        this.loadPicklist(this.picklist_select_.value) ;
     }
 
     createPicklist() {
@@ -285,8 +278,10 @@ class PickListView extends TabulatorView {
         this.populatePicklistDeleteNames(arg[0].list) ;
 
         if (arg[0].default) {
-            this.current_picklist_ = arg[0].default ;
-            this.sendPicklistData() ;
+            this.loadPicklist(arg[0].default) ;
+        }
+        else if (arg[0].list.length > 0) {
+            this.loadPicklist(arg[0].list[0]) ;
         }
     }
 
@@ -304,7 +299,7 @@ class PickListView extends TabulatorView {
     receivePicklistData(arg) {
         let obj = arg[0] ;
 
-        this.clear(this.table_top_) ;
+        this.clear(this.picklist_top_) ;
         if (this.columns_picklist_name_ !== obj.name) {
             //
             // If the stored columns are from a different picklist, they the columns
@@ -317,8 +312,6 @@ class PickListView extends TabulatorView {
         }
 
         this.picklist_name_ = obj.name ;
-        this.picklist_info_existing_.value = obj.name ;
-
         this.table_div_ = document.createElement('div');
         this.table_div_.id = 'tablediv';
 
@@ -340,7 +333,7 @@ class PickListView extends TabulatorView {
         this.table_.on("columnMoved", this.colMoved.bind(this)) ;
         this.table_.on("columnResized", this.sendColumnConfiguration.bind(this)) ;
         this.table_.on("cellEdited", this.sendNotes.bind(this)) ;
-        this.table_top_.append(this.table_div_) ;
+        this.picklist_top_.append(this.table_div_) ;
     }
 
     dataSorted(sorters, rows) {
@@ -383,7 +376,7 @@ class PickListView extends TabulatorView {
         }
 
         let obj = {
-            name: this.getCurrentPicklistName(),
+            name: this.picklist_name_,
             notes: data
         }
 
@@ -646,7 +639,7 @@ class PickListView extends TabulatorView {
         }
 
         let coldata = {
-            name: this.getCurrentPicklistName(),
+            name: this.current_picklist_,
             cols: coldescs
         }
         this.scoutingAPI('update-picklist-columns', coldata) ;
