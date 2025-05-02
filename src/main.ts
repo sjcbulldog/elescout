@@ -43,6 +43,7 @@ import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventDa
          getImages,
          importImage,
          getImageData} from "./ipchandlers" ;
+import { runUnitTests } from "./units/unittest";
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -77,6 +78,10 @@ function createWindow() : void {
         }
         else if (process.argv[2] === 'central') {
             scappbase = new SCCentral(win, args) ;
+        }
+        else if (process.argv[2] === 'unittests') {
+            runUnitTests() ;
+            app.exit(0) ;
         }
     }
 

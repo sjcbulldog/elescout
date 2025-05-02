@@ -4,7 +4,7 @@
   "description": "Electron based scouting program",
   "main": "dist/main.js",
   "scripts": {
-    "compile": "tsc && copyfiles content/**/* dist",
+    "compile": "tsc",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make"

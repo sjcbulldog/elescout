@@ -543,9 +543,8 @@ class MultipleChoiceFormControl extends FormControl {
     }
 
     updateFromItem() {
-        this.formctrl_.ctrl.tag = this.item.tag ;
-        this.formctrl_.item.choices = [] ;
-        this.formctrl_.updateChoices() ;        
+        this.ctrl.tag = this.item.tag ;
+        this.updateChoices() ;        
     }
 
     clone(tag) {
@@ -756,8 +755,8 @@ class SelectFormControl extends FormControl {
     }
 
     updateFromitem() {
-        this.formctrl_.ctrl.tag = this.item.tag ;
-        this.formctrl_.updateChoices() ;
+        this.ctrl.tag = this.item.tag ;
+        this.updateChoices() ;
     }
 
     clone(tag) {

@@ -103,7 +103,7 @@ export class DataGenerator
             else if (item.datatype === 'real') {
                 value = DataValue.fromReal(v) ;
             }
-            else if (item.datatype === 'text') {
+            else if (item.datatype === 'string') {
                 value = DataValue.fromString(v) ;
             }
             else {

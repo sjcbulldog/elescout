@@ -24,6 +24,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { FormManager } from "../project/formmgr";
 import { DataValue } from "../model/datavalue";
+import { Expr } from "../expr/expr";
 
 export interface GraphDataRequest {
 	ds: string,
@@ -826,8 +827,8 @@ export class SCCentral extends SCBase {
 		this.project_?.formula_mgr_?.renameFormula(oldname, newname) ;
 	}	
 
-	public updateFormula(name: string, expr: string) : void {
-		this.project_?.formula_mgr_?.addFormula(name, expr) ;
+	public updateFormula(name: string, exprstr: string) : void {
+		this.project_?.formula_mgr_?.addFormula(name, exprstr) ;
 	}	
 
 	public deleteFormula(name: string) : void {
@@ -2220,6 +2221,16 @@ export class SCCentral extends SCBase {
 	public generateRandomData() {
 		if (this.lastview_ && this.lastview_ === 'info') {
 			if (this.project_ && this.project_.isInitialized() && this.project_.isLocked()) {
+				let ans = dialog.showMessageBoxSync(
+					{
+					  title: 'Generate Random Data',
+					  type: 'question',
+					  buttons: ['Yes', 'No'],
+					  message: `This operation will generate random data for all teams and matches in the event. This will overwrite any existing data. Do you want to continue?`,
+					}) ;
+				if (ans === 1) {
+					return ;
+				}
 				this.project_!.generateRandomData() ;
 				dialog.showMessageBox(this.win_, {
 					title: "Random Data",

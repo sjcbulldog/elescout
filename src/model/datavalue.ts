@@ -9,6 +9,36 @@ export class DataValue {
         this.type = type;
     }
 
+    public equals(other: DataValue): boolean {  
+        if (this.type !== other.type) {
+            return false;
+        }
+
+        if (this.value_ === null && other.value_ === null) {
+            return true;
+        }
+
+        if (this.value_ === null || other.value_ === null) {
+            return false;
+        }
+
+        if (this.type === 'array') {
+            const arr1 = this.toArray();
+            const arr2 = other.toArray();
+            if (arr1.length !== arr2.length) {
+                return false;
+            }
+            for (let i = 0; i < arr1.length; i++) {
+                if (!arr1[i].equals(arr2[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        return this.value_ === other.value_;
+    }
+
     static isValidType(type: DataValueType): boolean {
         return ['integer', 'real', 'string', 'boolean', 'error', 'array'].includes(type);
     }

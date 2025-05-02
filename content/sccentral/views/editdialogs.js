@@ -172,7 +172,7 @@ class EditFormControlDialog extends EditFormDialog {
 
     okButton(event) {
         this.extractData() ;            // Extract the item data form the dialog
-        this.updateFromItem() ;         // Make the control on the screen match the item data
+        this.formctrl_.updateFromItem() ;         // Make the control on the screen match the item data
         super.okButton(event) ;         // Finish the edit operation, save the form, and dismiss the dialog
     }
 

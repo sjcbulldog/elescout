@@ -103,6 +103,32 @@ export class MatchDataModel extends DataModel {
         ret += ', match_number REAL NOT NULL'
         ret += ', team_key TEXT NOT NULL' ;
         ret += ');' ;
+
+        this.emit('column-added', {
+            name: 'key',
+            type: 'string'
+        }) ;
+
+        this.emit('column-added', {
+            name: 'comp_level',
+            type: 'string'
+        }) ;
+
+        this.emit('column-added', {
+            name: 'set_number',
+            type: 'integer'
+        }) ;
+
+        this.emit('column-added', {
+            name: 'match_number',
+            type: 'integer'
+        }) ;
+
+        this.emit('column-added', {
+            name: 'team_key',
+            type: 'string'
+        }) ;
+
         return ret ;
     }
 

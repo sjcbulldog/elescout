@@ -1,5 +1,6 @@
 import winston from "winston";
 import { Manager } from "./manager" ;
+import { Expr } from "../expr/expr";
 
 export interface Formula {
     name: string,
@@ -12,6 +13,7 @@ export class FormulaInfo {
 
 export class FormulaManager extends Manager {
     private info_ : FormulaInfo ;
+    private expr_map_ : Map<string, Expr> = new Map() ; // Map of formula name to expression
 
     constructor(logger: winston.Logger, writer: () => void, info: FormulaInfo) {
         super(winston.createLogger(), writer) ;
@@ -35,21 +37,27 @@ export class FormulaManager extends Manager {
         return ret ;
     }
 
-    public findFormula(name: string) : string | undefined {
-        let ret: string | undefined = undefined ;
+    public findFormula(name: string) : Expr | undefined {
+        let ret: Expr | undefined = undefined ;
 
-        for(let f of this.info_.formulas_) {
-            if (f.name === name) {
-                ret = f.formula ;
-                break ;
+        if (this.expr_map_.has(name)) {
+            ret = this.expr_map_.get(name) ;
+        }
+        else {
+            for(let f of this.info_.formulas_) {
+                if (f.name === name) {
+                    ret = Expr.parse(f.formula) ;
+                    this.expr_map_.set(name, ret) ;
+                    break ;
+                }
             }
         }
 
         return ret ;
     }
 
-    private findFormulaIndex(name: string) : number | undefined {
-        let ret: number | undefined = undefined ;
+    private findFormulaIndex(name: string) : number {
+        let ret: number = -1 ;
 
         for(let i = 0 ; i < this.info_.formulas_.length; i++) {
             if (this.info_.formulas_[i].name === name) {
@@ -76,9 +84,9 @@ export class FormulaManager extends Manager {
         }
     }
 
-    public addFormula(name: string, formula: string) {
+    public addFormula(name: string, formula: string) : void {
         let index = this.findFormulaIndex(name) ;
-        if (index != undefined) {
+        if (index != -1) {
             this.info_.formulas_[index].formula = formula ;
         }
         else {      
@@ -93,13 +101,6 @@ export class FormulaManager extends Manager {
     }
 
     public importFormulas(obj: any) {
-        for(let key of Object.keys(obj)) {
-            let v = obj[key] ;
-            if (typeof v === 'string') {
-                this.addFormula(key, v) ;
-            }
-        }
-
-        this.write() ;
+        // TODO: implement this function
     }    
 }

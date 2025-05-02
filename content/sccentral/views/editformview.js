@@ -919,11 +919,16 @@ class EditFormView extends XeroView {
             this.popup_ = undefined ;
         }
 
-        let items = [
-            new PopupMenuItem('Import Image', this.importImage.bind(this)),
+        let sectionItems = [
             new PopupMenuItem('Add Section', this.addSection.bind(this)),
             new PopupMenuItem('Delete Section', this.deleteSection.bind(this)),
-            new PopupMenuItem('Rename Section', this.renameSection.bind(this)),
+            new PopupMenuItem('Rename Section', this.renameSection.bind(this))
+        ]
+        this.section_menu_ = new PopupMenu(sectionItems) ;
+
+        let items = [
+            new PopupMenuItem('Import Image', this.importImage.bind(this)),
+            new PopupMenuItem('Sections', undefined, this.section_menu_),
             new PopupMenuItem('Add Control', undefined, this.ctrl_menu_),
             new PopupMenuItem('Select Background Image', undefined, this.image_menu_),
         ]

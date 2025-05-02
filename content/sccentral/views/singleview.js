@@ -347,6 +347,9 @@ class SingleTeamView extends XeroView {
                 continue ;
             }
             let value = data[key] ;
+            if (!value) {
+                continue ;
+            }
 
             tr = document.createElement('tr') ;
             if (even) {

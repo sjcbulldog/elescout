@@ -4,9 +4,6 @@ import { TeamDataModel } from "../model/teammodel";
 import * as path from 'path' ;
 import { Manager } from "./manager";
 import { FormulaManager } from "./formulamgr";
-import { parseExpression } from '@babel/parser';
-import evaluate from 'ts-expression-evaluator'
-import { Expression } from "ts-expression-evaluator/build/main/lib/t";
 import { OneScoutResult, ScoutingData } from "../comms/resultsifc";
 import { BAMatch, BAOprData, BARankingData, BATeam } from "../extnet/badata";
 import { ColumnDesc } from "../model/datamodel";
@@ -387,7 +384,7 @@ export class DataManager extends Manager {
             this.teamdb_.all(query)
                 .then((data) => {
                     let rec = data[0] as any ;
-                    let v = rec[field] ;
+                    let v = rec.value(field) ;
                     resolve(v) ;
                 })
                 .catch((err) => {
@@ -466,43 +463,30 @@ export class DataManager extends Manager {
     private evalFormula(m: MatchSet, name: string, team: number) : Promise<DataValue> {
         let ret = new Promise<DataValue>(async (resolve, reject) => {
             let formula = this.formula_mgr_.findFormula(name) ;
-            let result = DataValue.fromError(new Error('formula error')) ;
-            let errors : Error[] = [] ;
-            if (formula) {
-                let obj : any = {} ;
-                let expr = parseExpression(formula) ;
-                let deps = this.searchForDependencies(expr) ; 
-                for(let dep of deps) {
-                    try {
-                        let v = await this.getData(m, dep, team) ;
-                        if (v instanceof Error) {
-                            errors.push(v) ;
-                        }
-                        obj[dep] = v ;
-                    }
-                    catch(err) {
-                        resolve(DataValue.fromError(new Error('formula error'))) ;
-                    }
-                }
-                if (errors.length > 0) { 
-                    let msg = '' ;
-                    for(let e of errors) {
-                        if (msg.length > 0) {
-                            msg += '\n' ;
-                        }
-                        msg += e.message ;
-                    }
-                    resolve(DataValue.fromError(new Error(msg))) ;
-                }
-                else {
-                    result = evaluate(formula, obj) ;
-                }
-                resolve(result) ;
+            if (!formula) {
+                resolve(DataValue.fromError(new Error('formula ' + name + ' not found'))) ;
+                return ;
+            }
+            else if (formula.hasError()) {
+                resolve(DataValue.fromError(formula.getError()!)) ;
             }
             else {
-                resolve(DataValue.fromError(new Error('formula ' + name + ' not found'))) ;
+                let vars: string[] = formula.variables() ;
+                let varvalues: Map<string, DataValue> = new Map() ;
+                for(let varname of vars) {
+                    let v = await this.getData(m, varname, team) ;
+                    if (v.isError()) {
+                        resolve(v) ;
+                        return ;
+                    }
+                    varvalues.set(varname, v) ;
+                }
+
+                let result = formula.evaluate(varvalues) ;
+                resolve(result) ;
             }
         }) ;
+    
         return ret ;
     }
 
@@ -657,36 +641,4 @@ export class DataManager extends Manager {
 
         return total / count ;
     }
-
-
-    private searchForDependenciesRecurse(expr: Expression, deps: string[]) {
-        switch(expr.type) {
-            case 'Identifier':
-                if (!deps.includes(expr.name)) {
-                    deps.push(expr.name) ;
-                }
-                break ;
-            case 'BinaryExpression':
-                this.searchForDependenciesRecurse(expr.left as Expression, deps) ;
-                this.searchForDependenciesRecurse(expr.right, deps) ;
-                break ;
-            case 'NumericLiteral':
-            case 'StringLiteral':
-            case 'BooleanLiteral':
-            case 'ArrayExpression':
-            case 'NullLiteral':
-            case 'LogicalExpression':
-                break ;
-
-            case 'UnaryExpression':
-                this.searchForDependenciesRecurse((expr as any).argument as Expression, deps) ;
-                break ;
-        }
-    }
-
-    private searchForDependencies(expr: Expression) : string[] {
-        let ret: string[] = [] ;
-        this.searchForDependenciesRecurse(expr, ret) ;
-        return ret;
-    }    
 }
