@@ -2,6 +2,21 @@ import { Expr } from "../expr/expr";
 import { DataValue } from "../model/datavalue";
 
 export function runUnitTests() : void {
+
+    console.log("Running unit tests...") ;
+    
+    testExpression("1", new Map<string, DataValue>(), DataValue.fromInteger(1)) ;
+    testExpression("0", new Map<string, DataValue>(), DataValue.fromInteger(0)) ;
+    testExpression("-1", new Map<string, DataValue>(), DataValue.fromInteger(-1)) ;
+    testExpression("1.0", new Map<string, DataValue>(), DataValue.fromReal(1.0)) ;
+    testExpression("0.0", new Map<string, DataValue>(), DataValue.fromReal(0.0)) ;
+    testExpression("-1.0", new Map<string, DataValue>(), DataValue.fromReal(-1.0)) ;
+    testExpression("1.2e2", new Map<string, DataValue>(), DataValue.fromReal(120.0)) ;
+    testExpression("1.2e-2", new Map<string, DataValue>(), DataValue.fromReal(0.012)) ;
+
+    testExpression("true", new Map<string, DataValue>(), DataValue.fromBoolean(true)) ;
+    testExpression("false", new Map<string, DataValue>(), DataValue.fromBoolean(false)) ;
+
     testExpression("1 + 2", new Map<string, DataValue>(), DataValue.fromInteger(3)) ;
     testExpression("10 - 4", new Map<string, DataValue>(), DataValue.fromInteger(6)) ;
     testExpression("2 * 3", new Map<string, DataValue>(), DataValue.fromInteger(6)) ;
@@ -49,6 +64,26 @@ export function runUnitTests() : void {
     testExpression('"hello" == "hello"', new Map<string, DataValue>(), DataValue.fromBoolean(true)) ;
     testExpression('"hello" != "hello"', new Map<string, DataValue>(), DataValue.fromBoolean(false)) ;
 
+    testExpression("abs(-4)", new Map<string, DataValue>(), DataValue.fromInteger(4)) ;
+    testExpression("abs(-4.2)", new Map<string, DataValue>(), DataValue.fromReal(4.2)) ;
+    testExpression("abs(4)", new Map<string, DataValue>(), DataValue.fromInteger(4)) ;
+    testExpression("abs(4.2)", new Map<string, DataValue>(), DataValue.fromReal(4.2)) ;
+    
+    testExpression("[1.1, 2.2, 3.3]", new Map<string, DataValue>(), DataValue.fromArray([DataValue.fromReal(1.1), DataValue.fromReal(2.2), DataValue.fromReal(3.3)])) ;
+    testExpression("average(1.0, 2, 3.0)", new Map<string, DataValue>(), DataValue.fromReal(2.0)) ;
+    testExpression("average([1.0, 2, 3.0])", new Map<string, DataValue>(), DataValue.fromReal(2.0)) ;
+    testExpression("average([1.0, 2, 3.0], 4)", new Map<string, DataValue>(), DataValue.fromReal(2.5)) ;
+    testExpression("average([1.0, 2, 3.0], 4, 5)", new Map<string, DataValue>(), DataValue.fromReal(3.0)) ;
+    testExpression("average([1.0, 2, 3.0], [4, 5, 6])", new Map<string, DataValue>(), DataValue.fromReal(3.5)) ;
+
+    testExpression("median(1, 2, 3)", new Map<string, DataValue>(), DataValue.fromReal(2)) ;
+    testExpression("median([1, 2, 3, 4])", new Map<string, DataValue>(), DataValue.fromReal(2.5)) ; 
+
+    testExpression("int(1.2)", new Map<string, DataValue>(), DataValue.fromInteger(1)) ;
+    testExpression("int(-1.8)", new Map<string, DataValue>(), DataValue.fromInteger(-1)) ;
+
+    testExpression("int(1000.0 * stddev(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))", new Map<string, DataValue>(), DataValue.fromInteger(2872)) ;
+
     let vars = new Map<string, DataValue>() ;
     vars.set("x", DataValue.fromInteger(2)) ;
     vars.set("y", DataValue.fromInteger(3)) ;
@@ -75,9 +110,10 @@ function testExpression(exprstr: string, vars: Map<string, DataValue>, expected:
     }
 
     if (!v.equals(expected)) {
-        console.log(`Error evaluating expression: expected ${expected.toValueString()}, got ${v.toValueString()}`) ;
+        console.log(`Error: expression '${exprstr}': expected ${expected.toValueString()}, got ${v.toValueString()}`) ;
         return false ;
     }
 
+    console.log(`Passed: expression '${exprstr}' evaluated to ${v.toValueString()}`) ;  
     return true ;
 }

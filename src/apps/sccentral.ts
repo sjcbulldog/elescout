@@ -2566,6 +2566,7 @@ export class SCCentral extends SCBase {
 		if (this.project_ && this.project_.isInitialized()) {
 			retdata.matches = this.project_.match_mgr_!.getMatchResults(+team) ;
 			retdata.teamdata = await this.project_.dataset_mgr_!.getDataSetData(ds) ;
+			retdata.videoicon = this.getIconData('video.png') ;
 		}
 
 		this.sendToRenderer('send-single-team-data', retdata) ;

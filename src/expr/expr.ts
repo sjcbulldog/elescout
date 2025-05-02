@@ -1,6 +1,4 @@
-import { Data } from "electron";
 import { DataValue } from "../model/datavalue";
-import { has } from "electron-settings";
 
 export class ExprNode {
     public getValue(varvalues: Map<string, DataValue>) : DataValue {
@@ -76,10 +74,11 @@ export class ExprFunction extends ExprNode {
     private name_ : string ;
     private func_ : ExprFunctionDef ;
 
-    constructor(name: string, fun: ExprFunctionDef) {
+    constructor(name: string, args: ExprNode[], fun: ExprFunctionDef) {
         super() ;
         this.name_ = name;
         this.func_ = fun;
+        this.args_ = args ;
     }
 
     public variables(vars: string[]): void {
@@ -100,8 +99,8 @@ export class ExprFunction extends ExprNode {
             args.push(arg.getValue(varvalues)) ;
         }
 
-        if (args.length !== this.func_.getArgCount()) {
-            return DataValue.fromError(new Error('Invalid number of arguments for function ' + this.name_)) ;
+        if (args.length !== this.func_.getArgCount() && this.func_.getArgCount() >= 0) {
+            return DataValue.fromError(new Error(`Invalid number of arguments for function '${this.name_}'`)) ;
         }
 
         return this.func_.getValue(args) ;
@@ -226,8 +225,11 @@ export class ExprOperator extends ExprNode {
         if (a.isString() && b.isString()) {
             ret = DataValue.fromString(a.toString() + b.toString()) ;
         }
-        else if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
-            ret = DataValue.fromInteger(a.toReal() + b.toReal()) ;
+        else if (a.isInteger() && b.isInteger()) {
+            ret = DataValue.fromInteger(a.toInteger() + b.toInteger()) ;
+        }
+        else if (a.isNumber() && b.isNumber()) {
+            ret = DataValue.fromReal(a.toReal() + b.toReal()) ;
         }
 
         return ret;
@@ -236,8 +238,11 @@ export class ExprOperator extends ExprNode {
     private operMinus(a: DataValue, b: DataValue) : DataValue {
         let ret : DataValue = DataValue.fromError(new Error('operatorn - invalid argument types')) ;
 
-        if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
-            ret = DataValue.fromInteger(a.toReal() - b.toReal()) ;
+        if (a.isInteger() && b.isInteger()) {
+            ret = DataValue.fromInteger(a.toInteger() - b.toInteger()) ;
+        }
+        else if (a.isNumber() && b.isNumber()) {
+            ret = DataValue.fromReal(a.toReal() - b.toReal()) ;
         }
 
         return ret;
@@ -246,8 +251,11 @@ export class ExprOperator extends ExprNode {
     private operMul(a: DataValue, b: DataValue) : DataValue {
         let ret : DataValue = DataValue.fromError(new Error('operatorn * invalid argument types')) ;
 
-        if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
-            ret = DataValue.fromInteger(a.toReal() * b.toReal()) ;
+        if (a.isInteger() && b.isInteger()) {
+            ret = DataValue.fromInteger(a.toInteger() * b.toInteger()) ;
+        }
+        else if (a.isNumber() && b.isNumber()) {
+            ret = DataValue.fromReal(a.toReal() * b.toReal()) ;
         }
 
         return ret;
@@ -256,8 +264,21 @@ export class ExprOperator extends ExprNode {
     private operDiv(a: DataValue, b: DataValue) : DataValue {
         let ret : DataValue = DataValue.fromError(new Error('operatorn / invalid argument types')) ;
 
-        if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
-            ret = DataValue.fromInteger(a.toReal() / b.toReal()) ;
+        if (a.isInteger() && b.isInteger()) {
+            if (b.toInteger() === 0) {
+                ret = DataValue.fromError(new Error('division by zero')) ;
+            }
+            else {
+                ret = DataValue.fromInteger(Math.floor(a.toInteger() / b.toInteger())) ;
+            }
+        }
+        else if (a.isNumber() && b.isNumber()) {
+            if (b.toReal() === 0.0) {
+                ret = DataValue.fromError(new Error('division by zero')) ;
+            }
+            else {
+                ret = DataValue.fromReal(a.toReal() / b.toReal()) ;
+            }
         }
 
         return ret;
@@ -266,8 +287,21 @@ export class ExprOperator extends ExprNode {
     private operMod(a: DataValue, b: DataValue) : DataValue {
         let ret : DataValue = DataValue.fromError(new Error('operatorn % invalid argument types')) ;
 
-        if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
-            ret = DataValue.fromInteger(a.toReal() % b.toReal()) ;
+        if (a.isInteger() && b.isInteger()) {
+            if (b.toInteger() === 0) {
+                ret = DataValue.fromError(new Error('division by zero')) ;
+            }
+            else {
+                ret = DataValue.fromInteger(a.toInteger() % b.toInteger()) ;
+            }
+        }
+        else if (a.isNumber() && b.isNumber()) {
+            if (b.toReal() === 0.0) {
+                ret = DataValue.fromError(new Error('division by zero')) ;
+            }
+            else {
+                ret = DataValue.fromReal(a.toReal() % b.toReal()) ;
+            }
         }
 
         return ret;
@@ -276,8 +310,11 @@ export class ExprOperator extends ExprNode {
     private operPow(a: DataValue, b: DataValue) : DataValue {
         let ret : DataValue = DataValue.fromError(new Error('operatorn ^ invalid argument types')) ;
 
-        if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
-            ret = DataValue.fromInteger(Math.pow(a.toReal(), b.toReal())) ;
+        if (a.isInteger() && b.isInteger()) {
+            ret = DataValue.fromInteger(Math.pow(a.toInteger(), b.toInteger())) ;
+        }
+        else if (a.isNumber() && b.isNumber()) {
+            ret = DataValue.fromReal(Math.pow(a.toReal(), b.toReal())) ;
         }
 
         return ret;
@@ -289,7 +326,7 @@ export class ExprOperator extends ExprNode {
         if (a.isString() && b.isString()) {
             ret = DataValue.fromBoolean(a.toString() === b.toString()) ;
         }
-        else if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
+        else if (a.isNumber() && b.isNumber()) {
             ret = DataValue.fromBoolean(a.toReal() === b.toReal()) ;
         }
 
@@ -302,7 +339,7 @@ export class ExprOperator extends ExprNode {
         if (a.isString() && b.isString()) {
             ret = DataValue.fromBoolean(a.toString() !== b.toString()) ;
         }
-        else if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
+        else if (a.isNumber() && b.isNumber()) {
             ret = DataValue.fromBoolean(a.toReal() !== b.toReal()) ;
         }
 
@@ -315,7 +352,7 @@ export class ExprOperator extends ExprNode {
         if (a.isString() && b.isString()) {
             ret = DataValue.fromBoolean(a.toString() < b.toString()) ;
         }
-        else if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
+        else if (a.isNumber() && b.isNumber()) {
             ret = DataValue.fromBoolean(a.toReal() < b.toReal()) ;
         }
 
@@ -328,7 +365,7 @@ export class ExprOperator extends ExprNode {
         if (a.isString() && b.isString()) {
             ret = DataValue.fromBoolean(a.toString() <= b.toString()) ;
         }
-        else if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
+        else if (a.isNumber() && b.isNumber()) {
             ret = DataValue.fromBoolean(a.toReal() <= b.toReal()) ;
         }
 
@@ -341,7 +378,7 @@ export class ExprOperator extends ExprNode {
         if (a.isString() && b.isString()) {
             ret = DataValue.fromBoolean(a.toString() > b.toString()) ;
         }
-        else if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
+        else if (a.isNumber() && b.isNumber()) {
             ret = DataValue.fromBoolean(a.toReal() > b.toReal()) ;
         }
 
@@ -354,7 +391,7 @@ export class ExprOperator extends ExprNode {
         if (a.isString() && b.isString()) {
             ret = DataValue.fromBoolean(a.toString() >= b.toString()) ;
         }
-        else if ((a.isInteger() || a.isReal()) && (b.isInteger() || b.isReal())) {
+        else if (a.isNumber() && b.isNumber()) {
             ret = DataValue.fromBoolean(a.toReal() >= b.toReal()) ;
         }
 
@@ -423,10 +460,20 @@ export class Expr {
     private err_ : Error | null ;
     private str_ : string ;
 
+    private static inited_ : boolean = false ;
+    private static functions_ : Map<string, ExprFunctionDef> = new Map<string, ExprFunctionDef>() ;
+
     private constructor(str: string, node: ExprNode | null, err: Error | null) {
         this.expr_ = node ;
         this.err_ = err ;
         this.str_ = str ;
+    }
+
+    public static registerFunction(name: string, argcnt: number, func: (args: DataValue[]) => DataValue) : void {
+        if (Expr.functions_.has(name)) {
+            throw new Error('Function already registered') ;
+        }
+        Expr.functions_.set(name, new ExprFunctionDef(name, argcnt, func)) ;
     }
 
     public hasError() : boolean {
@@ -465,6 +512,10 @@ export class Expr {
     }
 
     public static parse(str: string) : Expr {
+        if (!Expr.inited_) {
+            Expr.initFunctions() ;
+        }
+
         let result = Expr.parseNode(str, 0) ;
         if (result instanceof Error) {
             return new Expr(str, null, result as Error) ;
@@ -476,6 +527,319 @@ export class Expr {
         }
 
         return new Expr(str, result[1], null) ;
+    }
+
+    private static initFunctions() : void {
+
+        Expr.registerFunction('int', 1, (args: DataValue[]) => {
+            let ret: DataValue ;
+
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function int')) ;
+            }
+
+            if (args[0].isInteger()) {
+                ret = args[0] ;
+            }
+            else if (args[0].isReal()) {
+                if (args[0].toReal() > Number.MAX_SAFE_INTEGER) {
+                    ret = DataValue.fromError(new Error('Integer overflow')) ;
+                }
+                else if (args[0].toReal() < Number.MIN_SAFE_INTEGER) {
+                    ret = DataValue.fromError(new Error('Integer underflow')) ;
+                }
+                else if (args[0].toReal() > 0) {
+                    ret = DataValue.fromInteger(Math.floor(args[0].toReal())) ;
+                }
+                else {
+                    ret = DataValue.fromInteger(Math.ceil(args[0].toReal())) ;
+                }
+            }
+            else {
+                ret = DataValue.fromError(new Error('Invalid argument type for function int')) ;
+            }
+            return ret;
+        }) ;
+
+        Expr.registerFunction('abs', 1, (args: DataValue[]) => {
+            let ret: DataValue ;
+
+            if (args.length !== 1) {
+                ret = DataValue.fromError(new Error('Invalid number of arguments for function abs')) ;
+            }
+            else if (args[0].isInteger()) {
+                ret = DataValue.fromInteger(Math.abs(args[0].toInteger())) ;
+            }
+            else if (args[0].isReal()) {
+                ret = DataValue.fromReal(Math.abs(args[0].toReal())) ;
+            }
+            else {
+                ret = DataValue.fromError(new Error('Invalid argument type for function abs')) ;
+            }
+            return ret ;
+        });
+
+        Expr.registerFunction('ceil', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function ceil')) ;
+            }
+            return DataValue.fromInteger(Math.ceil(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('floor', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function floor')) ;
+            }
+            return DataValue.fromInteger(Math.floor(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('round', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function round')) ;
+            }
+            return DataValue.fromInteger(Math.round(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('sqrt', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function sqrt')) ;
+            }
+
+            return DataValue.fromReal(Math.sqrt(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('sin', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function sin')) ;
+            }
+            return DataValue.fromReal(Math.sin(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('cos', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function cos')) ;
+            }
+            return DataValue.fromReal(Math.cos(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('tan', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function tan')) ;
+            }
+            return DataValue.fromReal(Math.tan(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('asin', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function asin')) ;
+            }
+            return DataValue.fromReal(Math.asin(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('acos', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function acos')) ;
+            }
+            return DataValue.fromReal(Math.acos(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('atan', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function atan')) ;
+            }
+            return DataValue.fromReal(Math.atan(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('atan2', 2, (args: DataValue[]) => {
+            if (args.length !== 2) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function atan2')) ;
+            }
+            return DataValue.fromReal(Math.atan2(args[0].toReal(), args[1].toReal())) ;
+        });
+
+        Expr.registerFunction('exp', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function exp')) ;
+            }
+            return DataValue.fromReal(Math.exp(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('log', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function log')) ;
+            }
+            return DataValue.fromReal(Math.log(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('log10', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function log10')) ;
+            }
+            return DataValue.fromReal(Math.log10(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('log2', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function log2')) ;
+            }
+            return DataValue.fromReal(Math.log2(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('ln', 1, (args: DataValue[]) => {
+            if (args.length !== 1) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function ln')) ;
+            }
+            return DataValue.fromReal(Math.log(args[0].toReal())) ;
+        });
+
+        Expr.registerFunction('logn', 2, (args: DataValue[]) => {
+            if (args.length !== 2) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function logn')) ;
+            }
+            return DataValue.fromReal(Math.log(args[0].toReal()) / Math.log(args[1].toReal())) ;
+        });
+
+        Expr.registerFunction('average', -1, (args: DataValue[]) => {
+            if (args.length === 0) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function average')) ;
+            }
+
+            let result: DataValue[] = [] ;
+            Expr.flatten(args, result) ;
+            let sum = 0.0 ;
+            for(let i = 0; i < result.length; i++) {
+                if (result[i].isError()) {
+                    return result[i] ;
+                }
+                else if (!result[i].isNumber()) {
+                    return DataValue.fromError(new Error('Invalid argument type for function average')) ;
+                }
+                sum += result[i].toReal() ;
+            }
+
+            return DataValue.fromReal(sum / result.length) ;
+        }) ;
+
+        Expr.inited_ = true ;
+
+        Expr.registerFunction('sum', -1, (args: DataValue[]) => {
+            if (args.length === 0) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function average')) ;
+            }
+
+            let result: DataValue[] = [] ;
+            Expr.flatten(args, result) ;
+            let sum = 0.0 ;
+            for(let i = 0; i < result.length; i++) {
+                if (result[i].isError()) {
+                    return result[i] ;
+                }
+                else if (!result[i].isNumber()) {
+                    return DataValue.fromError(new Error('Invalid argument type for function average')) ;
+                }
+                sum += result[i].toReal() ;
+            }
+
+            return DataValue.fromReal(sum) ;
+        }) ;
+
+        Expr.registerFunction('median', -1, (args: DataValue[]) => {
+            if (args.length === 0) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function average')) ;
+            }
+
+            let result: DataValue[] = [] ;
+            Expr.flatten(args, result) ;
+
+            for(let i = 0; i < result.length; i++) {
+                if (result[i].isError()) {
+                    return result[i] ;
+                }
+                else if (!result[i].isNumber()) {
+                    return DataValue.fromError(new Error('Invalid argument type for function average')) ;
+                }
+            }
+
+            result.sort((a: DataValue, b: DataValue) => {
+                return a.toReal() - b.toReal() ;
+            }) ;
+
+            let len = result.length / 2 ;
+            if (result.length % 2 === 0) {
+                return DataValue.fromReal((result[len - 1].toReal() + result[len].toReal()) / 2.0) ;
+            }
+            else {
+                return DataValue.fromReal(result[Math.floor(len)].toReal()) ;
+            }
+        }) ;     
+        
+        Expr.registerFunction('variance', -1, (args: DataValue[]) => {
+            if (args.length === 0) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function average')) ;
+            }
+
+            let result: DataValue[] = [] ;
+            Expr.flatten(args, result) ;
+
+            let sum = 0.0 ;
+            for(let i = 0; i < result.length; i++) {
+                if (result[i].isError()) {
+                    return result[i] ;
+                }
+                else if (!result[i].isNumber()) {
+                    return DataValue.fromError(new Error('Invalid argument type for function average')) ;
+                }
+                sum += result[i].toReal() ;
+            }
+
+            let sum2 = 0.0 ;
+            for(let i = 0; i < result.length; i++) {
+                sum2 += Math.pow(result[i].toReal() - sum, 2) ;
+            }
+
+            return DataValue.fromReal(sum2 / result.length) ;
+        }) ;  
+        
+        Expr.registerFunction('stddev', -1, (args: DataValue[]) => {
+            if (args.length === 0) {
+                return DataValue.fromError(new Error('Invalid number of arguments for function average')) ;
+            }
+
+            let result: DataValue[] = [] ;
+            Expr.flatten(args, result) ;
+
+            let sum = 0.0 ;
+            for(let i = 0; i < result.length; i++) {
+                if (result[i].isError()) {
+                    return result[i] ;
+                }
+                else if (!result[i].isNumber()) {
+                    return DataValue.fromError(new Error('Invalid argument type for function average')) ;
+                }
+                sum += result[i].toReal() ;
+            }
+
+            let avg = sum / result.length ;
+            let sum2 = 0.0 ;
+            for(let i = 0; i < result.length; i++) {
+                sum2 += Math.pow(result[i].toReal() - avg, 2) ;
+            }
+
+            return DataValue.fromReal(Math.sqrt(sum2 / result.length)) ;
+        }) ;         
+
+        Expr.inited_ = true ;
+    }
+
+    private static flatten(args: DataValue[], result : DataValue[]) : void {
+        for(let arg of args) {
+            if (arg.isArray()) {
+                Expr.flatten(arg.toArray(), result) ;
+            }
+            else {
+                result.push(arg) ;
+            }
+        }
     }
 
     private static skipSpaces(str: string, index: number) : number {
@@ -516,13 +880,35 @@ export class Expr {
         }
         else if (Expr.isDigit(str.charAt(index)) || str.charAt(index) === '-' || str.charAt(index) === '+') {
             let start = index ;
-            while (index < str.length && (Expr.isDigit(str.charAt(index)) || str.charAt(index) === '.')) {
+
+            if (str.charAt(index) === '-' || str.charAt(index) === '+') {
                 index++ ;
             }
+            while (index < str.length && Expr.isDigit(str.charAt(index))) {
+                index++ ;
+            }
+
+            if (index < str.length && str.charAt(index) === '.') {
+                index++ ;
+                while (index < str.length && Expr.isDigit(str.charAt(index))) {
+                    index++ ;
+                }
+            }
+
+            if (index < str.length && str.charAt(index).toLowerCase() === 'e') {
+                index++ ;
+                if (index < str.length && (str.charAt(index) === '+' || str.charAt(index) === '-')) {
+                    index++ ;
+                }
+                while (index < str.length && Expr.isDigit(str.charAt(index))) {
+                    index++ ;
+                }
+            }
+
             let num = str.substring(start, index) ;
             
             let v : DataValue = DataValue.fromError(new Error('Invalid number')) ;
-            if (Number.isInteger(num)) {
+            if (num.match(/^[+-]?\d+$/)) {
                 v = DataValue.fromInteger(Number.parseInt(num)) ;
             }
             else {
@@ -530,7 +916,7 @@ export class Expr {
                 if (Number.isNaN(fv)) {
                     return new Error('Invalid number') ;
                 }
-                v = DataValue.fromReal(Number.parseFloat(num)) ;
+                v = DataValue.fromReal(fv) ;
             }
             ret = [index, new ExprValue(v)] ;
         }
@@ -576,6 +962,16 @@ export class Expr {
                         return new Error('Invalid function call') ;
                     }
                 }
+
+                if (!Expr.functions_.has(name)) {
+                    return new Error('function ' + name + ' not found') ;
+                }
+
+                let func = Expr.functions_.get(name)! ;
+                if (args.length !== func.getArgCount() && func.getArgCount() >= 0) {
+                    return new Error('Invalid number of arguments for function ' + name) ;
+                }
+                ret = [index, new ExprFunction(name, args, func)] ;
             }
             else {
                // This is a variable

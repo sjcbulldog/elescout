@@ -90,6 +90,10 @@ export class DataValue {
         return this.type === 'real';
     }
 
+    public isNumber() : boolean {
+        return this.type === 'integer' || this.type === 'real';
+    }   
+
     public isString() : boolean {
         return this.type === 'string';
     }

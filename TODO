@@ -11,15 +11,24 @@ Real text entry field
 Central
 -------
 Provide access to max, min, stddev for numeric match data
-View: dataset mgr - add/remove icons
-View: single team view - add video links
-View: picklist editor - adapt to new dataset model
-View: multi team view - adapt to new dataset model
-View: team graph - adapt to new dataset model
-View: spider graph - adapt to new dataset model
-
+View: dataset mgr 
+      - add/remove icons
+      - search for fields
+View: single team view 
+      - add video links
+View: picklist editor 
+      - adapt to new dataset model
+View: multi team view 
+      - adapt to new dataset model
+View: team graph 
+      - adapt to new dataset model
+View: spider graph 
+      - adapt to new dataset model
+View: formula manager
+      - understand functions, operator, etc.
 Scout
 -----
+
 
 Attributions
 ------------
@@ -39,3 +48,4 @@ Attributions
 <a href="https://www.flaticon.com/free-icons/file-import" title="file import icons">File import icons created by Vectors Tank - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/content" title="content icons">Content icons created by Pixelmeetup - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/editing" title="editing icons">Editing icons created by Freepik - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/video-camera" title="video camera icons">Video camera icons created by smashingstocks - Flaticon</a>

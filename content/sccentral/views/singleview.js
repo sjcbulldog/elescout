@@ -136,7 +136,14 @@ class SingleTeamView extends XeroView {
         return str;
     }
 
-    populateMatches(team, matches) {
+    openlink(ev) {
+        let a = ev.target ;
+        if (a.linktoopen) {
+            window.open(a.linktoopen, '_blank') ;
+        }
+    }
+
+    populateMatches(team, matches, icon) {
         let td, one ;
         let won = 0, lost = 0, tied = 0 ;
         this.clear(this.team_report_matches_table_) ;
@@ -206,8 +213,27 @@ class SingleTeamView extends XeroView {
             tr = document.createElement('tr') ;
 
             td = document.createElement('td') ;
-            td.className = 'single-team-matches-title-cell' ;
-            td.textContent = this.matchTitle(m.comp_level, m.set_number, m.match_number) ;
+            let span = document.createElement('span') ;
+            span.className = 'single-team-matches-match-number' ;
+            span.textContent = this.matchTitle(m.comp_level, m.set_number, m.match_number) ;
+            td.append(span) ;
+
+            if (m.videos && m.videos.length > 0) {
+                for(let v of m.videos) {
+                    if (v.type === 'youtube') {
+                        let img = document.createElement('img') ;
+                        img.className = 'single-team-matches-video-icon' ;
+                        img.src = `data:image/jpg;base64,${icon}`;
+                        img.width = 16 ;
+                        img.height = 16 ;
+                        img.style.cursor = 'pointer' ;
+                        img.linktoopen = "https://www.youtube.com/watch?v=" + v.key ;
+                        img.addEventListener('click', this.openlink.bind(this)) ;
+                        td.append(img) ;
+                    }
+                }
+            }
+
             tr.append(td) ;
 
             for(let i = 0 ; i < 3 ; i++) {
@@ -389,7 +415,7 @@ class SingleTeamView extends XeroView {
         let data = args[0]; 
 
         if (data.matches) {
-            this.populateMatches(this.team_, data.matches) ;
+            this.populateMatches(this.team_, data.matches, data.videoicon) ;
         }
 
         if (data.teamdata) {
