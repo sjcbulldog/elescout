@@ -363,13 +363,12 @@ class PickListView extends TabulatorView {
     }
 
     addRemoveColumns(e, col) {
-        let colnames = [] ;
-        let ds = undefined ;
-
-        let fieldlist = [...this.team_fields_, ...this.match_fields_, ...this.formulas_] ;
-        let selected = this.cols_.map((col) => col.name) ;
-        this.dialog_ = new PromptForColumnNames(this.selectPicklistMenu.bind(this), fieldlist, selected) ;
-        this.dialog_.showRelative(this.top_) ;
+        if (col.getField() === undefined) {
+            let fieldlist = [...this.team_fields_, ...this.match_fields_, ...this.formulas_] ;
+            let selected = this.cols_.map((col) => col.name) ;
+            this.dialog_ = new PromptForColumnNames(this.selectPicklistMenu.bind(this), fieldlist, selected) ;
+            this.dialog_.showRelative(this.top_) ;
+        }
     }
 
     receivePicklistData(arg) {
