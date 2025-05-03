@@ -11,12 +11,27 @@ export interface ProjPicklistNotes
     picknotes: string
 }
 
+export interface ProjPicklistData {
+    name: string ;
+    teams: number[] ;
+}
+
+export interface ProjPickListColConfig {
+    name: string ;
+    width: number ;
+}
+
+export interface ProjPickListCols {
+    name: string ;
+    cols: ProjPickListColConfig[] ;
+}
+
 export interface PickList {
     name: string ;
     dataset: string ;
     rank: number[] ;
     notes: ProjPicklistNotes[];
-    cols: string[] ;                            // Columns are defined by dataset, this defines the order
+    cols: ProjPickListColConfig[] ;                            // Columns are defined by dataset, this defines the order and width
 }
 
 export class PickListData {
@@ -57,6 +72,21 @@ export class PicklistMgr extends Manager {
         this.write() ;
     }
 
+    public updatePicklistData(name: string, teams: number[]) {
+        let picklist = this.findPicklistByName(name) ;
+        if (picklist) {
+            picklist.rank = teams ;
+            this.write() ;
+        }
+    }
+
+    public updatePicklistCols(name: string, cols: ProjPickListColConfig[]) {
+        let picklist = this.findPicklistByName(name) ;
+        if (picklist) {
+            picklist.cols = cols ;
+            this.write() ;
+        }
+    }
     
     public deletePicklist(name: string) : boolean {
         let which = -1 ;
@@ -83,12 +113,20 @@ export class PicklistMgr extends Manager {
     public addPicklist(name: string, dataset: string) {
         let ds = this.dset_mgr_.findDataSet(dataset) ;
         if (ds) {
+            let cols: ProjPickListColConfig[] = [] ;
+            for(let col of ds.fields) {
+                let colcfg: ProjPickListColConfig = {
+                    name: col,
+                    width: 0
+                }
+                cols.push(colcfg) ;
+            }
             let picklist = {
                 name: name,
                 dataset: dataset,
                 notes: [],
                 rank: ds.teams,
-                cols: ds.fields
+                cols: cols
             }
             this.info_.picklist_.push(picklist) ;
             this.info_.last_picklist_ = name ;

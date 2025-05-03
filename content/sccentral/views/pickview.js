@@ -1,3 +1,58 @@
+class PromptNameAndDataset extends EditFormDialog {
+    constructor(close, datasets) {
+        super(close, 'Create Picklist') ;
+        this.datasets_ = datasets ;
+    }
+
+    async populateDialog(pdiv) {
+        let div = document.createElement('div') ;
+        div.className = 'popup-form-edit-dialog-rowdiv' ;
+
+        this.picklist_name_ = document.createElement('input') ;
+        this.picklist_name_.type = 'text' ;
+        this.picklist_name_.className = 'popup-form-edit-dialog-input' ;
+        this.picklist_name_.value = '' ;
+        this.picklist_name_.placeholder = 'Enter Picklist Name' ;
+        this.picklist_name_.maxLength = 32 ;
+
+        let label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Picklist Name' ;
+        label.appendChild(this.picklist_name_) ;
+        div.appendChild(label) ;
+
+        this.dataset_name_ = document.createElement('select') ;
+        this.dataset_name_.className = 'popup-form-edit-dialog-select' ;
+        let fonts = await window.queryLocalFonts() ;
+        for(let ds of this.datasets_) {
+            let option = document.createElement('option') ;
+            option.value = ds ;
+            option.innerText = ds ;
+            this.dataset_name_.appendChild(option) ;
+        }
+        this.dataset_name_.value = this.datasets_[0] ;
+
+        label = document.createElement('label') ;
+        label.className = 'popup-form-edit-dialog-label' ;
+        label.innerText = 'Dataset' ;
+        label.appendChild(this.dataset_name_) ;
+        div.appendChild(label) ;    
+
+        pdiv.appendChild(div) ;
+    }
+
+    onInit() {
+        this.picklist_name_.focus() ;
+        this.picklist_name_.select() ;
+    }
+
+    okButton(event) {
+        this.enteredName = this.picklist_name_.value.trim() ;
+        this.enteredDataset = this.dataset_name_.value.trim() ;
+
+        super.okButton(event) ;
+    }
+}
 
 class PickListView extends TabulatorView {
     static instnum = 0 ;
@@ -16,7 +71,7 @@ class PickListView extends TabulatorView {
 
     constructor(div,viewtype) {
         super(div, viewtype);
-
+        
         this.current_picklist_ = undefined ;
         this.instance_ = PickListView.instnum++ ;
         this.cols_ = [] ;
@@ -49,161 +104,121 @@ class PickListView extends TabulatorView {
         super.close() ;
     }
 
-    createSelect(parent) {
-        this.picklist_select_div_ = document.createElement('div') ;
-        this.picklist_select_div_.className = 'picklist-select' ;
-        parent.append(this.picklist_select_div_) ;
+    populatePickListList(names) {
+        this.picklist_items_ = [] ;
+        this.clear(this.picklist_list_) ;
 
-        this.picklist_select_label_ = document.createElement('label') ;
-        this.picklist_select_label_.className = 'picklist-label' ;
-        this.picklist_select_label_.textContent = 'Select Picklists:'
-        this.picklist_select_div_.append(this.picklist_select_label_) ;
-
-        this.picklist_select_ = document.createElement('select');
-        this.picklist_select_.className = 'picklist-select' ;
-        this.picklist_select_.onchange = this.selectedPicklistChanged.bind(this);
-        const opt = document.createElement('option') ;
-        opt.value = '' ;
-        opt.text = 'NONE' ;
-        this.picklist_select_.append(opt) ;
-
-        this.picklist_select_label_.append(this.picklist_select_) ;
+        if (names && names.length > 0) {
+            for(let name of names) {
+                let one = document.createElement('span') ;
+                one.className = 'picklist-list-item' ;
+                one.textContent = name ;
+                one.addEventListener('click', this.selectedPicklistChanged.bind(this)) ;
+                one.addEventListener('dblclick', this.editPicklist.bind(this)) ;
+                this.picklist_list_.append(one) ;
+                this.picklist_items_.push(one) ;
+            }
+        }
     }
 
-    createDelete(parent) {
-        this.picklist_delete_div_ = document.createElement('div') ;
-        this.picklist_delete_div_.className = 'picklist-delete' ;
-        parent.append(this.picklist_delete_div_) ;
-
-        this.picklist_del_select_label_ = document.createElement('label') ;
-        this.picklist_del_select_label_.className = 'picklist-label' ;
-        this.picklist_del_select_label_.textContent = 'Delete Picklists:'
-        this.picklist_delete_div_.append(this.picklist_del_select_label_) ;
-
-        this.picklist_del_select_ = document.createElement('select');
-        this.picklist_del_select_.className = 'picklist-select' ;
-        const opt = document.createElement('option') ;
-        opt.value = '' ;
-        opt.text = 'NONE' ;
-        this.picklist_del_select_.append(opt) ;
-        this.picklist_del_select_label_.append(this.picklist_del_select_) ;
-
-        //
-        // A button to delete a selected picklist
-        //
-        this.picklist_delete_ = document.createElement('button') ;
-        this.picklist_delete_.className = 'picklist-button' ;
-        this.picklist_delete_.textContent = 'Delete' ;
-        this.picklist_delete_.onclick = this.deletePicklist.bind(this) ;
-
-        this.picklist_delete_div_.append(this.picklist_delete_)
+    selectedPicklistChanged(event) {
+        let name = event.target.textContent ;
+        this.loadPicklist(name) ;
     }
 
-    createNew(parent) {
-        this.picklist_new_div_ = document.createElement('div') ;
-        this.picklist_new_div_.className = 'picklist-new' ;
-        parent.append(this.picklist_new_div_) ;
+    editPicklist(event) {
+        let name = event.target.textContent ;
+        alert('Edit picklist ' + name) ;
+    }
 
-        this.picklist_new_label_ = document.createElement('label') ;
-        this.picklist_new_label_.className = 'picklist-label' ;
-        this.picklist_new_label_.textContent = 'New Picklist Name:'
-        this.picklist_new_div_.append(this.picklist_new_label_) ;
+    createPicklistList(parent) {
+        this.picklist_list_div_ = document.createElement('div') ;
+        this.picklist_list_div_.className = 'picklist-list-div' ;
 
-        //
-        // An input text field to name a new picklist that will be created with the button below
-        //
-        this.picklist_new_name_ = document.createElement('input') ;
-        this.picklist_new_name_.className = 'picklist-info-text' ;
-        this.picklist_new_name_.setAttribute('type', 'text') ;
-        this.picklist_new_name_.setAttribute('placeholder', 'Picklist Name') ;
+        this.picklist_list_ = document.createElement('div') ;
+        this.picklist_list_.className = 'picklist-list-list' ;
+        this.picklist_list_div_.append(this.picklist_list_) ;
 
-        this.picklist_new_label_.append(this.picklist_new_name_) ;
+        this.picklist_ctrls_ = document.createElement('div') ;
+        this.picklist_ctrls_.className = 'picklist-list-ctrls' ;
+        this.picklist_list_div_.append(this.picklist_ctrls_) ;
 
-        this.picklist_new_ds_label_ = document.createElement('label') ;
-        this.picklist_new_ds_label_.className = 'picklist-label' ;
-        this.picklist_new_ds_label_.textContent = 'DataSet:'
-        this.picklist_new_div_.append(this.picklist_new_ds_label_) ;
+        this.picklist_delete_ = document.createElement('span') ;
+        this.picklist_delete_.className = 'picklist-list-control' ;
+        this.picklist_delete_.innerHTML = '&#9949;' ;
+        this.picklist_ctrls_.append(this.picklist_delete_) ;
+        this.picklist_delete_.addEventListener('click', this.deletePicklist.bind(this)) ;
 
-        this.picklist_ds_select_ = document.createElement('select');
-        this.picklist_ds_select_.className = 'picklist-select' ;
-        const opt = document.createElement('option') ;
-        opt.value = '' ;
-        opt.text = 'NONE' ;
-        this.picklist_ds_select_.append(opt) ;
-        this.picklist_new_ds_label_.append(this.picklist_ds_select_) ;
+        this.picklist_add_ = document.createElement('span') ;
+        this.picklist_add_.className = 'picklist-list-control' ;
+        this.picklist_add_.innerHTML = '&#10133;' ;
+        this.picklist_ctrls_.append(this.picklist_add_) ;
+        this.picklist_add_.addEventListener('click', this.createPicklist.bind(this)) ;
 
-
-        //
-        // A button to create a new picklist
-        //
-        this.picklist_new_button_ = document.createElement('button') ;
-        this.picklist_new_button_.className = 'picklist-button' ;
-        this.picklist_new_button_.textContent = 'Create' ;
-        this.picklist_new_button_.onclick = this.createPicklist.bind(this) ;
-        this.picklist_new_div_.append(this.picklist_new_button_) ;
+        parent.append(this.picklist_list_div_) ;
     }
 
     createInitialWindow() {
         this.reset() ;
 
-        this.picklist_ctrls_ = document.createElement('div') ;
-        this.picklist_ctrls_.className = 'picklist-ctrls' ;
-        this.top_.append(this.picklist_ctrls_) ;
-
-        this.createSelect(this.picklist_ctrls_) ;
-        this.createDelete(this.picklist_ctrls_) ;
-        this.createNew(this.picklist_ctrls_) ;
-
+        // This is where the picklist is displayed
         this.picklist_top_ = document.createElement('div') ;
         this.picklist_top_.className = 'picklist-top' ;
+
+        // This is to the left of the picklist display and contains the controls to create, delete, and select picklists
+        this.leftside_ = new XeroFoldable(this.top_, this.picklist_top_, 'Picklist') ;
+        this.createPicklistList(this.leftside_.content) ;
+        
+        this.list_top_ = document.createElement('div') ;
+        this.list_top_.className = 'list-top' ;
+
+        this.picklist_top_.append(this.leftside_.elem) ;
+        this.picklist_top_.append(this.list_top_) ;
         this.top_.append(this.picklist_top_) ;
     }
 
-    selectedPicklistChanged() {
-        //
-        // This stores the data to the picklist with the name given by the
-        // value this.current_picklist_
-        //
-        this.updateTeamData() ;
-
-        //
-        // Now, ask for picklist data based on what is selected in the picklist selector
-        //
-        this.loadPicklist(this.picklist_select_.value) ;
+    createPicklistDialogClosed(ok) {
+        if (ok) {
+            this.scoutingAPI('create-new-picklist', [this.dialog_.enteredName, this.dialog_.enteredDataset]) ;
+            this.scoutingAPI('get-picklist-list', true) ;
+            this.loadPicklist(ok.enteredName) ;
+            this.dialog_ = undefined ;
+        }
     }
 
     createPicklist() {
-        let name = this.picklist_new_name_.value ;
-        if (name.length === 0) {
-            alert('Please enter a name for the new picklist') ;
-            return ;
-        }
+        //
+        // Popup dialog box for picklist name and dataset
+        //
+        this.dialog_ = new PromptNameAndDataset(this.createPicklistDialogClosed.bind(this), this.datasets_.map((ds) => ds.name)) ;
+        this.dialog_.showRelative(this.top_) ;
+    }
 
-        let dsname = this.picklist_ds_select_.value ;
-        if (dsname.length === 0) {
-            alert('Please select a DataSet for the new picklist') ;
-            return ;
+    setPicklistSelected(name) {
+        for(let item of this.picklist_items_) {
+            if (item.textContent === name) {
+                item.className = 'picklist-list-item-selected' ;
+            }
+            else {
+                item.className = 'picklist-list-item' ;
+            }
         }
-
-        this.picklist_new_name_.value = '' ;
-        
-        this.current_picklist_ = name ;
-        this.scoutingAPI('create-new-picklist', [name, dsname]) ;
-        this.scoutingAPI('get-picklist-list', true) ;
-        this.loadPicklist(name) ;
     }
 
     loadPicklist(name) {
+
+        this.updateTeamData() ;
+
         this.current_picklist_ = name ;
+        this.setPicklistSelected(name) ;
         this.scoutingAPI('get-picklist-data', name) ;
         this.scoutingAPI('get-picklist-notes', name) ;
     }
 
     deletePicklist() {
-        let name = this.picklist_del_select_.value ;
-        this.scoutingAPI('delete-picklist', name) ;
-        this.cols_ = [] ;
-
+        this.scoutingAPI('delete-picklist', this.current_picklist_) ;
+        this.clear(this.table_div_) ;
+        this.current_picklist_ = undefined ;
         this.scoutingAPI('get-picklist-list') ;
     }
 
@@ -252,36 +267,23 @@ class PickListView extends TabulatorView {
     }
 
     receiveDataSets(args) {
-        let datasets = args[0] ;
-        this.clear(this.picklist_ds_select_) ;
-        if (datasets && datasets.length > 0) {
-            this.picklist_ds_select_.disabled = false ;
-            for(let choice of datasets) {
-                const opt = document.createElement('option');    
-                opt.value = choice.name ;
-                opt.text = choice.name ;
-                this.picklist_ds_select_.append(opt) ;
-            }
-        }
-        else {
-            const opt = document.createElement('option');    
-            opt.value = '' ;
-            opt.text = 'No DataSets Defined' ;
-            opt.disabled = true ;
-            this.picklist_ds_select_.append(opt) ;
-            this.picklist_ds_select_.disabled = true;
-        }
+        this.datasets_ = args[0] ;
     }
 
     receivePicklistList(arg) {
-        this.populatePicklistSelectNames(arg[0].list) ;
-        this.populatePicklistDeleteNames(arg[0].list) ;
+        this.populatePickListList(arg[0].list) ;
 
-        if (arg[0].default) {
-            this.loadPicklist(arg[0].default) ;
-        }
-        else if (arg[0].list.length > 0) {
-            this.loadPicklist(arg[0].list[0]) ;
+        if (!this.current_picklist_) {
+            //
+            // If we don't have a current picklist, then we need load the default, which is the last picklist
+            // that was previously loaded.  If there is no default, then we load the first picklist in the list.
+            //
+            if (arg[0].default) {
+                this.loadPicklist(arg[0].default) ;
+            }
+            else if (arg[0].list.length > 0) {
+                this.loadPicklist(arg[0].list[0]) ;
+            }
         }
     }
 
@@ -299,7 +301,7 @@ class PickListView extends TabulatorView {
     receivePicklistData(arg) {
         let obj = arg[0] ;
 
-        this.clear(this.picklist_top_) ;
+        this.clear(this.list_top_) ;
         if (this.columns_picklist_name_ !== obj.name) {
             //
             // If the stored columns are from a different picklist, they the columns
@@ -333,7 +335,7 @@ class PickListView extends TabulatorView {
         this.table_.on("columnMoved", this.colMoved.bind(this)) ;
         this.table_.on("columnResized", this.sendColumnConfiguration.bind(this)) ;
         this.table_.on("cellEdited", this.sendNotes.bind(this)) ;
-        this.picklist_top_.append(this.table_div_) ;
+        this.list_top_.append(this.table_div_) ;
     }
 
     dataSorted(sorters, rows) {

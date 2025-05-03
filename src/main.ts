@@ -43,7 +43,8 @@ import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventDa
          getImages,
          importImage,
          getImageData,
-         updatePicklistColumns} from "./ipchandlers" ;
+         updatePicklistColumns,
+         updatePicklistData} from "./ipchandlers" ;
 import { runUnitTests } from "./units/unittest";
 
 
@@ -160,6 +161,8 @@ app.on("ready", () => {
     ipcMain.on('create-new-picklist', (event, ...args) => { createNewPicklist('create-new-picklist', ...args)}) ;
     ipcMain.on('delete-picklist', (event, ...args) => { deletePicklist('delete-picklist', ...args)}) ;
     ipcMain.on('update-picklist-notes', (event, ...args) => { updatePicklistNotes('update-picklist-notes', ...args)}) ;
+    ipcMain.on('update-picklist-data', (event, ...args) => { updatePicklistData('update-picklist-data', ...args)}) ;
+    ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('update-picklist-columns', ...args)}) ;
     ipcMain.on('get-picklist-notes', (event, ...args) => { getPicklistNotes('get-picklist-notes', ...args)}) ;
     ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('get-picklist-columns', ...args)}) ;
     ipcMain.on('client-log', (event, ...args) => { clientLog('client-log', ...args)}) ;

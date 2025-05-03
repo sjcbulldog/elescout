@@ -18,7 +18,7 @@ import { TeamNickNameNumber } from "../project/teammgr";
 import { ManualMatchData } from "../project/matchmgr";
 import { GraphInfo, GraphConfig } from "../project/graphmgr";
 import { GraphData } from "../comms/graphifc";
-import { ProjPicklistNotes } from "../project/picklistmgr";
+import { ProjPickListColConfig, ProjPicklistNotes } from "../project/picklistmgr";
 import Papa from "papaparse";
 import * as fs from "fs";
 import * as path from "path";
@@ -2554,6 +2554,18 @@ export class SCCentral extends SCBase {
 	public updatePicklistNotes(name: string, notes: ProjPicklistNotes[]) {
 		if (this.project_ && this.project_.isInitialized()) {
 			this.project_.picklist_mgr_!.setPicklistNotes(name, notes) ;
+		}
+	}
+
+	public updatePicklistData(name: string, data: number[]) {
+		if (this.project_ && this.project_.isInitialized()) {
+			this.project_!.picklist_mgr_!.updatePicklistData(name, data) ;
+		}
+	}
+
+	public updatePicklistCols(name: string, cols: ProjPickListColConfig[]) {
+		if (this.project_ && this.project_.isInitialized()) {
+			this.project_!.picklist_mgr_!.updatePicklistCols(name, cols) ;
 		}
 	}
 

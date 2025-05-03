@@ -71,6 +71,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-picklist-col-data',
         'update-picklist-columns',
         'update-picklist-notes',
+        'update-picklist-data',
         'get-picklist-notes',
         'client-log',
         'get-single-team-data',
