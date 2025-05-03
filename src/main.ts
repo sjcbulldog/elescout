@@ -1,9 +1,9 @@
 import { app, BrowserWindow, ipcMain, Menu } from "electron";
 import * as path from "path";
-import { SCBase } from "./apps/scbase";
-import { SCScout } from "./apps/scscout";
-import { SCCentral } from "./apps/sccentral";
-import { SCCoach } from "./apps/sccoach";
+import { SCBase } from "./main/apps/scbase";
+import { SCScout } from "./main/apps/scscout";
+import { SCCentral } from "./main/apps/sccentral";
+import { SCCoach } from "./main/apps/sccoach";
 import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
          setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, 
          getTeamStatus, getMatchStatus, setTabletNamePurpose, 
@@ -44,8 +44,10 @@ import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventDa
          importImage,
          getImageData,
          updatePicklistColumns,
-         updatePicklistData} from "./ipchandlers" ;
-import { runUnitTests } from "./units/unittest";
+         updatePicklistData,
+         getPicklistColumns,
+         getPicklistColData} from "./main/ipchandlers" ;
+import { runUnitTests } from "./main/units/unittest";
 
 
 export let scappbase : SCBase | undefined = undefined ;
@@ -61,7 +63,7 @@ function createWindow() : void {
       webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-          preload: path.join(__dirname, 'preload.js'),
+          preload: path.join(__dirname, 'main', 'preload.js'),
           devTools: true,
       },
       title: "XeroScout",
@@ -162,9 +164,11 @@ app.on("ready", () => {
     ipcMain.on('delete-picklist', (event, ...args) => { deletePicklist('delete-picklist', ...args)}) ;
     ipcMain.on('update-picklist-notes', (event, ...args) => { updatePicklistNotes('update-picklist-notes', ...args)}) ;
     ipcMain.on('update-picklist-data', (event, ...args) => { updatePicklistData('update-picklist-data', ...args)}) ;
+    ipcMain.on('get-picklist-columns', (event, ...args) => { getPicklistColumns('get-picklist-columns', ...args)}) ;
     ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('update-picklist-columns', ...args)}) ;
     ipcMain.on('get-picklist-notes', (event, ...args) => { getPicklistNotes('get-picklist-notes', ...args)}) ;
     ipcMain.on('update-picklist-columns', (event, ...args) => { updatePicklistColumns('get-picklist-columns', ...args)}) ;
+    ipcMain.on('get-picklist-col-data', (event, ...args) => { getPicklistColData('get-picklist-col-data', ...args)}) ;
     ipcMain.on('client-log', (event, ...args) => { clientLog('client-log', ...args)}) ;
     ipcMain.on('get-single-team-data', (event, ...args) => { getSingleTeamData('get-single-team-data', ...args)}) ;
     createWindow() ;

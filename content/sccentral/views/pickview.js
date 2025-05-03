@@ -1,3 +1,65 @@
+class PromptForColumnNames extends EditFormDialog {
+    constructor(close, colnames, selected) {
+        super(close, 'Picklist Columns') ;
+        this.colnames_ = colnames ;
+        this.selected_ = selected ;
+    }
+
+    async populateDialog(pdiv) {
+        let div = document.createElement('div') ;
+        div.className = 'popup-form-edit-dialog-rowdiv' ;
+
+        let data = [] ;
+        for(let name of this.colnames_) {
+            let one = { 
+                selected: (this.selected_ && this.selected_.includes(name)) ? true : false,
+                name: name 
+            } ;
+            data.push(one) ;
+        }
+
+        this.colsel_ = new Tabulator(div,
+            {
+                data:data,
+                layout:"fitData",
+                resizableColumnFit:true,
+                columns: [
+                    { 
+                        field: 'selected', 
+                        title: 'Selected', 
+                        width: 256, 
+                        editor: 'tickCross', 
+                        formatter: 'tickCross'
+                    },
+                    { 
+                        field: 'name', 
+                        title: 'Field Name', 
+                        width: 512, 
+                        editor: 'input' 
+                    },
+                ],
+            }) ;
+
+        div.style.height = '512px' ;
+
+        pdiv.appendChild(div) ;
+    }
+
+    onInit() {
+    }
+
+    okButton(event) {
+        this.selected_ = [] ;
+        for(let row of this.colsel_.getRows()) {
+            let data = row.getData() ;
+            if (data.selected) {
+                this.selected_.push(data.name) ;
+            }
+        }
+        super.okButton(event) ;
+    }
+}
+
 class PromptNameAndDataset extends EditFormDialog {
     constructor(close, datasets) {
         super(close, 'Create Picklist') ;
@@ -101,6 +163,7 @@ class PickListView extends TabulatorView {
     }
 
     close() {
+        this.updateTeamData() ;
         super.close() ;
     }
 
@@ -213,6 +276,7 @@ class PickListView extends TabulatorView {
         this.setPicklistSelected(name) ;
         this.scoutingAPI('get-picklist-data', name) ;
         this.scoutingAPI('get-picklist-notes', name) ;
+        this.scoutingAPI('get-picklist-columns', name) ;
     }
 
     deletePicklist() {
@@ -298,6 +362,16 @@ class PickListView extends TabulatorView {
         this.updatingNotesFromMain_ = false ;
     }
 
+    addRemoveColumns(e, col) {
+        let colnames = [] ;
+        let ds = undefined ;
+
+        let fieldlist = [...this.team_fields_, ...this.match_fields_, ...this.formulas_] ;
+        let selected = this.cols_.map((col) => col.name) ;
+        this.dialog_ = new PromptForColumnNames(this.selectPicklistMenu.bind(this), fieldlist, selected) ;
+        this.dialog_.showRelative(this.top_) ;
+    }
+
     receivePicklistData(arg) {
         let obj = arg[0] ;
 
@@ -335,6 +409,7 @@ class PickListView extends TabulatorView {
         this.table_.on("columnMoved", this.colMoved.bind(this)) ;
         this.table_.on("columnResized", this.sendColumnConfiguration.bind(this)) ;
         this.table_.on("cellEdited", this.sendNotes.bind(this)) ;
+        this.table_.on("headerDblClick", this.addRemoveColumns.bind(this)) ;
         this.list_top_.append(this.table_div_) ;
     }
 
@@ -413,32 +488,10 @@ class PickListView extends TabulatorView {
     receivePicklistColData(args) {
         let dobj = args[0];
 
-        let num = true ;
         for(let i = 0 ; i < dobj.teams.length ; i++) {
-            if (dobj.data[i] != null && !this.isNumeric(dobj.data[i])) {
-                num = false ;
-                break ;
-            }
-        }        
-
-        if (num) {
-            for(let i = 0 ; i < dobj.teams.length ; i++) {
-                let team = dobj.teams[i] ;
-                let value ;
-                if (dobj.data[i] === null) {
-                    value = 'N/A' ;
-                } else {
-                    value = dobj.data[i].toFixed(3) ;
-                }
-                this.setValue(dobj.field, team, value) ;
-            }
-        }
-        else {
-            for(let i = 0 ; i < dobj.teams.length ; i++) {
-                let team = dobj.teams[i] ;
-                let value = dobj.data[i] ;
-                this.setValue(dobj.field, team, value) ;
-            }            
+            let team = dobj.teams[i] ;
+            let value = XeroView.formatDataValue(dobj.data[i]) ;
+            this.setValue(dobj.field, team, value) ;
         }
     }
 
@@ -459,7 +512,7 @@ class PickListView extends TabulatorView {
         let obj = args[0] ;
         this.columns_picklist_name_ = obj.name ;
 
-        for(let col of obj.columns) {
+        for(let col of obj.cols) {
             if (!this.isIgnoredField(col.name)) {
                 this.addPickListCol(col) ;
             }
@@ -468,7 +521,7 @@ class PickListView extends TabulatorView {
         //
         // Now set the column widths
         //
-        for(let col of obj.columns) {
+        for(let col of obj.cols) {
             this.setColumnWidth(col.name, col.width) ;
         }
 
@@ -476,8 +529,8 @@ class PickListView extends TabulatorView {
         // Now rearrange the column order to match the order we received
         //
         let prev = undefined ;
-        for(let index = 0 ; index < obj.columns.length ; index++) {
-            let col = obj.columns[index] ;
+        for(let index = 0 ; index < obj.cols.length ; index++) {
+            let col = obj.cols[index] ;
             if (prev) {
                 this.table_.moveColumn(col.name, prev, true) ;
             }
@@ -525,7 +578,7 @@ class PickListView extends TabulatorView {
         }
 
         let coldata = {
-            name: this.getCurrentPicklistName(),
+            name: this.current_picklist_,
             cols: this.cols_
         }
 
@@ -662,7 +715,12 @@ class PickListView extends TabulatorView {
             width: desc.width ? desc.width : 32,
             sorter: this.sortColumn.bind(this)
         });
-        this.scoutingAPI('get-picklist-col-data', desc.name) ;
+
+        let obj = {
+            name: this.current_picklist_,
+            field: desc.name,
+        }
+        this.scoutingAPI('get-picklist-col-data', obj) ;
     }
 
     findColumnIndexByName(name) {
@@ -691,50 +749,25 @@ class PickListView extends TabulatorView {
         col.delete() ;
     }
 
-    selectPicklistMenu(field) {
-        if (this.findColumnIndexByName(field) !== -1) {
-            this.removeColumn(field) ;
-        }
-        else {
-            let desc = {
-                name: field,
-                width: 64
+    selectPicklistMenu() {
+
+        // Remove all columns
+        for(let col of this.cols_) {
+            if (!this.isIgnoredField(col.name) && !this.dialog_.selected_.includes(col.name)) {
+                this.removeColumn(col.name) ;
             }
-            this.addPickListCol(desc) ;
+        }
+        
+        for(let field of this.dialog_.selected_) {
+            if (this.findColumnIndexByName(field) !== -1) {
+                let desc = {
+                    name: field,
+                    width: 64
+                }
+                this.addPickListCol(desc) ;
+            }
         }
         this.sendColumnConfiguration();
-    }
-
-    picklistMenu() {
-        var menu = [];
-        var columns = this.table_.getColumns();
-
-        let fieldlist = [...this.team_fields_, ...this.match_fields_, ...this.formulas_] ;
-        fieldlist.sort() ;
-
-        for (let field of fieldlist) {
-            //create checkbox element using font awesome icons
-            let icon = document.createElement("i");
-            icon.innerHTML = (this.findColumnIndexByName(field) !== -1) ? '&check;' : ' ';
-
-            //build label
-            let label = document.createElement("span");
-            let title = document.createElement("span");
-
-            title.textContent = " " + field;
-
-            label.appendChild(icon);
-            label.appendChild(title);
-            label.xerocol = field ;
-
-            //create menu item
-            menu.push({
-                label: label,
-                action: this.selectPicklistMenu.bind(this, field),
-            });
-        }
-
-        return menu;        
     }
 
     generateColDesc() {
@@ -749,13 +782,6 @@ class PickListView extends TabulatorView {
             let coldesc = this.findColumnByName(field.field) ;
             if (coldesc && coldesc.width) {
                 desc['width'] = coldesc.width ;
-            }
-
-            if (field.field === PickListView.RankFieldName) {
-                //
-                // This is the only field that has a menu
-                //
-                desc['headerMenu'] = this.picklistMenu.bind(this) ;
             }
 
             if (field.field === PickListView.PickNotesFieldName) {

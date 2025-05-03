@@ -15,7 +15,7 @@ View: dataset mgr
       - add/remove icons
       - search for fields
 View: picklist editor 
-      - adapt to new dataset model
+      - resize columns does not work
 View: multi team view 
       - adapt to new dataset model
 View: team graph 
@@ -30,6 +30,11 @@ Scout
 - add sync with IP address option
 - test syncing w/ cable
 - test syncing w/ wi-fi
+
+Broader
+-------
+Create a web server to act as a connection point between the various machines
+Create an IOS based scouting program for the scouting end
 
 Attributions
 ------------

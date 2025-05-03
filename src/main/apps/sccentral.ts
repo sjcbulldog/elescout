@@ -18,7 +18,7 @@ import { TeamNickNameNumber } from "../project/teammgr";
 import { ManualMatchData } from "../project/matchmgr";
 import { GraphInfo, GraphConfig } from "../project/graphmgr";
 import { GraphData } from "../comms/graphifc";
-import { ProjPickListColConfig, ProjPicklistNotes } from "../project/picklistmgr";
+import { PickList, ProjPickListColConfig, ProjPicklistNotes } from "../project/picklistmgr";
 import Papa from "papaparse";
 import * as fs from "fs";
 import * as path from "path";
@@ -2397,6 +2397,7 @@ export class SCCentral extends SCBase {
 		}
 	}
 
+	//#region picklists
 	private async doExportPicklist() {
 		if (this.project_ && this.project_.isInitialized()) {
 			if (this.project_.picklist_mgr_!.getPicklists().length > 0) {
@@ -2477,6 +2478,7 @@ export class SCCentral extends SCBase {
 		}
 	}
 
+	// TODO: this should be in the picklist manager
 	public sendPicklistData(name: string) {
         let data : any[] = [] ;
         if (this.project_ && this.project_.isInitialized()) {
@@ -2499,7 +2501,7 @@ export class SCCentral extends SCBase {
 				let ds = this.project_.dataset_mgr_!.getDataSetByName(picklist.dataset) ;
 				if (ds) {
 					let rank = 1 ;
-					for(let team of ds.teams) {
+					for(let team of picklist.rank) {
 						let t = this.project_.team_mgr_?.findTeamByNumber(team) ;
 						let obj = {
 							rank: rank++,
@@ -2518,21 +2520,48 @@ export class SCCentral extends SCBase {
         this.sendToRenderer('send-picklist-data', obj) ;
 	}
 
-	public async sendPicklistColData(m:MatchSet, field: string) {
+	public sendPicklistColumns(name: string) {
+		let data: ProjPickListColConfig[] = [] ;
+
+		if (this.project_ && this.project_.isInitialized()) {
+			let picklist = this.project_!.picklist_mgr_!.findPicklistByName(name) ;
+			if (picklist) {
+				data = picklist.cols ;
+			}
+		}
+
+		let obj = {
+			name: name,
+			cols: data
+		} ;
+		this.sendToRenderer('send-picklist-columns', obj) ;
+	}
+
+	public async sendPicklistColData(name: string, field: string) {
 		let values: DataValue[] = [] ;
 		let teams: number[] = [] ;
 
 		if (this.project_ && this.project_.isInitialized()) {
-			for(let t of this.project_!.team_mgr_!.getTeams()) {
-				let v = await this.project_!.data_mgr_!.getData(m, field, t.team_number) ;
+			let picklist = this.project_!.picklist_mgr_!.findPicklistByName(name) ;
+			if (!picklist) {
+				return ;
+			}
+
+			let ds = this.project_!.dataset_mgr_!.getDataSetByName(picklist.dataset) ;
+			if (!ds) {
+				return ;
+			}
+
+			for(let t of ds.teams) {
+				let v = await this.project_!.data_mgr_!.getData(ds.matches, field, t) ;
 				values.push(v) ;
-				teams.push(t.team_number) ;
+				teams.push(t) ;
 			}
 
 			let data : PickListColData = {
 				field: field,
 				data: values,
-				teams: teams	
+				teams: teams
 			}
 			this.sendToRenderer('send-picklist-col-data', data) ;
 		}
@@ -2568,6 +2597,8 @@ export class SCCentral extends SCBase {
 			this.project_!.picklist_mgr_!.updatePicklistCols(name, cols) ;
 		}
 	}
+
+	//#endregion
 
 	public async getSingleTeamData(ds: string, team: number) {
 		interface MyObject {

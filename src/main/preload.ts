@@ -63,8 +63,11 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'get-match-list',
         'get-stored-graph-list',
         'delete-stored-graph',
+
         'get-picklist-data',
         'get-picklist-list',
+        'get-picklist-col-data',
+        'get-picklist-columns',
         'create-new-picklist',
         'delete-picklist',
         'get-picklist-columns',
@@ -73,7 +76,9 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'update-picklist-notes',
         'update-picklist-data',
         'get-picklist-notes',
+
         'client-log',
+
         'get-single-team-data',
         'update-single-team-data',
         'get-single-team-fields'
