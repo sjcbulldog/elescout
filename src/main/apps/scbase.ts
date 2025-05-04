@@ -14,6 +14,7 @@ import * as winston from "winston";
 import * as crypto from "crypto";
 import settings from "electron-settings";
 import { ImageManager } from "../imagemgr";
+import { IPCSetView } from "../../shared/ipcinterfaces";
 
 export enum XeroAppType {
   None,
@@ -248,6 +249,9 @@ export abstract class SCBase {
     return XeroAppType.None;
   }
 
+  public mainWindowLoaded() : void {
+  }
+
   public sendToRenderer(ev: string, ...args: any) {
     let argval: any[] = args ;
 
@@ -266,7 +270,12 @@ export abstract class SCBase {
     this.lastview_ = view ;
     
     args.unshift(view) ;
-    this.sendToRenderer("update-main-window-view", ...args);
+    let obj : IPCSetView = {
+      view: "text",
+      args: args.splice(1),
+    } ;
+
+    this.sendToRenderer("update-main-window-view", obj);
   }
 
   private createUniqueFilename(

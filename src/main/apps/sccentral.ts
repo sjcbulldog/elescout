@@ -133,6 +133,15 @@ export class SCCentral extends SCBase {
 		this.tryConnectBlueAlliance() ;
 	}
 
+	public mainWindowLoaded(): void {
+		this.setView('text', 'No Event Loaded') ;
+		this.sendToRenderer('send-app-status', { 
+			left: 'Xero Central',
+			middle: undefined,
+			right: 'Connecting To Blue Alliance...',
+		}) ;
+	}
+
 	private tryAgain() {
 		setTimeout(() => {
 			this.logger_.info(`trying to connect (${this.bacount_}) to blue alliance again`) ;
@@ -149,13 +158,16 @@ export class SCCentral extends SCBase {
 			.then((up) => {
 				if (!up) {
 					this.ba_ = undefined;
+					this.sendToRenderer('send-app-status', { right: 'Blue Alliance not available - trying again' }) ;
 					this.tryAgain() ;
 				} else {
+					this.sendToRenderer('send-app-status', { right: 'Blue Alliance connected' }) ;
 					this.logger_.info('connected to the blue alliance site') ;
 					this.baloading_ = false;
 				}
 			})
 			.catch((err) => {
+				this.sendToRenderer('send-app-status', { right: `Blue Alliance error - ${err.message} - trying again` }) ;
 				this.tryAgain() ;
 			});		
 	}
@@ -165,7 +177,7 @@ export class SCCentral extends SCBase {
 	}
 
 	public basePage(): string {
-		return 'content/sccentral/central.html';
+		return 'content/main.html';
 	}
 
 	public close() : void {
@@ -1026,9 +1038,7 @@ export class SCCentral extends SCBase {
 
 	public async loadBaEventDataError(): Promise<void> {
 		this.sendToRenderer('set-status-title', 'Blue Alliance Error');
-		this.sendToRenderer(
-			'set-status-html',
-			'Error importing data - invalid request from renderer - internal error'
+		this.sendToRenderer('set-status-html','Error importing data - invalid request from renderer - internal error'
 		);
 		this.sendToRenderer('set-status-close-button-visible', true);
 		this.setView('info');
@@ -1064,19 +1074,14 @@ export class SCCentral extends SCBase {
 				let errobj = err as Error;
 				this.sendToRenderer("set-status-visible", true);
 				this.sendToRenderer("set-status-title", "Blue Alliance Error");
-				this.sendToRenderer(
-					"set-status-html",
-					"Error importing data - " + errobj.message
+				this.sendToRenderer("set-status-html","Error importing data - " + errobj.message
 				);
 				this.sendToRenderer("set-status-close-button-visible", true);
 				this.setView("info");
 			}
 		} else {
 			this.sendToRenderer("set-status-title", "Blue Alliance Error");
-			this.sendToRenderer(
-				"set-status-html",
-				"Error importing data - no event with key '" + key + "' was found"
-			);
+			this.sendToRenderer("set-status-html","Error importing data - no event with key '" + key + "' was found");
 			this.sendToRenderer("set-status-close-button-visible", true);
 			this.setView("info");
 		}
@@ -1160,15 +1165,9 @@ export class SCCentral extends SCBase {
 		let fev: BAEvent | undefined = this.project_?.info?.frcev_;
 		if (fev) {
 			this.sendToRenderer("set-status-visible", true);
-			this.sendToRenderer(
-				"set-status-title",
-				"Loading match data for event '" + fev.name + "'"
-			);
+			this.sendToRenderer("set-status-title","Loading match data for event '" + fev.name + "'");
 			this.msg_ = "";
-			this.sendToRenderer(
-				"set-status-html",
-				"Requesting match data from the Blue Alliance ..."
-			);
+			this.sendToRenderer("set-status-html","Requesting match data from the Blue Alliance ...");
 			this.project_!.loadExternalBAData(
 				this.ba_!,
 				fev,

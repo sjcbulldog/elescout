@@ -5,9 +5,11 @@
 			"type": "npm",
 			"script": "compile",
 			"group": "build",
-			"problemMatcher": ["$tsc"],
+			"problemMatcher": [
+				"$tsc"
+			],
 			"label": "npm: compile",
-			"detail": "tsc && copyfiles content/**/* dist"
+			"detail": "tsc"
 		}
 	]
 }

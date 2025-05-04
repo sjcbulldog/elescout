@@ -145,6 +145,44 @@ export class DataValue {
         return this.value_ as Array<DataValue>;
     }
 
+    public toDisplayString() : string {
+        let ret = '' ;
+
+        if (this.value_ === null) {
+            ret = 'null' ; 
+        }
+        else if (this.type === 'string') {
+            ret = this.toString() ;
+        }
+        else if (this.type === 'boolean') {
+            ret = this.toBoolean() ? 'true' : 'false' ;
+        }
+        else if (this.type === 'integer') {
+            ret = this.toInteger().toString() ;
+        }
+        else if (this.type === 'real') {
+            ret = this.toReal().toString() ;
+        }
+        else if (this.type === 'array') {
+            ret = '[' ;
+            for(const v of this.toArray()) {
+                ret += `${v.toDisplayString()},` ;
+            }
+            if (ret.length > 1) {
+                ret = ret.slice(0, -1) ; // remove last comma
+            }
+            ret += ']' ;
+        }
+        else if (this.type === 'error') {
+            ret = `Error: ${this.toString()}`;
+        }
+        else {
+            ret = `Unknown type: ${this.type}`;
+        }
+
+        return ret;
+    }
+
     public toValueString() {
         let ret = '' ;
 

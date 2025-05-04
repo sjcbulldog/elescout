@@ -9,7 +9,7 @@ import { TeamNickNameNumber } from "./project/teammgr";
 import { TabletData } from "./project/tabletmgr";
 import { ProjColConfig } from "./project/datamgr";
 import { GraphConfig } from "./project/graphmgr";
-import { ProjPickListColConfig, ProjPickListCols, ProjPicklistNotes } from "./project/picklistmgr";
+import { ProjPickListColConfig, ProjPicklistNotes} from "./project/picklistmgr";
 
 // get-info-data
 export async function getInfoData(cmd: string, ...args: any[]) {

@@ -96,9 +96,14 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
   //
   // These go from the main process to the renderer process
   //
+  receiveOff: (channel: string, func:any) => {
+    ipcRenderer.off(channel, func) ;
+  },
+
   receive: (channel: string, func:any) => {
       let validChannels = [
         'update-main-window-view',
+        'send-app-status',
         'event-name',
         'send-nav-data', 
         'send-nav-highlight',
@@ -146,7 +151,7 @@ contextBridge.exposeInMainWorld( 'scoutingAPI', {
         'send-single-team-fields'
       ];
       if (validChannels.includes(channel)) {
-        ipcRenderer.on(channel, (event, ...args) => func(...args));
+        ipcRenderer.on(channel, (event, ...args) => func(args[0][0]));
       }
   }
 }) ;

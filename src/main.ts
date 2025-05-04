@@ -5,50 +5,13 @@ import { SCScout } from "./main/apps/scscout";
 import { SCCentral } from "./main/apps/sccentral";
 import { SCCoach } from "./main/apps/sccoach";
 import { getNavData as getNavData, executeCommand, getInfoData, getSelectEventData, loadBaEventData, getTabletData, 
-         setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, 
-         getTeamStatus, getMatchStatus, setTabletNamePurpose, 
-         provideResult,
-         setEventName,
-         getMatchDB,
-         getTeamDB,
-         sendMatchColConfig,
-         sendTeamColConfig,
-         getTeamGraphData,
-         generateRandomData,
-         getTeamList,
-         saveTeamGraphSetup,
-         getMatchList,
-         getStoredGraphList,
-         deleteStoredGraph,
-         getForm,
-         getPicklistData,
-         getPicklistList,
-         createNewPicklist,
-         deletePicklist,
-         clientLog,
-         updatePicklistNotes,
-         getPicklistNotes,
-         getSingleTeamData,
-         getFormulas,
-         deleteFormula,
-         renameFormula,
-         updateFormula,
-         getDataSets,
-         updateDataSet,
-         deleteDataSet,
-         renameDataSet,
-         getTeamFieldList,
-         getMatchFieldList,
-         saveForm,
-         getImages,
-         importImage,
-         getImageData,
-         updatePicklistColumns,
-         updatePicklistData,
-         getPicklistColumns,
-         getPicklistColData} from "./main/ipchandlers" ;
+         setTabletData, getTeamData, setTeamData, getMatchData, setMatchData, getTeamStatus, getMatchStatus, setTabletNamePurpose, 
+         provideResult, setEventName, getMatchDB, getTeamDB, sendMatchColConfig, sendTeamColConfig, getTeamGraphData, generateRandomData,
+         getTeamList, saveTeamGraphSetup, getMatchList, getStoredGraphList, deleteStoredGraph, getForm, getPicklistData, getPicklistList,
+         createNewPicklist, deletePicklist, clientLog, updatePicklistNotes, getPicklistNotes, getSingleTeamData, getFormulas, deleteFormula,
+         renameFormula, updateFormula, getDataSets, updateDataSet, deleteDataSet, renameDataSet, getTeamFieldList, getMatchFieldList,
+         saveForm, getImages, importImage, getImageData, updatePicklistColumns, updatePicklistData, getPicklistColumns, getPicklistColData} from "./main/ipchandlers" ;
 import { runUnitTests } from "./main/units/unittest";
-
 
 export let scappbase : SCBase | undefined = undefined ;
 
@@ -97,6 +60,7 @@ function createWindow() : void {
     win
       .loadFile(scappbase!.basePage())
       .then(() => {
+        scappbase?.mainWindowLoaded() ;
       })
       .catch((e) => {
         scappbase?.logger_.error("Error loading page: " + e) ;
