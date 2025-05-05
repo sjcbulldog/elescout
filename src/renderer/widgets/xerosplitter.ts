@@ -4,7 +4,7 @@ export type SplitterOrientation = "horizontal" | "vertical";
 
 export class XeroSplitter extends XeroWidget {
 
-    private bar_width_ = 5 ;
+    private bar_width_ = 7 ;
     private bar_ : XeroWidget ;
     private first_ : XeroWidget ;
     private second_ : XeroWidget ;

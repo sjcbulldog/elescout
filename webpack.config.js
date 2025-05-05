@@ -1,4 +1,5 @@
 const path = require('path');
+const { javascript } = require('webpack');
 
 module.exports = {
   mode: 'development',
@@ -8,4 +9,5 @@ module.exports = {
     filename: 'xeroapp.bundle.js',
   },
   devtool: 'inline-source-map',
+  target: 'web'
 };

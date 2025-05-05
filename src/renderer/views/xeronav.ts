@@ -15,7 +15,8 @@ export class XeroNav  extends XeroWidget {
 
     private onNavData(data: any) {
         let logger = XeroLogger.getInstance() ;
-        logger.debug(`XeroNav.onNavData: data=${data}`) ;
+
+        this.elem.innerHTML = "" ;
 
         for(let item of data) {
             let navItem = document.createElement('div') ;
@@ -53,8 +54,6 @@ export class XeroNav  extends XeroWidget {
     }
 
     private onNavHighlight(data: any) {
-        let logger = XeroLogger.getInstance() ;
-        logger.debug(`XeroNav.onNavHighlight: data=${data}`) ;
     }
 
     private navItemClicked(event: Event) {

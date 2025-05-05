@@ -74,5 +74,91 @@ body {
 }
 
 /* 
- *
+ * Info view related styles
  */
+ .xero-info-view {
+    padding: 20px 10px;
+    border: 2px solid black;
+    border-radius: 10px;    
+    box-shadow: 10px 5px 5px lightgray;    
+    position: relative;
+    top: 25%;
+    width: max-content;
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.xero-info-table {
+    width: 720px ;
+    table-layout: fixed;
+}
+
+.xero-info-location {
+    font-weight: bold;
+    font-size: 18px;
+    text-align: center;
+}
+
+.xero-info-table-cell {
+    padding: 5px 10px;
+}
+
+.xero-info-table-icon-import {
+    margin-left: 0px;
+    margin-right: 0px;
+    cursor: pointer;
+}
+
+.xero-info-table-icon-create {
+    margin-left: 5px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.xero-info-table-icon-edit{
+    margin-left: 0px;
+    margin-right: 0px;
+    cursor: pointer;
+}
+
+/*
+ * Select event view related styles
+ */
+.xero-select-event-header-row {
+    font-weight: bold ;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.xero-select-event-row-even {
+    background-color: antiquewhite;
+}
+
+.xero-select-event-row-odd {
+    background-color: lightgray
+}
+
+.xero-select-event-row-odd:hover {
+  color: #000;
+  text-decoration: none;
+  font-weight: bolder;
+  cursor: pointer;
+}
+
+.xero-select-event-row-even:hover {
+    color: #000;
+    text-decoration: none;
+    font-weight: bolder;
+    cursor: pointer;
+}
+
+.select-event-search-box {
+    border-style: solid;
+    border-color: black;
+    border-width: 2px;
+    font-size: medium;
+    width: 100%;
+}

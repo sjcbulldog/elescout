@@ -1,11 +1,7 @@
 import { XeroLogger } from "../utils/xerologger";
+import { EventEmitter } from 'events';
 
 type XeroCBCallback = (arg: any) => void ;
-
-interface XeroCBRegistered {
-    name: string ;
-    callback: XeroCBCallback ;
-};
 
 declare global {
     interface Window {
@@ -17,40 +13,87 @@ declare global {
     }
   }
 
-export class XeroMainProcessInterface {
+export class XeroMainProcessInterface extends EventEmitter {
     private static verbose_ : boolean = true ;
-    private callbacks_: XeroCBRegistered[] = [] ;
+    private cbmap_ : Map<string, XeroCBCallback[]> = new Map() ;
 
     constructor() {
+        super() ;
     }
 
     unregisterAllCallbacks() {
-        for (let i = 0; i < this.callbacks_.length; i++) {
-            const cb = this.callbacks_[i] ;
-            this.unregisterCallback(cb.name, cb.callback) ;
+        for(let name of this.cbmap_.keys()) {
+            let callbacks = this.cbmap_.get(name) ;
+            for (let i = 0; i < callbacks!.length; i++) {
+                this.unregisterCallback(name, callbacks![i]) ;
+            }
         }
     }
 
     request(name: string, arg?: any) {
         if (XeroMainProcessInterface.verbose_) {
             let logger = XeroLogger.getInstance() ;
-            logger.debug(`XeroCBTarget.request: , name=${name}, arg=${arg}`) ;
+            logger.debug(`XeroCBTarget.request: name='${name}', arg='${JSON.stringify(arg)}'`) ;
         }
 
         window.scoutingAPI.send(name, arg);
     }
 
     registerCallback(name: string, callback: XeroCBCallback) {
-        let XeroCBRegistered = { name: name, callback: callback } ;
-        this.callbacks_.push(XeroCBRegistered) ;
-        window.scoutingAPI.receive(name, callback) ;
+        if (XeroMainProcessInterface.verbose_) {
+            let logger = XeroLogger.getInstance() ;
+            logger.debug(`XeroCBTarget.registerCallback: name=${name}`) ;
+        }
+
+        if (!this.cbmap_.has(name)) {
+            this.cbmap_.set(name, [callback]) ;
+            window.scoutingAPI.receive(name, this.dispatchCallback.bind(this, name)) ;
+        }
+        else {
+            let callbacks = this.cbmap_.get(name) ;
+            callbacks!.push(callback) ;
+        }
+
     }
 
     unregisterCallback(name: string, callback: XeroCBCallback) {
-        window.scoutingAPI.receiveOff(name, callback) ;
-        const index = this.callbacks_.findIndex(cb => cb.name === name && cb.callback === callback);
-        if (index !== -1) {
-            this.callbacks_.splice(index, 1);
+        if (XeroMainProcessInterface.verbose_) {
+            let logger = XeroLogger.getInstance() ;
+            logger.debug(`XeroCBTarget.unregisterCallback: name=${name}`) ;
+        }
+
+        if (!this.cbmap_.has(name)) {
+            return ;
+        }
+
+        let callbacks = this.cbmap_.get(name) ;
+        let index = callbacks!.indexOf(callback) ;
+        if (index >= 0) {
+            callbacks!.splice(index, 1) ;
+        }
+        if (callbacks!.length == 0) {
+            this.cbmap_.delete(name) ;
+            window.scoutingAPI.receiveOff(name, this.dispatchCallback.bind(this, name)) ;
+        }
+        else {
+            this.cbmap_.set(name, callbacks!) ;
+        }
+    }
+
+    dispatchCallback(name: string, arg: any) {
+        if (XeroMainProcessInterface.verbose_) {
+            let logger = XeroLogger.getInstance() ;
+            let argstr = (arg === null) ? 'null' : JSON.stringify(arg) ;
+            if (argstr.length > 80) {
+                argstr = argstr.substring(0, 80) + '...' ;
+            }
+            logger.debug(`XeroCBTarget.dispatchCallback: name='${name}', arg='${argstr}'`) ;
+        }
+        const callbacks = this.cbmap_.get(name) ;
+        if (callbacks) {
+            for (const callback of callbacks) {
+                callback(arg) ;
+            }
         }
     }
 }

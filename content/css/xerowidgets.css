@@ -2,6 +2,10 @@
   background-color: lightgray;
 }
 
+.xero-splitter-bar:hover {
+  background-color: blue ;
+}
+
 .xero-status-bar-left {
   height: 100%;
   flex-grow: 0 ;

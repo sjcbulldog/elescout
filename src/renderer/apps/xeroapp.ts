@@ -1,6 +1,8 @@
 import { IPCSetStatus, IPCSetView } from "../../shared/ipcinterfaces";
 import { XeroLogger } from "../utils/xerologger";
+import { XeroInfoView } from "../views/xeroinfoview";
 import { XeroNav } from "../views/xeronav";
+import { XeroSelectEvent } from "../views/xeroselectevent";
 import { XeroTextView } from "../views/xerotextview";
 import { XeroView } from "../views/xeroview";
 import { XeroMainProcessInterface } from "../widgets/xerocbtarget";
@@ -48,9 +50,8 @@ export class XeroApp extends XeroMainProcessInterface {
         this.status_.statusBar().setRightStatus(args.right) ;
     }
 
-    private updateView(args: IPCSetView) {
+    public updateView(args: IPCSetView) {
         let logger = XeroLogger.getInstance() ;
-        logger.debug(`request to update view to ${args.view} with args ${args.args}`) ;
 
         this.closeCurrentView() ;
 
@@ -58,9 +59,8 @@ export class XeroApp extends XeroMainProcessInterface {
             logger.error(`view ${args.view} not registered`) ;
         }
         else {
-            logger.error(`view ${args.view} being displayed`) ;
             let classObj = this.viewmap_.get(args.view) ;
-            this.current_view_ = new classObj(args.args) ;
+            this.current_view_ = new classObj(this, args.args) ;
             this.right_view_pane_.elem.appendChild(this.current_view_!.elem) ;
         }
     }
@@ -68,8 +68,8 @@ export class XeroApp extends XeroMainProcessInterface {
     private closeCurrentView() {
         if (this.current_view_) {
             this.current_view_.close() ;
-            this.current_view_ = undefined ;
             this.right_view_pane_.elem.removeChild(this.current_view_!.elem) ;
+            this.current_view_ = undefined ;
         }
     }
 
@@ -79,5 +79,7 @@ export class XeroApp extends XeroMainProcessInterface {
 
     private registerViews() {
         this.registerView('text', XeroTextView) ;
+        this.registerView('info', XeroInfoView) ;
+        this.registerView('select-event', XeroSelectEvent) ;
     }
 }

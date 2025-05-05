@@ -134,7 +134,28 @@ export class SCCentral extends SCBase {
 	}
 
 	public mainWindowLoaded(): void {
-		this.setView('text', 'No Event Loaded') ;
+		if (process.argv.length === 4) {
+			Project.openEvent(this.logger_, process.argv[3], this.year_!)
+			.then((p) => {
+				this.addRecent(p.location);
+				this.project_ = p;
+				this.updateMenuState(true);
+				if (this.project_.info?.locked_) {
+					this.startSyncServer();
+				}
+				this.setView("info");
+				this.sendNavData();
+			})
+			.catch((err) => {
+				let errobj: Error = err as Error;
+				dialog.showErrorBox("Open Project Error", errobj.message);
+				this.setView('text', 'No Event Loaded') ;
+			});			
+		}
+		else {
+			this.setView('text', 'No Event Loaded') ;
+		}
+
 		this.sendToRenderer('send-app-status', { 
 			left: 'Xero Central',
 			middle: undefined,

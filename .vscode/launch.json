@@ -12,7 +12,8 @@
       },
       "args": [
         ".",
-        "central"
+        "central",
+        "C:/users/butch/OneDrive/Documents/events/e1/event.json"
       ],
       "outputCapture": "std",
       "preLaunchTask": "npm: compile"

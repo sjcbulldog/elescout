@@ -271,8 +271,8 @@ export abstract class SCBase {
     
     args.unshift(view) ;
     let obj : IPCSetView = {
-      view: "text",
-      args: args.splice(1),
+      view: view,
+      args: args[1],
     } ;
 
     this.sendToRenderer("update-main-window-view", obj);

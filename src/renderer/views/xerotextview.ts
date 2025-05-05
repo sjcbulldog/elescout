@@ -1,3 +1,5 @@
+import { XeroApp } from "../apps/xeroapp";
+import { XeroLogger } from "../utils/xerologger";
 import { XeroView } from "./xeroview";
 
 export class XeroTextView extends XeroView {
@@ -5,10 +7,16 @@ export class XeroTextView extends XeroView {
     private empty_div_: HTMLDivElement ;
     private span_: HTMLSpanElement ;
 
-    constructor(args: any[]) {
-        super('xero-text-view') ;
+    constructor(app: XeroApp, arg: string) {
+        super(app, 'xero-text-view') ;
 
-        this.message_ = args[0] ;
+        let logger = XeroLogger.getInstance() ;
+        logger.debug(`XeroTextView: constructor: arg=${JSON.stringify(arg)}`) ;
+
+        this.message_ = arg ;
+        if (!this.message_) {
+            this.message_ = "Invalid Text View Request" ;
+        }
 
         this.empty_div_ = document.createElement("div") ;
         this.empty_div_.className = "xero-text-div" ;
