@@ -252,7 +252,7 @@ body {
 /*
  * Edit form view related styles
  */
-.xero-edit-form-view {
+.xero-form-edit-view {
     display: flex;
     flex-direction: column;
     height: 100%;
