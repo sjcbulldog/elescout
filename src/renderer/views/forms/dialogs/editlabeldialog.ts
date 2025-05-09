@@ -14,21 +14,22 @@ export class EditLabelDialog extends EditFormControlDialog {
 
         let label ;
         let div = document.createElement('div') ;
-        div.className = 'popup-form-edit-dialog-rowdiv' ;
+        div.className = 'xero-popup-form-edit-dialog-rowdiv' ;
 
         this.text_string_ = document.createElement('input') ;
         this.text_string_.type = 'text' ;
-        this.text_string_.className = 'popup-form-edit-dialog-input' ;
+        this.text_string_.className = 'xero-popup-form-edit-dialog-input' ;
         this.text_string_.value = item.text ;
 
         label = document.createElement('label') ;
-        label.className = 'popup-form-edit-dialog-label' ;
+        label.className = '.xero-popup-form-edit-dialog-label' ;
         label.innerText = 'Text' ;
         label.appendChild(this.text_string_) ;
         div.appendChild(label) ;
 
         this.populateColors(div) ;
         await this.populateFontSelector(div) ;
+        pdiv.appendChild(div) ;
     }
 
     protected extractData() : void {
@@ -39,5 +40,7 @@ export class EditLabelDialog extends EditFormControlDialog {
         item.fontStyle = this.font_style_!.value ;
         item.fontWeight = this.font_weight_!.value ;
         item.color = this.text_color_!.value ;
+        item.background = this.background_color_!.value ;
+        item.transparent = this.transparent_!.checked ;
     }
 }

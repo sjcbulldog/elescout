@@ -45,8 +45,14 @@ export class LabelControl extends FormControl {
             this.ctrl.style.fontWeight = item.fontWeight ;
             this.ctrl.style.fontStyle = item.fontStyle ;
             this.ctrl.style.color = item.color ;
-            this.ctrl.style.backgroundColor = item.background ;
+            if (item.transparent) {
+                this.ctrl.style.backgroundColor = 'transparent' ;
+            }
+            else {
+                this.ctrl.style.backgroundColor = item.background ;
+            }
             this.ctrl.style.margin = '4px' ;
+            this.ctrl.style.zIndex = '100' ;
         }
     }
 

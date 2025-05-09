@@ -23,21 +23,21 @@ export abstract class EditDialog {
     public showRelative(win: HTMLElement) {
         this.parent_ = win ;
         this.popup_ = document.createElement('div') ;
-        this.popup_.className = 'popup-form-edit-dialog' ;
+        this.popup_.className = 'xero-popup-form-edit-dialog' ;
 
         this.topbar_ = document.createElement('div') ;
-        this.topbar_.className = 'popup-form-edit-dialog-topbar' ;
+        this.topbar_.className = 'xero-popup-form-edit-dialog-topbar' ;
         if (this.title_) {
             this.topbar_.innerHTML = this.title_ ;
         }
         this.popup_.appendChild(this.topbar_) ;
 
         this.client_area_ = document.createElement('div') ;
-        this.client_area_.className = 'popup-form-edit-dialog-client' ;
+        this.client_area_.className = 'xero-popup-form-edit-dialog-client' ;
         this.popup_.appendChild(this.client_area_) ;
 
         this.button_area_ = document.createElement('div') ;
-        this.button_area_.className = 'popup-form-edit-dialog-buttons' ;
+        this.button_area_.className = 'xero-popup-form-edit-dialog-buttons' ;
         this.popup_.appendChild(this.button_area_) ;
 
         this.populateDialog(this.client_area_) 
@@ -122,14 +122,14 @@ export abstract class EditDialog {
     public populateButtons(div: HTMLDivElement) {
         let okbutton = document.createElement('button') ;
         okbutton.innerText = 'OK' ;
-        okbutton.className = 'popup-form-edit-dialog-button' ;
-        okbutton.onclick = this.okButton.bind(this) ;
+        okbutton.className = 'xero-popup-form-edit-dialog-button' ;
+        okbutton.addEventListener('click', this.okButton.bind(this)) ;
         div.appendChild(okbutton) ;
 
         let cancelbutton = document.createElement('button') ;
         cancelbutton.innerText = 'Cancel' ;
-        cancelbutton.className = 'popup-form-edit-dialog-button' ;
-        cancelbutton.onclick = this.cancelButton.bind(this) ;
+        cancelbutton.className = 'xero-popup-form-edit-dialog-button' ;
+        cancelbutton.addEventListener('click', this.cancelButton.bind(this)) ;
         div.appendChild(cancelbutton) ;
     }
 

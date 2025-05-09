@@ -12,15 +12,15 @@ export class EditSectionNameDialog extends EditDialog {
 
     async populateDialog(pdiv: HTMLDivElement) {
         let div = document.createElement('div') ;
-        div.className = 'popup-form-edit-dialog-rowdiv' ;
+        div.className = 'xero-popup-form-edit-dialog-rowdiv' ;
 
         this.section_name_ = document.createElement('input') ;
         this.section_name_.type = 'text' ;
-        this.section_name_.className = 'popup-form-edit-dialog-input' ;
+        this.section_name_.className = 'xero-popup-form-edit-dialog-input' ;
         this.section_name_.value = this.section_.name ;
 
         let label = document.createElement('label') ;
-        label.className = 'popup-form-edit-dialog-label' ;
+        label.className = 'xero-popup-form-edit-dialog-label' ;
         label.innerText = 'Section Name' ;
         label.appendChild(this.section_name_) ;
         div.appendChild(label) ;

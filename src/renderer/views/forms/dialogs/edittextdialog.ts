@@ -16,12 +16,12 @@ export class EditTextDialog extends EditFormControlDialog {
         let option: HTMLOptionElement ;
 
         let div = document.createElement('div') ;
-        div.className = 'popup-form-edit-dialog-rowdiv' ;
+        div.className = 'xero-popup-form-edit-dialog-rowdiv' ;
 
         this.populateTag(div) ;
 
         this.data_type_ = document.createElement('select') ;
-        this.data_type_.className = 'popup-form-edit-dialog-select' ;
+        this.data_type_.className = 'xero-popup-form-edit-dialog-select' ;
         option = document.createElement('option') ;
         option.value = 'string' ;
         option.innerText = 'String' ;
@@ -37,18 +37,18 @@ export class EditTextDialog extends EditFormControlDialog {
         this.data_type_.value = this.formctrl_.item.datatype ;
 
         label = document.createElement('label') ;
-        label.className = 'popup-form-edit-dialog-label' ;
+        label.className = 'xero-popup-form-edit-dialog-label' ;
         label.innerText = 'Data Type' ;
         label.appendChild(this.data_type_) ;
         div.appendChild(label) ;
 
         this.placeholder_ = document.createElement('input') ;
         this.placeholder_.type = 'text' ;
-        this.placeholder_.className = 'popup-form-edit-dialog-input' ;
+        this.placeholder_.className = 'xero-popup-form-edit-dialog-input' ;
         this.placeholder_.value = item.placeholder ;
 
         label = document.createElement('label') ;
-        label.className = 'popup-form-edit-dialog-label' ;
+        label.className = 'xero-popup-form-edit-dialog-label' ;
         label.innerText = 'Placeholder' ;
         label.appendChild(this.placeholder_) ;
         div.appendChild(label) ;

@@ -1,15 +1,14 @@
-import { IPCForm, IPCFormItem } from "../../../shared/ipcinterfaces";
+import { IPCFormItem } from "../../../shared/ipcinterfaces";
 import { XeroApp } from "../../apps/xeroapp";
 import { XeroPoint, XeroRect } from "../../widgets/xerogeom";
-import { PopupMenu, PopMenuItem as PopupMenuItem } from "../menus/popupmenu";
+import { PopupMenu, PopMenuItem as PopupMenuItem } from "../../widgets/popupmenu";
 import { XeroView } from "../xeroview";
 import { FormControl } from "./controls/formctrl";
 import { LabelControl } from "./controls/labelctrl";
 import { TextControl } from "./controls/textctrl";
 import { EditDialog } from "./dialogs/editdialog";
-import { EditFormControlDialog } from "./dialogs/editformctrldialog";
 import { EditSectionNameDialog } from "./dialogs/editsectionnamedialog";
-import { FormObject } from "./FormObj";
+import { FormObject } from "./formobj";
 
 type DragState = 'none' | 'ulcorner' | 'lrcorner' | 'urcorner' | 'llcorner' | 'right' | 'left' | 'top' | 'bottom' | 'move' | 'all' ;
 
@@ -32,7 +31,6 @@ export class XeroEditFormView extends XeroView {
     private dragging_ : DragState = 'none' ;    
     private form_ctrls_ : FormControl[] = [] ;
     private edit_dialog_? : EditDialog ;
-    private context_menu_? : PopupMenu ;
     private section_menu_? : PopupMenu ;
     private image_menu_? : PopupMenu ;
     private popup_menu_? : PopupMenu ;
@@ -155,6 +153,8 @@ export class XeroEditFormView extends XeroView {
         if (changed) {
             this.modified() ;
         }
+
+        this.edit_dialog_ = undefined ;
     }
 
     private formCallback(args: any) {
@@ -310,7 +310,7 @@ export class XeroEditFormView extends XeroView {
     }    
 
     private receiveImages(args: any) {
-        this.image_names_ = args[0] ;
+        this.image_names_ = args ;
 
         let items = [] ;
         for(let im of this.image_names_) {
@@ -408,15 +408,6 @@ export class XeroEditFormView extends XeroView {
         document.addEventListener('mousedown', this.mouusedownbind_) ;
     }
 
-    private findFormControlFromItem(item: IPCFormItem) {
-        for(let entry of this.form_ctrls_) {
-            if (entry.item === item) {
-                return entry ;
-            }
-        }
-        return undefined ;
-    }
-
     private findFormControlFromCtrl(ctrl: HTMLElement) {
         for(let entry of this.form_ctrls_) {
             if (entry.ctrl === ctrl) {
@@ -436,7 +427,7 @@ export class XeroEditFormView extends XeroView {
             this.dragging_ = 'none' ;
             if (formctrl) {
                 this.edit_dialog_ = formctrl.createEditDialog() ;
-                this.edit_dialog_.showRelative(this.selected_) ;
+                this.edit_dialog_.showRelative(this.elem) ;
             }
         }
     }
@@ -891,9 +882,8 @@ export class XeroEditFormView extends XeroView {
                 new PopupMenuItem('Select Background Image', undefined, this.image_menu_),
             ]
 
-
-            this.context_menu_ = new PopupMenu(items) ;
-            this.context_menu_.showRelative(event.target.parentElement!, new XeroPoint(event.clientX, event.clientY)) ;
+            this.popup_menu_ = new PopupMenu(items) ;
+            this.popup_menu_.showRelative(event.target.parentElement!, new XeroPoint(event.clientX, event.clientY)) ;
         }
     }    
 }

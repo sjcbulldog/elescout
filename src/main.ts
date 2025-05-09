@@ -85,7 +85,7 @@ function createWindow() : void {
     Menu.setApplicationMenu(scappbase!.createMenu()) ;
 
     win.on('ready-to-show', () => {
-        win.webContents.openDevTools() ;
+        // win.webContents.openDevTools() ;
     }) ;
     
     win.on("close", (event) => {

@@ -1,4 +1,4 @@
-import { XeroPoint } from "../../widgets/xerogeom";
+import { XeroPoint } from "./xerogeom";
 
 export class PopMenuItem {
     private text_: string ;
@@ -8,6 +8,7 @@ export class PopMenuItem {
     constructor(text: string, callback: (() => void) | undefined, submenu?: PopupMenu) {
         this.text_ = text ;
         this.callback_ = callback ;
+        this.submenu_ = submenu ;
     }
 
     public get text() : string {
@@ -79,14 +80,14 @@ export class PopupMenu {
     showRelative(win: HTMLElement, pt: XeroPoint) {
         this.parent_ = win ;
         this.popup_ = document.createElement('div') ;
-        this.popup_.className = 'popup-menu' ;
+        this.popup_.className = 'xero-popup-menu' ;
         this.popup_.style.left = pt.x + 'px' ;
         this.popup_.style.top = pt.y + 'px' ;
         this.popup_.style.zIndex = '1000' ;
 
         for(let item of this.items_) {
             let div = document.createElement('div') ;
-            div.className = 'popup-menu-item' ;
+            div.className = 'xero-popup-menu-item' ;
 
             this.item_map_.set(div, item) ;
             if (item.submenu) {

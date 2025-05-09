@@ -100,3 +100,24 @@
   background-color: lightgrey;
 }
 
+.xero-popup-menu {
+    z-index: 1000;
+    position: absolute;
+    background-color: white;
+    border: black 1px solid;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.xero-popup-menu-item {
+    padding: 10px;
+    font-size: 16px;
+    color: black;
+    background-color: white;
+    cursor: pointer;
+}
+
+.xero-popup-menu-item:hover {
+    background-color: gray;
+    color: white
+}
