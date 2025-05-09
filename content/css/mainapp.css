@@ -278,9 +278,13 @@ body {
 }
 
 .xero-form-edit-label {
-    font-size: 1.2em;
-    font-weight: bold;
-    margin-bottom: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;   
+    z-index: 1000;
+    pointer-events: none;
+    text-align: center;
 }
 
 .xero-popup-form-edit-dialog {

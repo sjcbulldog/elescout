@@ -8,7 +8,6 @@ import { LabelControl } from "./controls/labelctrl";
 import { TextControl } from "./controls/textctrl";
 import { EditDialog } from "./dialogs/editdialog";
 import { EditSectionNameDialog } from "./dialogs/editsectionnamedialog";
-import { FormObject } from "./formobj";
 
 type DragState = 'none' | 'ulcorner' | 'lrcorner' | 'urcorner' | 'llcorner' | 'right' | 'left' | 'top' | 'bottom' | 'move' | 'all' ;
 
