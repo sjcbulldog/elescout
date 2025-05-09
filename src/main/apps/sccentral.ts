@@ -156,8 +156,9 @@ export class SCCentral extends SCBase {
 			this.setView('text', 'No Event Loaded') ;
 		}
 
+		let v = this.getVersion('application') ;
 		this.sendToRenderer('send-app-status', { 
-			left: 'Xero Central',
+			left: `Xero Central ${this.versionToString(v)}`,
 			middle: undefined,
 			right: 'Connecting To Blue Alliance...',
 		}) ;
@@ -1603,12 +1604,12 @@ export class SCCentral extends SCBase {
 
 	private setFormView(view: string) {
 		this.lastformview_ = view ;
-		this.setView('formview', view);
+		this.setView('form-view', view);
 	}
 
 	private setFormEdit(name: string) {
 		this.lastformview_ = name ;
-		this.setView('formedit', name);
+		this.setView('form-edit', name);
 	}
 
 	private importTeams() {

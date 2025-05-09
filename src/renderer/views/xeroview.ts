@@ -16,4 +16,8 @@ export class XeroView extends XeroWidget {
     public reset() {
         this.elem.innerHTML = "" ;
     }
+
+    public resetElem(elem: HTMLElement) {
+        elem.innerHTML = "" ;
+    }
 }

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu } from "electron";
+import { app, BrowserWindow, BrowserWindowConstructorOptions, ipcMain, Menu } from "electron";
 import * as path from "path";
 import { SCBase } from "./main/apps/scbase";
 import { SCScout } from "./main/apps/scscout";
@@ -15,25 +15,40 @@ import { runUnitTests } from "./main/units/unittest";
 
 export let scappbase : SCBase | undefined = undefined ;
 
+const Config = require('electron-config') ;
+let config = new Config() ;
+
 function createWindow() : void {
     const args = process.argv;
 
     let content = path.join(process.cwd(), 'content') ;
     let icon = path.join(content, 'images', 'tardis.ico') ;
-  
-    const win = new BrowserWindow({
-      icon: icon,
-      webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-          preload: path.join(__dirname, 'main', 'preload.js'),
-          devTools: true,
-          sandbox: true,
-      },
-      title: "XeroScout",
-    });
 
-    win.maximize() ;
+    let bounds = config.get('windowBounds') ;
+    let opts : BrowserWindowConstructorOptions = {
+        icon: icon,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'main', 'preload.js'),
+            devTools: true,
+            sandbox: true,
+        },
+        title: "XeroScout"
+    };
+
+    if (bounds) {
+        opts.width = bounds.width ;
+        opts.height = bounds.height ;
+        opts.x = bounds.x ;
+        opts.y = bounds.y ;
+    }
+  
+    const win = new BrowserWindow(opts);
+
+    if (!bounds) {
+        win.maximize() ;
+    }
 
     if (process.argv.length > 2) {
         let args = process.argv.slice(3) ;
@@ -69,10 +84,17 @@ function createWindow() : void {
 
     Menu.setApplicationMenu(scappbase!.createMenu()) ;
 
+    win.on('ready-to-show', () => {
+        win.webContents.openDevTools() ;
+    }) ;
+    
     win.on("close", (event) => {
         if (scappbase) {
             if (!scappbase.canQuit()) {
                 event.preventDefault() ;
+            }
+            else {
+                config.set('windowBounds', win.getBounds()) ;
             }
         }
     });

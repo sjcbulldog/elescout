@@ -47,9 +47,12 @@ export class XeroSplitter extends XeroWidget {
             this.bar_.elem.style.cursor = "row-resize";
         }
 
+        this.setSplit(5) ;
+
         document.addEventListener('mousedown', this.mouseDownHandler.bind(this));
         this.mouse_move_handler_ = this.mouseMoveHandler.bind(this);
         this.mouse_up_handler_ = this.mouseUpHandler.bind(this);
+
     }
 
     public setSplit(percent: number) {

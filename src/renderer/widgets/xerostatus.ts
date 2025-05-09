@@ -43,15 +43,21 @@ export class XeroStatusBar extends XeroWidget {
 export class XeroStatusWindow extends XeroWidget {
     private status_ : XeroStatusBar ;
     private mainview_ : XeroWidget ;
+    private status_bar_height_ = 20 ;
 
-    constructor(mainview: XeroWidget) {
+    constructor(child: XeroWidget) {
         super('div', 'xero-status-win');
 
-        this.mainview_ = mainview;
+        this.mainview_ = new XeroWidget('div', 'xero-status-win-mainview') ;
         this.mainview_.setParentWidget(this) ;
+        this.mainview_.elem.style.height = `calc(100% - ${this.status_bar_height_}px)` ;
+        this.mainview_.elem.style.width = '100%' ;
+
+        child.setParentWidget(this.mainview_) ;
 
         this.status_ = new XeroStatusBar() ;
         this.status_.setParentWidget(this) ;
+        this.status_.elem.style.height = `${this.status_bar_height_} px` ;
     }
 
     public statusBar() : XeroStatusBar { 

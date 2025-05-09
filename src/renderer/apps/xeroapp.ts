@@ -1,14 +1,16 @@
 import { IPCSetStatus, IPCSetView } from "../../shared/ipcinterfaces";
 import { XeroLogger } from "../utils/xerologger";
-import { XeroInfoView } from "../views/xeroinfoview";
-import { XeroNav } from "../views/xeronav";
-import { XeroSelectEvent } from "../views/xeroselectevent";
-import { XeroTextView } from "../views/xerotextview";
+import { XeroInfoView } from "../views/infoview";
+import { XeroNav } from "../xeronav";
+import { XeroSelectEvent } from "../views/selectevent";
+import { XeroTextView } from "../views/textview";
 import { XeroView } from "../views/xeroview";
 import { XeroMainProcessInterface } from "../widgets/xerocbtarget";
 import { XeroSplitter } from "../widgets/xerosplitter";
 import { XeroStatusWindow } from "../widgets/xerostatus";
 import { XeroWidget } from "../widgets/xerowidget";
+import { XeroAssignTablets } from "../views/assigntablets";
+import { XeroEditFormView } from "../views/forms/editformview";
 
 document.addEventListener('DOMContentLoaded', function () {
     let mainapp = new XeroApp() ;
@@ -81,5 +83,7 @@ export class XeroApp extends XeroMainProcessInterface {
         this.registerView('text', XeroTextView) ;
         this.registerView('info', XeroInfoView) ;
         this.registerView('select-event', XeroSelectEvent) ;
+        this.registerView('assign-tablets', XeroAssignTablets) ;
+        this.registerView('form-edit', XeroEditFormView) ;
     }
 }

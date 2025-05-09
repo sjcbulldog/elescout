@@ -1,6 +1,6 @@
-import { XeroLogger } from "../utils/xerologger";
-import { XeroMainProcessInterface } from "../widgets/xerocbtarget";
-import { XeroWidget } from "../widgets/xerowidget";
+import { XeroLogger } from "./utils/xerologger";
+import { XeroMainProcessInterface } from "./widgets/xerocbtarget";
+import { XeroWidget } from "./widgets/xerowidget";
 
 export class XeroNav  extends XeroWidget {
     private navelems_ : HTMLElement[] = [] ;

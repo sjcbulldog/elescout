@@ -46,6 +46,10 @@ body {
     display: block;
 }
 
+.xero-view-pane {
+    overflow: auto;
+}
+
  /*
   * Text view related styles
   */
@@ -127,38 +131,148 @@ body {
 /*
  * Select event view related styles
  */
-.xero-select-event-header-row {
-    font-weight: bold ;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-.xero-select-event-row-even {
-    background-color: antiquewhite;
-}
-
-.xero-select-event-row-odd {
-    background-color: lightgray
-}
-
-.xero-select-event-row-odd:hover {
-  color: #000;
-  text-decoration: none;
-  font-weight: bolder;
-  cursor: pointer;
-}
-
-.xero-select-event-row-even:hover {
-    color: #000;
-    text-decoration: none;
-    font-weight: bolder;
-    cursor: pointer;
-}
-
-.select-event-search-box {
-    border-style: solid;
-    border-color: black;
-    border-width: 2px;
-    font-size: medium;
+.xero-select-event {
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    height: 100%;
+}
+
+.xero-select-event-search {
+    width: auto;
+    flex-grow: 0;
+}
+
+.xero-select-event-search-box {
+    display: block;
+    margin: 0 auto;
+    width: 95%;
+    padding: 5px 10px;
+    border: 2px solid black;
+    border-radius: 10px;    
+    box-shadow: 10px 5px 5px lightgray;
+}
+
+.xero-select-event-table {
+    width: auto;
+    flex-grow: 1;
+    max-width: inherit;
+    max-height: inherit;
+    padding: 10px;
+}
+
+/*
+ * Assign tablets view styles
+ */
+ .xero-assign-tablets-main-top-div {
+    padding: 20px 10px;
+    border: 2px solid black;
+    border-radius: 10px;    
+    box-shadow: 10px 5px 5px lightgray;    
+    position: relative;
+    top: 25%;
+    width: max-content;
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 200px;
+    min-height: 200px;
+ }
+
+ .xero-assign-tablets-tablet-div {
+    display: flex;
+    justify-content: center;    
+ }
+
+ .xero-assign-tablets-available {
+    min-width: 200px ;
+    border: 2px solid black ;
+    min-height: 350px;
+}
+
+.xero-assign-tablets-match {
+    min-width: 200px ;
+    border: 2px solid black ;
+    min-height: 350px;    
+}
+
+.xero-assign-tablets-team {
+    min-width: 200px ;
+    border: 2px solid black ;
+    min-height: 350px;    
+}
+
+.xero-assign-tablets-buttons {
+    display: flex;
+    justify-content: center;
+}
+
+.xero-assign-tablets-match-holder {
+    height: 100%;
+}
+
+.xero-assign-tablets-match-span {
+    text-align: center;
+    width: 100%;
+    display: block;
+    font-weight: bolder;    
+}
+
+.xero-assign-tablets-team-holder {
+    height: 100%;    
+}
+
+.xero-assign-tablets-team-span {
+    text-align: center;
+    width: 100%;    
+    display: block;    
+    font-weight: bolder;
+}
+
+.xero-assign-tablets-available-holder {
+    height: 100%;
+}
+
+.xero-assign-tablets-available-span {
+    text-align: center;
+    width: 100%;
+    display: block;    
+    font-weight: bolder;    
+}
+
+.xero-assign-tablets-list-item {
+    text-align: center;
+    width: 100% ;
+    display: block ;
+    cursor:grab;
+}
+
+/*
+ * Edit form view related styles
+ */
+.xero-edit-form-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+}
+
+.xero-form-edit-title {
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    flex-grow: 0;
+}
+
+.xero-form-edit-tab {
+    border: 1px solid #ccc;
+    background-color: #c1c1c1;
+    flex-grow: 0;
+}
+
+.xero-form-edit-form {
+    flex-grow: 1;
+    z-index: 1;
 }
