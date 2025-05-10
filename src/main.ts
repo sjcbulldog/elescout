@@ -1,4 +1,4 @@
-import { app, BrowserWindow, BrowserWindowConstructorOptions, ipcMain, Menu } from "electron";
+import { app, BrowserWindow, BrowserWindowConstructorOptions, dialog, ipcMain, Menu } from "electron";
 import * as path from "path";
 import { SCBase } from "./main/apps/scbase";
 import { SCScout } from "./main/apps/scscout";
@@ -46,25 +46,47 @@ function createWindow() : void {
   
     const win = new BrowserWindow(opts);
 
+    bounds = undefined ;
     if (!bounds) {
         win.maximize() ;
     }
 
     if (process.argv.length > 2) {
-        let args = process.argv.slice(3) ;
+        let index = 2 ;
+        while (index < process.argv.length && process.argv[index].startsWith('-')) {
+            index++ ;
+        }
 
-        if (process.argv[2] === "scout") {
+        if (index === process.argv.length) {
+            dialog.showMessageBoxSync(win, {
+                type: 'error',
+                title: 'Error',
+                message: 'No application specified - the first argument that is not a flag must be the application name (e.g. scout, coach, central)',
+                buttons: ['OK']
+            });
+            app.exit(1) ;
+        }       
+        else if (process.argv[index] === "scout") {
             scappbase = new SCScout(win, args) ;
         }
-        else if (process.argv[2] === "coach") {
+        else if (process.argv[index] === "coach") {
             scappbase = new SCCoach(win, args) ;
         }
-        else if (process.argv[2] === 'central') {
+        else if (process.argv[index] === 'central') {
             scappbase = new SCCentral(win, args) ;
         }
-        else if (process.argv[2] === 'unittests') {
+        else if (process.argv[index] === 'unittests') {
             runUnitTests() ;
             app.exit(0) ;
+        }
+        else {
+            dialog.showMessageBoxSync(win, {
+                type: 'error',
+                title: 'Error',
+                message: 'Invalid application specified - the first argument that is not a flag must be the application name (e.g. scout, coach, central)',
+                buttons: ['OK']
+            });
+            app.exit(1) ;
         }
     }
 

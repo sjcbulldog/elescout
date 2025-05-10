@@ -1,15 +1,12 @@
-import { IPCTextItem } from "../../../../shared/ipcinterfaces";
+import { IPCBooleanItem } from "../../../../shared/ipcinterfaces";
 import { XeroRect } from "../../../widgets/xerogeom";
+import { EditBooleanDialog } from "../dialogs/editbooleandialog";
 import { EditFormControlDialog } from "../dialogs/editformctrldialog";
-import { EditLabelDialog } from "../dialogs/editlabeldialog";
-import { EditTextDialog } from "../dialogs/edittextdialog";
 import { FormControl } from "./formctrl";
 
-export class TextControl extends FormControl {
-    private static item_desc_ : IPCTextItem = 
-    {
-        type: 'text',
-        placeholder: 'Enter Text Here',
+export class BooleanControl extends FormControl {
+    private static item_desc_ : IPCBooleanItem = {
+        type: 'boolean',
         tag: '',
         x: 0,
         y: 0,
@@ -21,31 +18,27 @@ export class TextControl extends FormControl {
         fontSize: 36,
         fontWeight: 'normal',
         fontStyle: 'normal',
-        datatype: 'string',
+        datatype: 'none',
         transparent: true,
-    } ;
+        accent: 'lightgreen',
+    }
+
+    private input_? : HTMLInputElement ;
 
     constructor(tag: string, bounds: XeroRect) {
-        super(TextControl.item_desc_) ;
+        super(BooleanControl.item_desc_) ;
         this.setTag(tag) ;
         this.setBounds(bounds) ;
     }
 
     public copyObject() : FormControl {
-        return new TextControl(this.item.tag, this.bounds()) ;
-    }    
+        return new BooleanControl(this.item.tag, this.bounds()) ;
+    }
 
     public updateFromItem(editing: boolean) : void {
         if (this.ctrl) {
-            let item = this.item as IPCTextItem ;
+            let item = this.item as IPCBooleanItem ;
             let ctrl = this.ctrl as HTMLInputElement ;
-
-            if (editing) {
-                ctrl.value = item.placeholder ;
-            }
-            else {
-                ctrl.placeholder = item.placeholder ;
-            }
 
             ctrl.style.left = item.x + 'px' ;
             ctrl.style.top = item.y + 'px' ;
@@ -57,53 +50,49 @@ export class TextControl extends FormControl {
             ctrl.style.fontWeight = item.fontWeight ;
             ctrl.style.fontStyle = item.fontStyle ;
             ctrl.style.color = item.color ;
+            ctrl.style.accentColor = item.accent ;
             ctrl.style.backgroundColor = item.background ;
+            ctrl.style.zIndex = '100' ;
             ctrl.style.margin = '4px' ;
         }
     }
 
     public createForEdit(parent: HTMLElement) : void  {
-        let input = document.createElement('input') ;
-        this.setClassList(input, 'edit') ;
-        input.disabled = true ;
+        this.ctrl = document.createElement('div') ;
+        this.setClassList(this.ctrl, 'edit') ;
 
-        this.ctrl = input ;
+        this.input_ = document.createElement('input') ;
+        this.setClassList(this.input_, 'edit', 'checkbox') ;
+        this.input_.type = 'checkbox' ;
+        this.input_.disabled = true ;
         this.updateFromItem(true) ;
+        this.ctrl.appendChild(this.input_) ;
+        parent.appendChild(this.ctrl) ;
+    }
+    
+    public createForScouting(parent: HTMLElement) : void {
+        this.ctrl = document.createElement('div') ;        
+        this.setClassList(this.ctrl, 'scout') ;
+
+        this.input_ = document.createElement('input') ;
+        this.setClassList(this.input_, 'scout', 'checkbox') ;
+        this.input_.type = 'checkbox' ;
+        this.updateFromItem(false) ;
+        this.ctrl.appendChild(this.input_) ;
         parent.appendChild(this.ctrl) ;
     }
 
-    public createForScouting(parent: HTMLElement) : void {
-        let input = document.createElement('input') ;
-        this.setClassList(input, 'scout') ;
-        this.ctrl = input ;
-        
-        if (this.item.datatype === 'integer') {
-            input.type = 'number' ;
-            input.step = '1' ;
-        }
-        else if (this.item.datatype === 'real') {
-            input.type = 'number' ;
-            input.step = 'any' ;
-        }
-        else if (this.item.datatype === 'string') {
-            input.type = 'text' ;
-        }
-
-        this.updateFromItem(false) ;
-        parent.appendChild(this.ctrl);
-    }
-
-    public createEditDialog() : EditFormControlDialog  {
-        return new EditTextDialog(this) ;
+    public createEditDialog() : EditFormControlDialog {
+        return new EditBooleanDialog(this) ;
     }
 
     public getData() : any {
-        let input = this.ctrl as HTMLInputElement ;
-        return input.value ;
+        return this.input_?.checked ;
     }
 
     public setData(data: any) : void {
-        let input = this.ctrl as HTMLInputElement ;
-        input.value = data ;
+        if (this.input_) {
+            this.input_.checked = data ? true : false ;
+        }
     }
 }

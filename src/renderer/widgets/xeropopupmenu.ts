@@ -1,11 +1,12 @@
+import EventEmitter from "events";
 import { XeroPoint } from "./xerogeom";
 
-export class PopMenuItem {
+export class XeroPopMenuItem {
     private text_: string ;
     private callback_?: () => void ;
-    private submenu_? : PopupMenu ;
+    private submenu_? : XeroPopupMenu ;
 
-    constructor(text: string, callback: (() => void) | undefined, submenu?: PopupMenu) {
+    constructor(text: string, callback: (() => void) | undefined, submenu?: XeroPopupMenu) {
         this.text_ = text ;
         this.callback_ = callback ;
         this.submenu_ = submenu ;
@@ -19,65 +20,76 @@ export class PopMenuItem {
         return this.callback_ ;
     }
 
-    public get submenu() : PopupMenu | undefined {
+    public get submenu() : XeroPopupMenu | undefined {
         return this.submenu_ ;
     }
 }
 
-export class PopupMenu {
+export class XeroPopupMenu extends EventEmitter {
     private parent_? : HTMLElement ;
-    private items_ : PopMenuItem[] ;
-    private child_menu_? : PopupMenu ;
-    private item_map_ : Map<HTMLElement, PopMenuItem> = new Map() ;
+    private items_ : XeroPopMenuItem[] ;
+    private child_menu_? : XeroPopupMenu ;
+    private parent_menu_? : XeroPopupMenu ;
+    private item_map_ : Map<HTMLElement, XeroPopMenuItem> = new Map() ;
     private popup_? : HTMLElement ;
+    private global_click_ : (event: MouseEvent) => void ;
+    private global_key_ : (event: KeyboardEvent) => void ;
+    private name_ : string ; 
 
-    constructor(items: PopMenuItem[]) {
+    public constructor(name: string, items: XeroPopMenuItem[]) {
+        super() ;
+
         this.items_ = items ;
+        this.name_ = name ;
+
+        this.global_click_ = this.onGlobalClick.bind(this) ;
+        this.global_key_ = this.onGlobalKey.bind(this) ;
     }
 
-    onClick(item: PopMenuItem, event: MouseEvent) {
+    private onClick(item: XeroPopMenuItem, event: MouseEvent) {
         if (item.action) {
+            this.emit('menu-item-selected', item) ;
             item.action() ;
+            this.closeMenu() ;
         }
     }
 
-    onSubmenuClick(item: PopMenuItem, event: MouseEvent) {
+    private onSubmenuClick(item: XeroPopMenuItem, event: MouseEvent) {
+        this.emit('submenu-opened', item) ;
+
         if (item.submenu && this.parent_) {
             this.child_menu_ = item.submenu ;
+            item.submenu.parent_menu_ = this ;
             this.child_menu_.showRelative(this.parent_, new XeroPoint(event.clientX, event.clientY)) ;
         }
     }
 
-    onGlobalClick(event: MouseEvent) {
-        if (event.target && event.target && this.item_map_.has(event.target as HTMLElement)) {
-            let item = this.item_map_.get(event.target as HTMLElement) ;
-            if (item && !item.submenu) {
-                this.closeMenu() ;
-            }
-        }
+    private onGlobalClick(event: MouseEvent) {
     }
 
-    onGlobalKey(event: KeyboardEvent) {
+    private onGlobalKey(event: KeyboardEvent) {
         if (event.key === 'Escape') {
             this.closeMenu() ;
         }
     }
 
-    closeMenu() {
-        if (this.child_menu_) {
-            this.child_menu_.closeMenu() ;
-            this.child_menu_ = undefined ;
-        }
-
+    public closeMenu() {
         if (this.popup_ && this.parent_ && this.parent_.contains(this.popup_)) {
             this.parent_.removeChild(this.popup_) ;
             this.popup_ = undefined ;
         }
-        document.removeEventListener('click', this.onGlobalClick.bind(this)) ;
-        document.removeEventListener('keydown', this.onGlobalKey.bind(this)) ;
+
+        if (this.parent_menu_) {
+            this.parent_menu_.closeMenu() ;
+        }
+        else {
+            this.emit('menu-closed') ;
+            document.removeEventListener('click', this.global_click_) ;
+            document.removeEventListener('keydown', this.global_key_) ;
+        }
     }
 
-    showRelative(win: HTMLElement, pt: XeroPoint) {
+    public showRelative(win: HTMLElement, pt: XeroPoint) {
         this.parent_ = win ;
         this.popup_ = document.createElement('div') ;
         this.popup_.className = 'xero-popup-menu' ;
@@ -100,8 +112,8 @@ export class PopupMenu {
             this.popup_.appendChild(div) ;
         }
 
-        document.addEventListener('click', this.onGlobalClick.bind(this)) ;
-        document.addEventListener('keydown', this.onGlobalKey.bind(this)) ;
+        document.addEventListener('click', this.global_click_) ;
+        document.addEventListener('keydown', this.global_key_) ;
         this.parent_.appendChild(this.popup_) ; 
     }    
 }

@@ -1,0 +1,179 @@
+
+/*
+ * Edit form view related styles
+ */
+.xero-form-edit-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+}
+
+.xero-form-edit-title {
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    flex-grow: 0;
+}
+
+.xero-form-edit-tab {
+    border: 1px solid #ccc;
+    background-color:   rgba(211, 211, 211, 0.74) ;
+    flex-grow: 0;
+    display: flex ;
+    flex-direction: row;
+}
+
+.xero-form-tab-button-unselected {
+    font-family: Arial;
+    font-size: 24px;
+    font-weight: bold;
+    width: fit-content;
+    margin-left: 4px;
+    margin-right: 4px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    margin: 4px ;
+    padding: 4px ;
+    border-radius: 6px;
+}
+
+.xero-form-tab-button-unselected:hover {
+    font-family: Arial;
+    font-size: 24px;
+    font-weight: bold;
+    width: fit-content;
+    background-color: rgb(96, 96, 186);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) ;
+    margin: 4px ;
+    padding: 4px ;
+    border-radius: 6px;
+}
+
+.xero-form-tab-button-selected {
+    font-family: Arial;
+    font-size: 24px;
+    font-weight: bold;
+    background-color: blue;
+    color: white;
+    width: fit-content;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) ;
+    margin: 4px ;
+    padding: 4px ;
+    border-radius: 6px;
+}
+
+.xero-form-edit-form {
+    flex-grow: 1;
+    z-index: 1;
+}
+
+/* 
+ * Edit form 'label' control view related styles
+ */
+.xero-form-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;   
+    z-index: 1000;
+    pointer-events: none;
+    text-align: center;
+}
+
+.xero-form-edit-lable {
+    z-index: 1000;
+}
+
+.xero-form-scout-lable {
+    z-index: 1000;
+}
+
+/* 
+ * Edit form 'text' control view related styles
+ */
+
+.xero-form-text {
+    z-index: 1000;
+}
+
+.xero-form-edit-text {
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.xero-form-scout-text {
+    z-index: 1000;
+}
+
+/* 
+ * Edit form 'boolean' control view related styles
+ */
+
+.xero-form-boolean {
+    z-index: 1000;
+}
+
+.xero-form-edit-boolean {
+    z-index: 1000;
+}
+
+.xero-form-scout-boolean {
+    z-index: 1000;
+}
+
+.xero-form-boolean-checkbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;   
+    z-index: 1000;
+    pointer-events: none;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+}
+
+.xero-form-edit-boolean-checkbox {
+    z-index: 1000;
+}
+
+.xero-form-scout-boolean-checkbox {
+    z-index: 1000;
+}   
+
+/* 
+ * Edit form 'updown' control view related styles
+ */
+
+.xero-form-updown {
+    z-index: 1000;
+}
+
+.xero-form-updown-button {
+    z-index: 1000;
+}
+
+.xero-form-edit-updown-button {
+    pointer-events: none;
+}
+
+.xero-form-scout-updown-button {
+    z-index: 1000;
+}
+
+.xero-form-updown-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;   
+    z-index: 1000;
+    pointer-events: none;
+    text-align: center;
+    border: 1px solid black ;
+}
+
+.xero-form-edit-updown-count {
+    z-index: 1000;
+}

@@ -24,17 +24,20 @@ export class LabelControl extends FormControl {
         transparent: true
     } ;
 
-    constructor(tag: string, bounds: XeroRect, donecb: (changed: boolean) => void) {
-        super(LabelControl.item_desc_, donecb) ;
+    constructor(tag: string, bounds: XeroRect) {
+        super(LabelControl.item_desc_) ;
         this.setTag(tag) ;
         this.setBounds(bounds) ;
     }
 
-    public updateFromItem() : void {
+    public copyObject() : FormControl {
+        return new LabelControl(this.item.tag, this.bounds()) ;
+    }
+
+    public updateFromItem(editing: boolean) : void {
         if (this.ctrl) {
             let item = this.item as IPCLabelItem ;
             this.ctrl.innerText = item.text ;
-            this.ctrl.className = 'xero-form-edit-label' ;
             this.ctrl.style.left = item.x + 'px' ;
             this.ctrl.style.top = item.y + 'px' ;
             this.ctrl.style.width = item.width + 'px' ;
@@ -58,18 +61,22 @@ export class LabelControl extends FormControl {
 
     public createForEdit(parent: HTMLElement) : void  {
         this.ctrl = document.createElement('span') ;
-        this.updateFromItem() ;
+        this.setClassList(this.ctrl, 'edit') ;
+        this.ctrl.classList.add('xero-form-label') ;
+        this.ctrl.classList.add('xero-form-edit-label') ;       
+        this.updateFromItem(true) ;
         parent.appendChild(this.ctrl) ;
     }
 
     public createForScouting(parent: HTMLElement) : void {
         this.ctrl = document.createElement('span') ;
-        this.updateFromItem() ;
+        this.setClassList(this.ctrl, 'scout') ;
+        this.updateFromItem(false) ;
         parent.appendChild(this.ctrl);
     }
 
     public createEditDialog() : EditFormControlDialog  {
-        return new EditLabelDialog(this, this.callback.bind(this)) ;
+        return new EditLabelDialog(this) ;
     }
 
     public getData() : any {

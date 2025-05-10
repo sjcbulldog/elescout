@@ -1,13 +1,16 @@
 import { IPCFormItem } from "../../../shared/ipcinterfaces";
 import { XeroApp } from "../../apps/xeroapp";
 import { XeroPoint, XeroRect } from "../../widgets/xerogeom";
-import { PopupMenu, PopMenuItem as PopupMenuItem } from "../../widgets/popupmenu";
+import { XeroPopupMenu, XeroPopMenuItem as PopupMenuItem } from "../../widgets/xeropopupmenu";
 import { XeroView } from "../xeroview";
 import { FormControl } from "./controls/formctrl";
 import { LabelControl } from "./controls/labelctrl";
 import { TextControl } from "./controls/textctrl";
 import { EditDialog } from "./dialogs/editdialog";
 import { EditSectionNameDialog } from "./dialogs/editsectionnamedialog";
+import { FormObject } from "./formobj";
+import { UpDownControl } from "./controls/updownctrl";
+import { BooleanControl } from "./controls/booleanctrl";
 
 type DragState = 'none' | 'ulcorner' | 'lrcorner' | 'urcorner' | 'llcorner' | 'right' | 'left' | 'top' | 'bottom' | 'move' | 'all' ;
 
@@ -30,12 +33,12 @@ export class XeroEditFormView extends XeroView {
     private dragging_ : DragState = 'none' ;    
     private form_ctrls_ : FormControl[] = [] ;
     private edit_dialog_? : EditDialog ;
-    private section_menu_? : PopupMenu ;
-    private image_menu_? : PopupMenu ;
-    private popup_menu_? : PopupMenu ;
+    private section_menu_? : XeroPopupMenu ;
+    private image_menu_? : XeroPopupMenu ;
+    private popup_menu_? : XeroPopupMenu ;
     private type_: string ;
     private nameToImageMap_: Map<string, string> ;
-    private ctrl_menu_ : PopupMenu ;
+    private ctrl_menu_ : XeroPopupMenu ;
     private form_? : FormObject ;
     private formimg_? : HTMLImageElement ;
     private currentSectionIndex_: number = -1 ;
@@ -74,12 +77,12 @@ export class XeroEditFormView extends XeroView {
         let ctrlitems = [
             new PopupMenuItem('Label', this.addNewLabelCtrl.bind(this)),
             new PopupMenuItem('Text Field', this.addNewTextCtrl.bind(this)),
-            // new PopupMenuItem('Up/Down Field', this.addNewUpDownCtrl.bind(this)),
-            // new PopupMenuItem('Boolean Field', this.addNewBooleanCtrl.bind(this)),
+            new PopupMenuItem('Up/Down Field', this.addNewUpDownCtrl.bind(this)),
+            new PopupMenuItem('Boolean Field', this.addNewBooleanCtrl.bind(this)),
             // new PopupMenuItem('Multiple Choice', this.addNewMultipleChoiceCtrl.bind(this)),
             // new PopupMenuItem('Select', this.addNewSelectCtrl.bind(this)),
         ]
-        this.ctrl_menu_ = new PopupMenu(ctrlitems) ;
+        this.ctrl_menu_ = new XeroPopupMenu('main', ctrlitems) ;
     }
 
     findItemByTag(name: string) {
@@ -125,7 +128,7 @@ export class XeroEditFormView extends XeroView {
     private addNewLabelCtrl() {
         if (this.formimg_) {
             let imgrect = this.formimg_.getBoundingClientRect() ;
-            let formctrl = new LabelControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50), this.editdone.bind(this)) ;
+            let formctrl = new LabelControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
             this.addItemToCurrentSection(formctrl.item) ;
             this.form_ctrls_.push(formctrl) ;
@@ -138,7 +141,7 @@ export class XeroEditFormView extends XeroView {
     addNewTextCtrl() {
         if (this.formimg_) {
             let imgrect = this.formimg_.getBoundingClientRect() ;
-            let formctrl = new TextControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50), this.editdone.bind(this)) ;
+            let formctrl = new TextControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
             this.addItemToCurrentSection(formctrl.item) ;
             this.form_ctrls_.push(formctrl) ;
@@ -147,6 +150,32 @@ export class XeroEditFormView extends XeroView {
             this.modified() ;  
         }
     }    
+
+    private addNewUpDownCtrl() {
+        if (this.formimg_) {
+            let imgrect = this.formimg_.getBoundingClientRect() ;
+            let formctrl = new UpDownControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+
+            this.addItemToCurrentSection(formctrl.item) ;
+            this.form_ctrls_.push(formctrl) ;
+
+            formctrl.createForEdit(this.elem) ;
+            this.modified() ;  
+        }
+    }  
+
+    private addNewBooleanCtrl() {
+        if (this.formimg_) {
+            let imgrect = this.formimg_.getBoundingClientRect() ;
+            let formctrl = new BooleanControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+
+            this.addItemToCurrentSection(formctrl.item) ;
+            this.form_ctrls_.push(formctrl) ;
+
+            formctrl.createForEdit(this.elem) ;
+            this.modified() ;  
+        }
+    }  
 
     private editdone(changed: boolean) {
         if (changed) {
@@ -188,21 +217,21 @@ export class XeroEditFormView extends XeroView {
             for(let item of section.items) {
                 let formctrl ;
                 if (item.type === 'label') {
-                    formctrl = new LabelControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height), this.editdone.bind(this) ) ;
+                    formctrl = new LabelControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
                 else if (item.type === 'text') {
-                    formctrl = new TextControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height), this.editdone.bind(this)) ;
+                    formctrl = new TextControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
-                // else if (item.type === 'boolean') {  
-                //     formctrl = new BooleanFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
-                //     formctrl.update(item) ;
-                // }
-                // else if (item.type === 'updown') {
-                //     formctrl = new UpDownFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
-                //     formctrl.update(item) ;
-                // }
+                else if (item.type === 'boolean') {  
+                    formctrl = new BooleanControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === 'updown') {
+                    formctrl = new UpDownControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
                 // else if (item.type === 'choice') {
                 //     formctrl = new MultipleChoiceFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
                 //     formctrl.update(item) ;
@@ -304,7 +333,6 @@ export class XeroEditFormView extends XeroView {
             }
 
             this.modified() ;
-            this.popup_menu_!.closeMenu() ;
         }
     }    
 
@@ -316,7 +344,7 @@ export class XeroEditFormView extends XeroView {
             let item = new PopupMenuItem(im, this.selectBackgroundImage.bind(this, im)) ;
             items.push(item) ;
         }
-        this.image_menu_ = new PopupMenu(items) ;        
+        this.image_menu_ = new XeroPopupMenu('images', items) ;        
     }
 
     private receiveImageData(args: any) {
@@ -357,7 +385,7 @@ export class XeroEditFormView extends XeroView {
             this.bardiv_.innerHTML = '' ;
             let index = 0 ;
             for(let section of this.form_.sections) {
-                let button = document.createElement('button') ;
+                let button = document.createElement('div') ;
                 button.innerText = section.name ;
                 button.className = XeroEditFormView.buttonClassUnselected ;
                 button.id = section + '-button' ;
@@ -420,6 +448,10 @@ export class XeroEditFormView extends XeroView {
         this.controlRelease(event) ;
     }    
 
+    private dialogClosed() {
+        this.edit_dialog_ = undefined ;
+    }
+
     private doubleClick(event: MouseEvent) {
         if (this.selected_ && !this.edit_dialog_) {
             let formctrl = this.findFormControlFromCtrl(this.selected_) ;
@@ -427,12 +459,15 @@ export class XeroEditFormView extends XeroView {
             if (formctrl) {
                 this.edit_dialog_ = formctrl.createEditDialog() ;
                 this.edit_dialog_.showRelative(this.elem) ;
+                this.edit_dialog_.on('closed', this.dialogClosed.bind(this)) ;
             }
         }
     }
 
     private onGlobalKey(event: KeyboardEvent) {
         if (!this.edit_dialog_) {
+            console.log('onGlobalKey', event.key, event.ctrlKey) ;
+            
             if (event.key === 'Delete') {
                 this.deleteSelectedItem() ;
             }
@@ -624,6 +659,10 @@ export class XeroEditFormView extends XeroView {
     }
 
     private mouseMove(event: MouseEvent) {
+        if (!document.hasFocus()) {
+            return ;
+        }
+
         if (this.dragging_ === 'all') {
             let dx = event.pageX - this.basex_ ;
             let dy = event.pageY - this.basey_ ;
@@ -789,7 +828,7 @@ export class XeroEditFormView extends XeroView {
     }
 
     private mouseDown(event: MouseEvent) {
-        if (this.selected_) {
+        if (this.selected_ && !this.edit_dialog_ && !this.popup_menu_) {
             let top = this.isTopEdge(event.pageX, event.pageY, this.selected_) ;
             let bottom = this.isBottomEdge(event.pageX, event.pageY, this.selected_) ;
             let left = this.isLeftEdge(event.pageX, event.pageY, this.selected_) ;
@@ -840,25 +879,29 @@ export class XeroEditFormView extends XeroView {
     private sectionNameDialogDone(changed: boolean) {
         if (changed && this.bardiv_ && this.form_) {
             let barctrl = this.bardiv_.children[this.currentSectionIndex_] as HTMLElement ;
-            this.modified() ;
             barctrl.innerText = this.form_.sections[this.currentSectionIndex_].name ;
+            this.modified() ;
         }
         this.edit_dialog_ = undefined ;
     }
 
     private renameSection() {
         if (this.form_) {
-            this.edit_dialog_ = new EditSectionNameDialog(this.sectionNameDialogDone.bind(this), this.form_.sections[this.currentSectionIndex_]) ;
+            this.edit_dialog_ = new EditSectionNameDialog(this.form_.sections[this.currentSectionIndex_]) ;
+            this.edit_dialog_.on('closed', this.sectionNameDialogDone.bind(this)) ;
             this.edit_dialog_.showRelative(this.elem.parentElement!) ;
         }
     }
 
-    
     private importImage() {
         this.request('import-image') ;
     }
 
-    contextMenu(event: MouseEvent) {
+    private menuClosed() {
+        this.popup_menu_ = undefined ;
+    }
+
+    private contextMenu(event: MouseEvent) {
         event.preventDefault() ;
 
         if (this.popup_menu_) {
@@ -872,7 +915,7 @@ export class XeroEditFormView extends XeroView {
                 new PopupMenuItem('Delete Section', this.deleteSection.bind(this)),
                 new PopupMenuItem('Rename Section', this.renameSection.bind(this))
             ]
-            this.section_menu_ = new PopupMenu(sectionItems) ;
+            this.section_menu_ = new XeroPopupMenu('section', sectionItems) ;
 
             let items = [
                 new PopupMenuItem('Import Image', this.importImage.bind(this)),
@@ -881,7 +924,8 @@ export class XeroEditFormView extends XeroView {
                 new PopupMenuItem('Select Background Image', undefined, this.image_menu_),
             ]
 
-            this.popup_menu_ = new PopupMenu(items) ;
+            this.popup_menu_ = new XeroPopupMenu('main', items) ;
+            this.popup_menu_.on('menu-closed', this.menuClosed.bind(this)) ;
             this.popup_menu_.showRelative(event.target.parentElement!, new XeroPoint(event.clientX, event.clientY)) ;
         }
     }    

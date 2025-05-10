@@ -5,11 +5,9 @@ import { EditFormControlDialog } from "../dialogs/editformctrldialog";
 export abstract class FormControl {
     private item_ : IPCFormItem ;
     private ctrl_? : HTMLElement ;
-    protected edit_done_cb_ : (changed: boolean) => void ;
 
-    constructor(item: IPCFormItem, donecb: (changed: boolean) => void) {
+    constructor(item: IPCFormItem) {
         this.item_ = item ;
-        this.edit_done_cb_ = donecb ;
     }
 
     public bounds() : XeroRect {
@@ -29,27 +27,24 @@ export abstract class FormControl {
     }
 
     public clone(tag: string) : FormControl {
-        let clone = structuredClone(this) ;
-        clone.item_.tag = tag ;
-        return clone ;
+        let t = typeof this ;
+        let ret = this.copyObject() ;
+        ret.item_ = JSON.parse(JSON.stringify(this.item_)) ;
+        ret.item_.tag = tag ;
+        return ret ;
     }
 
     public update(item: IPCFormItem) {
         this.item_ = item ;
     }
 
-    public abstract updateFromItem() : void ;
+    public abstract updateFromItem(editing: boolean) : void ;
     public abstract createForEdit(parent: HTMLElement) : void ;
     public abstract createForScouting(parent: HTMLElement) : void ;
     public abstract createEditDialog() : EditFormControlDialog ;
     public abstract getData() : void ;
     public abstract setData(data: any) : void ;
-
-    public callback(changed: boolean) {
-        if (this.edit_done_cb_) {
-            this.edit_done_cb_(changed) ;
-        }
-    }
+    protected abstract copyObject() : FormControl ;
 
     protected setTag(tag: string) {
         this.item_.tag = tag ;
@@ -60,5 +55,15 @@ export abstract class FormControl {
         this.item_.y = bounds.y ;
         this.item_.width = bounds.width ;
         this.item_.height = bounds.height ;
+    }
+
+    protected setClassList(ctrl: HTMLElement, oper: string, child?: string) {       
+        let name: string ;
+
+        name = 'xero-form-' + this.item.type + (child ? '-' + child : '') ;
+        ctrl.classList.add(name) ;
+
+        name = 'xero-form-' + oper + '-' + this.item.type + (child ? '-' + child : '') ;
+        ctrl.classList.add(name) ;
     }
 }

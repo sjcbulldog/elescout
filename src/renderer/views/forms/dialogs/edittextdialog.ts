@@ -6,8 +6,8 @@ export class EditTextDialog extends EditFormControlDialog {
     private data_type_? : HTMLSelectElement ;
     private placeholder_? : HTMLInputElement ;
 
-    constructor(formctrl: FormControl, closecb: (changed: boolean) => void) {
-        super('Edit Text', formctrl, closecb) ;
+    constructor(formctrl: FormControl) {
+        super('Edit Text', formctrl);
     }
 
     protected async populateDialog(pdiv: HTMLElement) : Promise<void> {
@@ -53,6 +53,7 @@ export class EditTextDialog extends EditFormControlDialog {
         label.appendChild(this.placeholder_) ;
         div.appendChild(label) ;
 
+        this.populateColors(div) ;
         this.populateFontSelector(div) ;
         pdiv.appendChild(div) ;
     }

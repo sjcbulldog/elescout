@@ -1,23 +1,30 @@
+import EventEmitter from "events";
 
-export abstract class EditDialog {
+export abstract class EditDialog extends EventEmitter {
     private title_ : string ;
-    private close_cb_: (changed: boolean) => void ;
     private moving_ : boolean ;
     private parent_? : HTMLElement ;
     private popup_? : HTMLDivElement ;
     private topbar_? : HTMLDivElement ;
     private client_area_? : HTMLDivElement ;
     private button_area_? : HTMLDivElement ;
-    private keydownbind_? : any ;
     private startx_ : number = 0 ;
     private starty_ : number = 0 ;
     private startleft_ : number = 0 ;
     private starttop_ : number = 0 ;
+    private mouse_move_handler_ : (event: MouseEvent) => void ;
+    private mouse_up_handler_ : (event: MouseEvent) => void ;
+    private key_down_handler_ : (event: KeyboardEvent) => void ;
 
-    constructor(title: string, close: (changed: boolean) => void) {
+    constructor(title: string) {
+        super() ;
+
         this.title_ = title ;
-        this.close_cb_ = close ;
         this.moving_ = false ;
+
+        this.mouse_move_handler_ = this.mouseMove.bind(this) ;
+        this.mouse_up_handler_ = this.mouseUp.bind(this) ;
+        this.key_down_handler_ = this.keyDown.bind(this) ;
     }
 
     public showRelative(win: HTMLElement) {
@@ -54,8 +61,7 @@ export abstract class EditDialog {
         this.parent_.appendChild(this.popup_) ;
         this.onInit() ;
 
-        this.keydownbind_ = this.keyDown.bind(this) ;
-        document.addEventListener('keydown', this.keydownbind_) ;
+        document.addEventListener('keydown', this.key_down_handler_) ;
         this.topbar_.addEventListener('mousedown', this.mouseDown.bind(this)) ;
     }
 
@@ -78,8 +84,8 @@ export abstract class EditDialog {
             this.startleft_ = parseInt(this.popup_.style.left) ;
             this.starttop_ = parseInt(this.popup_.style.top) ;
 
-            document.addEventListener('mousemove', this.mouseMove.bind(this)) ;
-            document.addEventListener('mouseup', this.mouseUp.bind(this)) ;
+            document.addEventListener('mousemove', this.mouse_move_handler_) ;
+            document.addEventListener('mouseup', this.mouse_up_handler_) ;
         }
     }
 
@@ -97,8 +103,8 @@ export abstract class EditDialog {
     private mouseUp(event: MouseEvent) {
         if (this.moving_) {
             this.moving_ = false ;
-            document.removeEventListener('mousemove', this.mouseMove.bind(this)) ;
-            document.removeEventListener('mouseup', this.mouseUp.bind(this)) ;
+            document.removeEventListener('mousemove', this.mouse_move_handler_) ;
+            document.removeEventListener('mouseup', this.mouse_up_handler_) ;
         }
     }
 
@@ -134,15 +140,13 @@ export abstract class EditDialog {
     }
 
     close(changed: boolean) {
-        document.removeEventListener('keydown', this.keydownbind_) ;
+        document.removeEventListener('keydown', this.key_down_handler_) ;
 
         if (this.popup_ && this.parent_ && this.parent_.contains(this.popup_)) {
             this.parent_.removeChild(this.popup_) ;
             this.popup_ = undefined ;
         }
 
-        if (this.close_cb_) {
-            this.close_cb_(changed) ;
-        }
+        this.emit('closed', changed) ;
     }
 }

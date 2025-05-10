@@ -25,15 +25,15 @@ export abstract class EditFormControlDialog extends EditDialog {
     protected transparent_? : HTMLInputElement ;
     protected tag_? : HTMLInputElement ;
 
-    constructor(title: string, formctr: FormControl, closecb: (changed: boolean) => void) {
-        super(title, closecb) ;
+    constructor(title: string, formctr: FormControl) {
+        super(title) ;
         this.formctrl_ = formctr ;
     }
 
     public okButton(event: Event) {
         this.extractData() ;                        // Extract the item data form the dialog
-        this.formctrl_.updateFromItem() ;          // Make the control on the screen match the item data
-        super.okButton(event) ;         // Finish the edit operation, save the form, and dismiss the dialog
+        this.formctrl_.updateFromItem(true) ;       // Make the control on the screen match the item data
+        super.okButton(event) ;                     // Finish the edit operation, save the form, and dismiss the dialog
     }
 
     protected abstract extractData() : void ;
@@ -110,7 +110,7 @@ export abstract class EditFormControlDialog extends EditDialog {
         this.font_weight_.appendChild(option) ;
         option = document.createElement('option') ;
         option.value = 'bold' ;
-        option.innerText = 'Boldl' ;
+        option.innerText = 'Bold' ;
         this.font_weight_.appendChild(option) ;
         option = document.createElement('option') ;
         option.value = 'bolder' ;

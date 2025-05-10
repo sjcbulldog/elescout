@@ -12,6 +12,7 @@
       },
       "args": [
         ".",
+        "--enable-logging",
         "central",
         "C:/users/butch/OneDrive/Documents/events/e1/event.json"
       ],
@@ -29,7 +30,8 @@
       },
       "args": [
         ".",
-        "scout"
+        "scout",
+
       ],
       "outputCapture": "std",
       "preLaunchTask": "npm: compile"
@@ -65,6 +67,14 @@
       ],
       "outputCapture": "std",
       "preLaunchTask": "npm: compile"
-    }
+    },
+    {
+      "name": "Debug Renderer",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9223,
+      "webRoot": "${workspaceFolder}",
+      "timeout": 10000
+    },
   ],
 }

@@ -5,8 +5,8 @@ export class EditSectionNameDialog extends EditDialog {
     private section_: IPCSection ;
     private section_name_?: HTMLInputElement ;
 
-    constructor(close: (changed: boolean) => void, section: IPCSection) {
-        super('Edit Section Name', close) ;
+    constructor(section: IPCSection) {
+        super('Edit Section Name') ;
         this.section_ = section ;
     }
 

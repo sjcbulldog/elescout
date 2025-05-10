@@ -42,9 +42,11 @@ export interface IPCTextItem extends IPCFormItem {
 }
 
 export interface IPCBooleanItem extends IPCFormItem {
+    accent: string ;
 }
 
 export interface IPCUpDownItem extends IPCFormItem {
+    orientation: 'horizontal' | 'vertical' ;
     minvalue: number ;
     maxvalue: number ;
 }

@@ -5,8 +5,8 @@ import { FormControl } from "../controls/formctrl";
 export class EditLabelDialog extends EditFormControlDialog {
     private text_string_? : HTMLInputElement ;
 
-    constructor(formctrl: FormControl, closecb: (changed: boolean) => void) {
-        super('Edit Label', formctrl, closecb) ;
+    constructor(formctrl: FormControl) {
+        super('Edit Label', formctrl) ;
     }
 
     protected async populateDialog(pdiv: HTMLElement) : Promise<void> {

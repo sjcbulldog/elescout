@@ -134,8 +134,9 @@ export class SCCentral extends SCBase {
 	}
 
 	public mainWindowLoaded(): void {
-		if (process.argv.length === 4) {
-			Project.openEvent(this.logger_, process.argv[3], this.year_!)
+		let index = process.argv.indexOf('central') ;
+		if (index < process.argv.length - 1) {
+			Project.openEvent(this.logger_, process.argv[index + 1], this.year_!)
 			.then((p) => {
 				this.addRecent(p.location);
 				this.project_ = p;
