@@ -39,6 +39,8 @@ export class XeroTable extends XeroWidget {
     private columns_ : XeroTableColumn[] = [] ;
     private options_: XeroTableOptions ;
     private table_container_ : HTMLDivElement ;
+    private table_headers_ : HTMLDivElement ;
+    private table_rows_ : HTMLDivElement ;
     private sort_col_ : number = -1 ;
 
     constructor(options: XeroTableOptions) {
@@ -48,6 +50,14 @@ export class XeroTable extends XeroWidget {
         this.table_container_ = document.createElement('div') ;
         this.table_container_.className = 'xero-table-container' ;
         this.elem.appendChild(this.table_container_) ;
+
+        this.table_headers_ = document.createElement('div') ;
+        this.table_headers_.className = 'xero-table-headers' ;
+        this.table_container_.appendChild(this.table_headers_) ;
+
+        this.table_rows_ = document.createElement('div') ;
+        this.table_rows_.className = 'xero-table-rows' ;
+        this.table_container_.appendChild(this.table_rows_) ;
 
         if (!options) {
             throw new Error('XeroTable: No options provided') ;
@@ -71,7 +81,7 @@ export class XeroTable extends XeroWidget {
     }
 
     public setFilter(filter: (data: any) => boolean) : void {
-        this.table_container_.innerHTML = '' ;
+        this.table_rows_.innerHTML = '' ;
         this.model_.filter(filter) ;
         this.updateTable()
         .then(() => {
@@ -131,7 +141,7 @@ export class XeroTable extends XeroWidget {
 
     private updateColumnHeader(col: number) : void {
         const colobj = this.columns_[col] ;
-        let cell = this.table_container_.children[0].children[col] as HTMLElement ;
+        let cell = this.table_headers_.children[col] as HTMLElement ;
         cell.innerHTML = colobj.title ;
         cell.style.fontFamily = this.options_.headerFont!.fontFamily! ;
         cell.style.fontSize = this.options_.headerFont!.fontSize! + 'px' ;
@@ -148,10 +158,10 @@ export class XeroTable extends XeroWidget {
         else {
             if (this.sort_col_ >= 0) {
                 this.columns_[this.sort_col_].resetSort() ;
-                this.table_container_.children[0].children[this.sort_col_].className = 'xero-table-header-cell-sortable' ;
+                this.table_headers_.children[this.sort_col_].className = 'xero-table-header-cell-sortable' ;
             }
             this.sort_col_ = col ;
-            this.table_container_.children[0].children[this.sort_col_].className = 'xero-table-header-cell-sortable-selected' ;
+            this.table_headers_.children[this.sort_col_].className = 'xero-table-header-cell-sortable-selected' ;
         }
         this.model_.sort(this.columns_[col].field, this.columns_[col].sortUp, this.columns_[col].sortFunc) ;
         this.putAllData(true) ;
@@ -164,7 +174,7 @@ export class XeroTable extends XeroWidget {
     }
 
     private putData(row: number, col: number) {
-        const cell = this.table_container_.children[row + 1].children[col] as HTMLDivElement ;
+        const cell = this.table_rows_.children[row].children[col] as HTMLDivElement ;
         const colobj = this.columns_[col] ;
         cell.innerText = this.getCellText(row, col) ;
     }
@@ -185,8 +195,12 @@ export class XeroTable extends XeroWidget {
         //
         for(let col = 0; col < this.columns_.length; col++) {
             const colobj = this.columns_[col] ;
-            for(let row = 0; row < this.table_container_.children.length; row++) {
-                const cell = this.table_container_.children[row].children[col] as HTMLDivElement ;
+
+            let elem = this.table_headers_.children[col] as HTMLDivElement ;
+            elem.style.width = colobj.width + 'px' ;
+
+            for(let row = 0; row < this.table_rows_.children.length; row++) {
+                const cell = this.table_rows_.children[row].children[col] as HTMLDivElement ;
                 cell.style.width = colobj.width + 'px' ;
             }
         }
@@ -245,39 +259,22 @@ export class XeroTable extends XeroWidget {
         return opts ;
     }
 
-    private async createCells() : Promise<void> {
-        let y = this.table_container_.clientTop || 0 ;
-
-        for(let row = 0 ; row <= this.model_.rowCount(); row++) {
-            let rowelem = document.createElement('div') ;
-            rowelem.className = 'xero-table-row' ;
-            this.table_container_.appendChild(rowelem) ;
-
+    private async createHeadersCells() : Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
             let left : number = this.table_container_.clientLeft || 0 ;
+            this.table_headers_.innerHTML = '' ;
             for(let col = 0 ; col < this.columns_.length; col++) {
                 const colobj = this.columns_[col] ;
                 const cell = document.createElement('div') ;
-                if (row === 0) {
-                    cell.style.paddingLeft = this.options_.columnPadding! + 'px' ;
-                    cell.style.paddingRight = this.options_.columnPadding! + 'px' ;
-                    if (colobj.sortable) {
-                        cell.addEventListener('click', this.sortColumn.bind(this, col)) ;
-                        cell.className = 'xero-table-header-cell-sortable' ;
-                    }
-                    else {
-                        cell.className = 'xero-table-header-cell' ;
-                    }
+                let rowelem = this.table_headers_ ;
+                cell.style.paddingLeft = this.options_.columnPadding! + 'px' ;
+                cell.style.paddingRight = this.options_.columnPadding! + 'px' ;
+                if (colobj.sortable) {
+                    cell.addEventListener('click', this.sortColumn.bind(this, col)) ;
+                    cell.className = 'xero-table-header-cell-sortable' ;
                 }
                 else {
-                    cell.style.paddingLeft = this.options_.cellPadding! + 'px' ;
-                    cell.style.paddingRight = this.options_.cellPadding! + 'px' ;
-                    if (colobj.dblClick) {
-                        cell.addEventListener('dblclick', this.dblClickCell.bind(this, row - 1, col)) ;
-                        cell.className = 'xero-table-cell-clickable' ;
-                    }
-                    else {
-                        cell.className = 'xero-table-cell' ;
-                    }
+                    cell.className = 'xero-table-header-cell' ;
                 }
 
                 cell.style.width = colobj.width + 'px' ;
@@ -287,13 +284,75 @@ export class XeroTable extends XeroWidget {
                 cell.style.color = this.options_.cellFont!.fontColor! ;
                 cell.style.fontWeight = this.options_.cellFont!.fontWeight! ;
                 cell.style.fontStyle = this.options_.cellFont!.fontStyle! ;
-                rowelem.appendChild(cell) ;
+                this.table_headers_.appendChild(cell) ;
 
-                left += colobj.width ;
+                left += colobj.width ;                
+            }
+            resolve() ;
+        }) ;
+        return ret ;
+    }
+
+    private async creatRowCells() : Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
+            let y = this.table_container_.clientTop || 0 ;
+            this.table_rows_.innerHTML = '' ;
+            for(let row = 0 ; row < this.model_.rowCount(); row++) {
+                let left : number = this.table_container_.clientLeft || 0 ;
+                let rowelem = document.createElement('div') ;
+
+                for(let col = 0 ; col < this.columns_.length; col++) {
+                    const colobj = this.columns_[col] ;
+                    const cell = document.createElement('div') ;
+                    rowelem.className = 'xero-table-row' ;
+                    this.table_rows_.appendChild(rowelem) ;
+
+                    cell.style.paddingLeft = this.options_.cellPadding! + 'px' ;
+                    cell.style.paddingRight = this.options_.cellPadding! + 'px' ;
+                    if (colobj.dblClick) {
+                        cell.addEventListener('dblclick', this.dblClickCell.bind(this, row - 1, col)) ;
+                        cell.className = 'xero-table-cell-clickable' ;
+                    }
+                    else {
+                        cell.className = 'xero-table-cell' ;
+                    }
+
+                    cell.style.width = colobj.width + 'px' ;
+                    cell.style.height = this.options_.rowHeight! + 'px' ;
+                    cell.style.fontFamily = this.options_.cellFont!.fontFamily! ;
+                    cell.style.fontSize = this.options_.cellFont!.fontSize! + 'px' ;
+                    cell.style.color = this.options_.cellFont!.fontColor! ;
+                    cell.style.fontWeight = this.options_.cellFont!.fontWeight! ;
+                    cell.style.fontStyle = this.options_.cellFont!.fontStyle! ;
+                    rowelem.appendChild(cell) ;
+
+                    left += colobj.width ;
+
+                }
+
+                this.table_rows_.appendChild(rowelem) ;
+                y += this.options_.rowHeight! ;
             }
 
-            y += this.options_.rowHeight! ;
-        }
+            resolve() ;
+        }) ;
+        return ret ;
+    }
+
+    private async createCells() : Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
+            this.createHeadersCells()
+            .then(() => {
+                this.creatRowCells()
+                .then(() => {
+                    resolve() ;
+                })
+            })
+            .catch((err) => {
+                reject(err) ;
+            }) ;
+        }) ;
+        return ret ;
     }
 
     private async createColumns(columns: XeroTableColumnDef[]) : Promise<void> {

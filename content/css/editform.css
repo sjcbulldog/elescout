@@ -151,6 +151,11 @@
     z-index: 1000;
 }
 
+.xero-form-edit-updown {
+    z-index: 1000;
+    pointer-events: none;
+}
+
 .xero-form-updown-button {
     z-index: 1000;
 }

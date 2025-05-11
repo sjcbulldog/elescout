@@ -10,8 +10,7 @@ export class XeroTableColumn {
     private minWidth_ : number = 0 ;
     private maxWidth_ : number = 0 ;
     private formatter_? : (data: any) => string ;
-
-    private sortup_: boolean = false ;
+    private sortup_: boolean = true ;
 
     constructor(table: XeroTable, index: number, def: XeroTableColumnDef) {
         this.table_ = table ;

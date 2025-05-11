@@ -43,7 +43,6 @@ export class UpDownControl extends FormControl {
     public updateFromItem(editing: boolean) : void {
         if (this.ctrl) {
             let item = this.item as IPCUpDownItem ;
-            this.ctrl.className = 'xero-form-edit-updown' ;
             this.ctrl.style.left = item.x + 'px' ;
             this.ctrl.style.top = item.y + 'px' ;
             this.ctrl.style.width = item.width + 'px' ;

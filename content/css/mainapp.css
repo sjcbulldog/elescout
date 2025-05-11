@@ -47,7 +47,6 @@ body {
 }
 
 .xero-view-pane {
-    overflow: auto;
 }
 
  /*
@@ -132,22 +131,20 @@ body {
  * Select event view related styles
  */
 .xero-select-event {
-    display: flex;
-    flex-direction: column;
     width: 100%;
     height: 100%;
 }
 
 .xero-select-event-search {
     width: auto;
-    flex-grow: 0;
+    height: 45px ;
 }
 
 .xero-select-event-search-box {
     display: block;
     margin: 0 auto;
     width: 95%;
-    padding: 5px 10px;
+    padding-bottom: 10px;
     border: 2px solid black;
     border-radius: 10px;    
     box-shadow: 10px 5px 5px lightgray;
@@ -155,10 +152,7 @@ body {
 
 .xero-select-event-table {
     width: auto;
-    flex-grow: 1;
-    max-width: inherit;
-    max-height: inherit;
-    padding: 10px;
+    height: calc(100% - 45px);
 }
 
 /*

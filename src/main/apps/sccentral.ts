@@ -83,7 +83,6 @@ export class SCCentral extends SCBase {
 	private static readonly viewMatchForm: string = 'view-match-form';
 	private static readonly viewMatchStatus: string = 'view-match-status';
 	private static readonly viewMatchDB: string = 'view-match-db';
-	private static readonly viewPreviewForm: string = 'view-preview-form';
 	private static readonly viewHelp: string = 'view-help';
 	private static readonly viewAbout: string = 'view-about';
 	private static readonly viewTeamGraph: string = 'view-team-graph';
@@ -1306,15 +1305,6 @@ export class SCCentral extends SCBase {
 			width: dims,
 			height: dims
 		});
-		treedata.push({
-			type: "icon",
-			command: SCCentral.viewPreviewForm,
-			title: "Preview Form",
-			icon: this.getIconData('preview.png'),
-			width: dims,
-			height: dims
-		});
-
 		if (this.project_) {
 			treedata.push({
 				type: "icon",
@@ -1459,8 +1449,6 @@ export class SCCentral extends SCBase {
 			);
 		} else if (cmd === SCCentral.viewAbout) {
 			this.showAbout();
-		} else if (cmd === SCCentral.viewPreviewForm) {
-			this.previewForm();
 		} else if (cmd === SCCentral.createNewEvent) {
 			this.createEvent(this.year_!);
 			this.sendNavData();
@@ -1567,40 +1555,6 @@ export class SCCentral extends SCBase {
 		else if (cmd === SCCentral.editTeamForm) {
 			this.setFormEdit('team') ;
 		}
-	}
-
-	private previewForm() {
-		var path = dialog.showOpenDialog({
-			title: "Select Form",
-			message: "Select scouting form",
-			filters: [
-				{
-					extensions: ["json"],
-					name: "JSON file for team scouting form",
-				},
-				{
-					extensions: ["html"],
-					name: "HTML file for team scouting form",
-				},
-			],
-			properties: ["openFile"],
-		});
-
-		path.then((pathname) => {
-			if (!pathname.canceled) {
-				let result = FormManager.validateForm(pathname.filePaths[0], '*') ;
-				if (result) {
-					dialog.showMessageBox(this.win_, {
-						title: 'Error Loading Form',
-						message: result.message
-					});					
-				}
-				else {
-					this.previewfile_ = pathname.filePaths[0];
-					this.setFormView('preview');
-				}
-			}
-		});
 	}
 
 	private setFormView(view: string) {
