@@ -1,7 +1,7 @@
 import { IPCSection } from '../../../../shared/ipcinterfaces';
-import { EditDialog } from './editdialog' ;
+import { XeroDialog } from '../../../widgets/xerodialog' ;
 
-export class EditSectionNameDialog extends EditDialog {
+export class EditSectionNameDialog extends XeroDialog {
     private section_: IPCSection ;
     private section_name_?: HTMLInputElement ;
 

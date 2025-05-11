@@ -1,5 +1,5 @@
 import { FormControl } from "../controls/formctrl";
-import { EditDialog } from "./editdialog";
+import { XeroDialog } from "../../../widgets/xerodialog";
 
 export interface FontData {
     family: string ;
@@ -14,7 +14,7 @@ declare global {
     }
 }
 
-export abstract class EditFormControlDialog extends EditDialog {
+export abstract class EditFormControlDialog extends XeroDialog {
     protected formctrl_ : FormControl ;
     protected font_name_? : HTMLSelectElement ;
     protected font_size_? : HTMLInputElement ;
@@ -24,6 +24,7 @@ export abstract class EditFormControlDialog extends EditDialog {
     protected background_color_? : HTMLInputElement ;
     protected transparent_? : HTMLInputElement ;
     protected tag_? : HTMLInputElement ;
+    protected orientation_? : HTMLSelectElement ;
 
     constructor(title: string, formctr: FormControl) {
         super(title) ;
@@ -179,6 +180,32 @@ export abstract class EditFormControlDialog extends EditDialog {
         label.appendChild(this.tag_) ;
         div.appendChild(label) ;
     }
+
+    protected populateOrientation(div: HTMLElement, value: 'horizontal' | 'vertical') {
+        let option: HTMLOptionElement ;
+        let label: HTMLLabelElement ;
+
+        this.orientation_ = document.createElement('select') ;
+        this.orientation_.className = 'xero-popup-form-edit-dialog-select' ;
+
+        option = document.createElement('option') ;
+        option.value = 'horizontal' ;
+        option.innerText = 'Horizontal' ;
+        this.orientation_.appendChild(option) ;
+
+        option = document.createElement('option') ;
+        option.value = 'vertical' ;
+        option.innerText = 'Vertical' ;
+        this.orientation_.appendChild(option) ;
+
+        this.orientation_.value = value ; 
+
+        label = document.createElement('label') ;
+        label.className = 'xero-popup-form-edit-dialog-label' ;
+        label.innerText = 'Orientation' ;
+        label.appendChild(this.orientation_) ;
+        div.appendChild(label) ;
+    }        
 
     public static getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
         return obj[key];

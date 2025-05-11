@@ -329,3 +329,18 @@ body {
 .xero-popup-form-edit-dialog-color {
     margin-left: 10px;
 }
+
+.xero-popup-form-edit-dialog-rowdiv {
+    padding-top: 10px ;
+    padding-bottom: 10px ;
+    width: 100%;
+}
+
+.xero-popup-form-edit-dialog-table-div {
+    height: 200px;
+    margin-top:10px ;
+    margin-bottom:10px;
+    border: 1px solid black;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+}

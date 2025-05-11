@@ -3,8 +3,6 @@ import { EditFormControlDialog } from "./editformctrldialog";
 import { FormControl } from "../controls/formctrl";
 
 export class EditUpDownControlDialog extends EditFormControlDialog {
-    private orientation_? : HTMLSelectElement ;
-
     constructor(formctrl: FormControl) {
         super('Edit UpDown', formctrl) ;
     }
@@ -18,30 +16,9 @@ export class EditUpDownControlDialog extends EditFormControlDialog {
         div.className = 'xero-popup-form-edit-dialog-rowdiv' ;
 
         this.populateTag(div) ;
-
-        this.orientation_ = document.createElement('select') ;
-        this.orientation_.className = 'xero-popup-form-edit-dialog-select' ;
-
-        option = document.createElement('option') ;
-        option.value = 'horizontal' ;
-        option.innerText = 'Horizontal' ;
-        this.orientation_.appendChild(option) ;
-
-        option = document.createElement('option') ;
-        option.value = 'vertical' ;
-        option.innerText = 'Vertical' ;
-        this.orientation_.appendChild(option) ;
-
-        this.orientation_.value = item.orientation ; 
-
-        label = document.createElement('label') ;
-        label.className = 'xero-popup-form-edit-dialog-label' ;
-        label.innerText = 'Orientation' ;
-        label.appendChild(this.orientation_) ;
-        div.appendChild(label) ;
-
+        this.populateOrientation(div, item.orientation) ;
         this.populateColors(div) ;
-        this.populateFontSelector(div) ;
+        await this.populateFontSelector(div) ;
 
         pdiv.appendChild(div) ;
     }

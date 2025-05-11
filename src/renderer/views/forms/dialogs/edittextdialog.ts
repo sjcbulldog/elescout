@@ -54,7 +54,7 @@ export class EditTextDialog extends EditFormControlDialog {
         div.appendChild(label) ;
 
         this.populateColors(div) ;
-        this.populateFontSelector(div) ;
+        await this.populateFontSelector(div) ;
         pdiv.appendChild(div) ;
     }
 

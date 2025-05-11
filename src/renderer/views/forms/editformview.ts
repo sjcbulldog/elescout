@@ -6,11 +6,12 @@ import { XeroView } from "../xeroview";
 import { FormControl } from "./controls/formctrl";
 import { LabelControl } from "./controls/labelctrl";
 import { TextControl } from "./controls/textctrl";
-import { EditDialog } from "./dialogs/editdialog";
+import { XeroDialog } from "../../widgets/xerodialog";
 import { EditSectionNameDialog } from "./dialogs/editsectionnamedialog";
 import { FormObject } from "./formobj";
 import { UpDownControl } from "./controls/updownctrl";
 import { BooleanControl } from "./controls/booleanctrl";
+import { MultipleChoiceControl } from "./controls/choicectrl";
 
 type DragState = 'none' | 'ulcorner' | 'lrcorner' | 'urcorner' | 'llcorner' | 'right' | 'left' | 'top' | 'bottom' | 'move' | 'all' ;
 
@@ -32,7 +33,7 @@ export class XeroEditFormView extends XeroView {
 
     private dragging_ : DragState = 'none' ;    
     private form_ctrls_ : FormControl[] = [] ;
-    private edit_dialog_? : EditDialog ;
+    private edit_dialog_? : XeroDialog ;
     private section_menu_? : XeroPopupMenu ;
     private image_menu_? : XeroPopupMenu ;
     private popup_menu_? : XeroPopupMenu ;
@@ -79,7 +80,7 @@ export class XeroEditFormView extends XeroView {
             new PopupMenuItem('Text Field', this.addNewTextCtrl.bind(this)),
             new PopupMenuItem('Up/Down Field', this.addNewUpDownCtrl.bind(this)),
             new PopupMenuItem('Boolean Field', this.addNewBooleanCtrl.bind(this)),
-            // new PopupMenuItem('Multiple Choice', this.addNewMultipleChoiceCtrl.bind(this)),
+            new PopupMenuItem('Multiple Choice', this.addNewMultipleChoiceCtrl.bind(this)),
             // new PopupMenuItem('Select', this.addNewSelectCtrl.bind(this)),
         ]
         this.ctrl_menu_ = new XeroPopupMenu('main', ctrlitems) ;
@@ -177,6 +178,19 @@ export class XeroEditFormView extends XeroView {
         }
     }  
 
+    private addNewMultipleChoiceCtrl() {
+        if (this.formimg_) {
+            let imgrect = this.formimg_.getBoundingClientRect() ;
+            let formctrl = new MultipleChoiceControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+
+            this.addItemToCurrentSection(formctrl.item) ;
+            this.form_ctrls_.push(formctrl) ;
+
+            formctrl.createForEdit(this.elem) ;
+            this.modified() ;  
+        }
+    } 
+
     private editdone(changed: boolean) {
         if (changed) {
             this.modified() ;
@@ -232,10 +246,10 @@ export class XeroEditFormView extends XeroView {
                     formctrl = new UpDownControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
-                // else if (item.type === 'choice') {
-                //     formctrl = new MultipleChoiceFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
-                //     formctrl.update(item) ;
-                // }
+                else if (item.type === 'choice') {
+                    formctrl = new MultipleChoiceControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
                 // else if (item.type === 'select') {
                 //     formctrl = new SelectFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
                 //     formctrl.update(item) ;
@@ -457,6 +471,7 @@ export class XeroEditFormView extends XeroView {
             let formctrl = this.findFormControlFromCtrl(this.selected_) ;
             this.dragging_ = 'none' ;
             if (formctrl) {
+                this.unselectCurrent() ;
                 this.edit_dialog_ = formctrl.createEditDialog() ;
                 this.edit_dialog_.showRelative(this.elem) ;
                 this.edit_dialog_.on('closed', this.dialogClosed.bind(this)) ;
@@ -783,7 +798,9 @@ export class XeroEditFormView extends XeroView {
             this.modified() ;
         }
         else {
-            this.updateMouseCursor(event.pageX, event.pageY) ;
+            if (!this.edit_dialog_ && !this.popup_menu_) {
+                this.updateMouseCursor(event.pageX, event.pageY) ;
+            }
         }
     }
 
@@ -887,6 +904,7 @@ export class XeroEditFormView extends XeroView {
 
     private renameSection() {
         if (this.form_) {
+            this.unselectCurrent() ;
             this.edit_dialog_ = new EditSectionNameDialog(this.form_.sections[this.currentSectionIndex_]) ;
             this.edit_dialog_.on('closed', this.sectionNameDialogDone.bind(this)) ;
             this.edit_dialog_.showRelative(this.elem.parentElement!) ;
@@ -924,6 +942,7 @@ export class XeroEditFormView extends XeroView {
                 new PopupMenuItem('Select Background Image', undefined, this.image_menu_),
             ]
 
+            this.unselectCurrent() ;
             this.popup_menu_ = new XeroPopupMenu('main', items) ;
             this.popup_menu_.on('menu-closed', this.menuClosed.bind(this)) ;
             this.popup_menu_.showRelative(event.target.parentElement!, new XeroPoint(event.clientX, event.clientY)) ;

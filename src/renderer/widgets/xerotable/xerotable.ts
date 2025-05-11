@@ -18,8 +18,10 @@ export interface XeroTableColumnDef {
     minwidth?: number ;
     formatter?: (data: any) => string ;
     dblClick? : boolean ;
+    singleClick? : boolean ;
     sortable? : boolean ;
     sortFunc? : (a: any, b: any) => number ;
+    editable?: boolean ;
 }
 
 export interface XeroTableOptions {
@@ -32,6 +34,7 @@ export interface XeroTableOptions {
     headerFont?: XeroTableFont ;
     columnPadding?: number ;
     cellPadding: number ;
+    rowsSelectable?: boolean ;
 }
 
 export class XeroTable extends XeroWidget {
@@ -42,7 +45,9 @@ export class XeroTable extends XeroWidget {
     private table_headers_ : HTMLDivElement ;
     private table_rows_ : HTMLDivElement ;
     private sort_col_ : number = -1 ;
-
+    private selected_row_ : number = -1 ;
+    private editing_cell_ : boolean = false ;
+ 
     constructor(options: XeroTableOptions) {
         super('div', 'xero-table') ;
         this.columns_ = [] ;
@@ -70,6 +75,7 @@ export class XeroTable extends XeroWidget {
                 this.updateTable() ;
             })
             .then(() => {
+                this.initialColumnWidths() ;
                 this.emit('table-ready') ;
             })
             .catch((err) => {
@@ -79,6 +85,52 @@ export class XeroTable extends XeroWidget {
                 logger.error(err.stack.toString()) ;
             }) ;
     }
+
+    public getSelectedRow() : number {
+        return this.selected_row_ ;
+    }
+
+    public getRowCount() : number {
+        return this.model_.rowCount() ;
+    }
+
+    public getRowData(row: number) : any {
+        if (row < 0 || row >= this.model_.rowCount()) {
+            throw new Error('XeroTable: Row out of range') ;
+        }
+        return this.model_.getRowData(row) ;
+    }
+
+    public addRow(data: any) : void {
+        this.model_.addRow(data) ;
+
+        // TODO: make this more efficient
+        this.updateTable()
+        .then(() => {
+            this.emit('table-updated') ;
+        })
+        .catch((err) => {
+            let logger = XeroLogger.getInstance() ;
+            logger.error(`XeroTable: Error adding row: ${err.message}`) ;
+            logger.error(err.stack.toString()) ;
+        }) ;
+    }
+
+    public deleteRow(row: number) : void {
+        if (row < 0 || row >= this.model_.rowCount()) {
+            throw new Error('XeroTable: Row out of range') ;
+        }
+
+        if (this.selected_row_ === row) {
+            for(let i = 0; i < this.columns_.length; i++) {
+                const cell = this.table_rows_.children[this.selected_row_].children[i] as HTMLDivElement ;
+                cell.classList.remove('xero-table-cell-rowselected') ;
+            }
+            this.selected_row_ = -1 ;
+        }
+        this.model_.removeRow(row) ;
+        this.table_rows_.removeChild(this.table_rows_.children[row]) ;
+    } ;
 
     public setFilter(filter: (data: any) => boolean) : void {
         this.table_rows_.innerHTML = '' ;
@@ -123,6 +175,41 @@ export class XeroTable extends XeroWidget {
 
     public getColumns() : XeroTableColumn[] {
         return this.columns_ ;
+    }
+
+    public fitColumns() : void {
+        let totalWidth = 0 ;
+        for(let col of this.columns_) {
+            totalWidth += col.width ;
+        }
+        let containerWidth = this.table_container_.clientWidth ;
+        let scale = containerWidth / totalWidth ;
+        for(let col of this.columns_) {
+            col.setWidth(Math.floor(col.width * scale)) ;
+        }
+        this.updateLayout() ;
+    }
+
+    public selectRow(row: number) : void {
+        if (row < 0 || row >= this.model_.rowCount()) {
+            throw new Error('XeroTable: Row out of range') ;
+        }
+
+        if (this.selected_row_ >= 0) {
+            for(let i = 0; i < this.columns_.length; i++) {
+                const cell = this.table_rows_.children[this.selected_row_].children[i] as HTMLDivElement ;
+                cell.classList.remove('xero-table-cell-rowselected') ;
+            }
+            this.selected_row_ = -1 ;
+        }
+
+        this.selected_row_ = row ;
+        if (this.selected_row_ >= 0) {
+            for(let i = 0; i < this.columns_.length; i++) {
+                const cell = this.table_rows_.children[this.selected_row_].children[i] as HTMLDivElement ;
+                cell.classList.add('xero-table-cell-rowselected') ;
+            }
+        }
     }
 
     private async putAllData(skipHeaders?: boolean) : Promise<void> {
@@ -187,6 +274,20 @@ export class XeroTable extends XeroWidget {
                 cell: ev.target
             }) ;
     } ;
+
+    private clickCell(row: number, col: number, ev: Event) : void {
+        if (this.columns_[col].singleClick) {
+            this.emit('cell-click', {
+                row: row, 
+                col: col, 
+                cell: ev.target
+            }) ;
+        }
+
+        if (this.options_.rowsSelectable) {
+            this.selectRow(row) ;
+        }
+    }
 
     public updateLayout() : void {
         //
@@ -300,21 +401,37 @@ export class XeroTable extends XeroWidget {
             for(let row = 0 ; row < this.model_.rowCount(); row++) {
                 let left : number = this.table_container_.clientLeft || 0 ;
                 let rowelem = document.createElement('div') ;
+                rowelem.className = 'xero-table-row' ;
+                this.table_rows_.appendChild(rowelem) ;
 
                 for(let col = 0 ; col < this.columns_.length; col++) {
                     const colobj = this.columns_[col] ;
                     const cell = document.createElement('div') ;
-                    rowelem.className = 'xero-table-row' ;
-                    this.table_rows_.appendChild(rowelem) ;
-
+                    cell.className = 'xero-table-cell' ;
                     cell.style.paddingLeft = this.options_.cellPadding! + 'px' ;
-                    cell.style.paddingRight = this.options_.cellPadding! + 'px' ;
-                    if (colobj.dblClick) {
-                        cell.addEventListener('dblclick', this.dblClickCell.bind(this, row - 1, col)) ;
-                        cell.className = 'xero-table-cell-clickable' ;
+                    cell.style.paddingRight = this.options_.cellPadding! + 'px' ;                    
+
+                    if (colobj.editable) {
+                        cell.classList.add('xero-table-cell-editable') ;
+                        cell.contentEditable = 'true' ;
+                        cell.addEventListener('input', this.startContentEdit.bind(this, row, col)) ;
+                        cell.addEventListener('focusout', this.endContentEdit.bind(this, row, col)) ;
                     }
-                    else {
-                        cell.className = 'xero-table-cell' ;
+
+                    if (colobj.dblClick) {
+                        cell.classList.add('xero-table-cell-clickable') ;
+                        cell.addEventListener('dblclick', this.dblClickCell.bind(this, row, col)) ;
+                    }
+
+                    if (this.options_.rowsSelectable || colobj.singleClick) {
+                        cell.addEventListener('click', this.clickCell.bind(this, row, col)) ;
+                        if (this.options_.rowsSelectable) {
+                            cell.classList.add('xero-table-cell-selectable') ;
+                        }                   
+
+                        if (colobj.singleClick) {
+                            cell.classList.add('xero-table-cell-clickable') ;
+                        }
                     }
 
                     cell.style.width = colobj.width + 'px' ;
@@ -327,7 +444,6 @@ export class XeroTable extends XeroWidget {
                     rowelem.appendChild(cell) ;
 
                     left += colobj.width ;
-
                 }
 
                 this.table_rows_.appendChild(rowelem) ;
@@ -337,6 +453,18 @@ export class XeroTable extends XeroWidget {
             resolve() ;
         }) ;
         return ret ;
+    }
+
+    private startContentEdit(row: number, col: number, ev: Event) : void {
+        this.editing_cell_ = true ;
+    }
+
+    private endContentEdit(row: number, col: number, ev: Event) : void {
+        if (this.editing_cell_) {
+            this.editing_cell_ = false ;
+            const cell = this.table_rows_.children[row].children[col] as HTMLDivElement ;
+            this.model_.setData(row, this.columns_[col].field, cell.innerText) ;
+        }
     }
 
     private async createCells() : Promise<void> {
@@ -365,4 +493,10 @@ export class XeroTable extends XeroWidget {
             this.columns_.push(col) ;
         }
     }
+
+    private initialColumnWidths() : void {
+        for(let col of this.columns_) {
+            col.setWidth() ;
+        }
+    }    
 }

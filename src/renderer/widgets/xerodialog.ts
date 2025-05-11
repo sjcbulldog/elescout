@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 
-export abstract class EditDialog extends EventEmitter {
+export abstract class XeroDialog extends EventEmitter {
     private title_ : string ;
     private moving_ : boolean ;
     private parent_? : HTMLElement ;

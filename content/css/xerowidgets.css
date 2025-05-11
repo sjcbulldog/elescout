@@ -95,15 +95,15 @@
   display: flex;
   align-items: center;
   border: 1px solid black ;
+  vertical-align: middle;  
+}
+
+.xero-table-cell-rowselected {
+  background-color: lightblue;
 }
 
 .xero-table-cell-clickable {
-  display: flex;
-  align-items: center;
-  border: 1px solid black ;
-  vertical-align: middle;
   cursor: pointer;
-  background-color: white;
   user-select: none;
 }
 

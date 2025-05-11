@@ -182,3 +182,120 @@
 .xero-form-edit-updown-count {
     z-index: 1000;
 }
+
+/* 
+ * Edit form 'choice' control view related styles
+ */
+.xero-form-choice {
+    z-index: 1000;
+}
+
+.xero-form-edit-choice {
+    z-index: 1000;
+}
+
+.xero-form-scout-choice {
+    z-index: 1000;
+}
+
+.xero-form-choice-table-vertical {
+    z-index: 1000;
+}
+
+.xero-form-edit-choice-table-vertical {
+    z-index: 1000;
+}
+
+.xero-form-scout-choice-table-vertical {
+    z-index: 1000;
+}
+
+.xero-form-choice-vertrow {
+    z-index: 1000;
+}
+
+.xero-form-edit-choice-vertrow {
+    z-index: 1000;
+}
+
+.xero-form-scout-choice-vertrow {
+    z-index: 1000;
+}
+
+.xero-form-choice-table-horizontal {
+    z-index: 1000;
+}
+
+.xero-form-edit-choice-table-horizontal {
+    z-index: 1000;
+}
+
+.xero-form-scout-choice-table-horizontal {
+    z-index: 1000;
+}
+
+.xero-form-choice-horizrow {
+    z-index: 1000;
+}
+
+.xero-form-edit-choice-horizrow {
+    z-index: 1000;
+}
+
+.xero-form-scout-choice-horizrow {
+    z-index: 1000;
+}
+
+.xero-form-choice-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;   
+    z-index: 1000;
+    pointer-events: none;
+    text-align: center;
+}
+
+.xero-form-edit-choice-label {
+    z-index: 1000;
+}
+
+.xero-form-scout-choice-label {
+    z-index: 1000;
+}
+
+.xero-form-choice-wrapper {
+    z-index: 1000;
+}
+
+.xero-form-edit-choice-wrapper {
+    z-index: 1000;
+}
+
+.xero-form-scout-choice-wrapper {
+    z-index: 1000;
+}
+
+.xero-form-choice-radio {
+    z-index: 1000;
+}
+
+.xero-form-edit-choice-radio {
+    z-index: 1000;
+}
+
+.xero-form-scout-choice-radio {
+    z-index: 1000;
+}
+
+.xero-form-choice-separator {
+    z-index: 1000;
+}
+
+.xero-form-edit-choice-separator {
+    z-index: 1000;
+}
+
+.xero-form-scout-choice-separator {
+    z-index: 1000;
+}

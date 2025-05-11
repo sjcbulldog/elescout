@@ -18,6 +18,10 @@ export class XeroTableColumn {
         this.def_ = def ;
     }
 
+    public get editable() : boolean {
+        return this.def_.editable ? this.def_.editable : false ;
+    }
+    
     public get sortable() : boolean {
         return this.def_.sortable ? this.def_.sortable : false ;
     }
@@ -52,6 +56,10 @@ export class XeroTableColumn {
 
     public get dblClick() : boolean {
         return this.def_.dblClick ? this.def_.dblClick : false ;
+    }
+
+    public get singleClick() : boolean {
+        return this.def_.singleClick ? this.def_.singleClick : false ;  
     }
 
     public setWidth(width? : number) : void {

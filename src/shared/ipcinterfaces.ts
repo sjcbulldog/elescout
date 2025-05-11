@@ -51,9 +51,11 @@ export interface IPCUpDownItem extends IPCFormItem {
     maxvalue: number ;
 }
 
+export type IPCChoiceValue = number | string ;
+
 export interface IPCChoice {
     text: string ;
-    value: number | string ;
+    value: IPCChoiceValue ;
 }
 
 export interface IPCChoicesItem extends IPCFormItem {
