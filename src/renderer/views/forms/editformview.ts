@@ -133,7 +133,7 @@ export class XeroEditFormView extends XeroView {
     private addNewLabelCtrl() {
         if (this.formimg_) {
             let imgrect = this.formimg_.getBoundingClientRect() ;
-            let formctrl = new LabelControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+            let formctrl = new LabelControl(this, this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
             this.addItemToCurrentSection(formctrl.item) ;
             this.form_ctrls_.push(formctrl) ;
@@ -146,7 +146,7 @@ export class XeroEditFormView extends XeroView {
     addNewTextCtrl() {
         if (this.formimg_) {
             let imgrect = this.formimg_.getBoundingClientRect() ;
-            let formctrl = new TextControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+            let formctrl = new TextControl(this, this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
             this.addItemToCurrentSection(formctrl.item) ;
             this.form_ctrls_.push(formctrl) ;
@@ -159,7 +159,7 @@ export class XeroEditFormView extends XeroView {
     private addNewUpDownCtrl() {
         if (this.formimg_) {
             let imgrect = this.formimg_.getBoundingClientRect() ;
-            let formctrl = new UpDownControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+            let formctrl = new UpDownControl(this, this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
             this.addItemToCurrentSection(formctrl.item) ;
             this.form_ctrls_.push(formctrl) ;
@@ -172,7 +172,7 @@ export class XeroEditFormView extends XeroView {
     private addNewBooleanCtrl() {
         if (this.formimg_) {
             let imgrect = this.formimg_.getBoundingClientRect() ;
-            let formctrl = new BooleanControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+            let formctrl = new BooleanControl(this, this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
             this.addItemToCurrentSection(formctrl.item) ;
             this.form_ctrls_.push(formctrl) ;
@@ -185,7 +185,7 @@ export class XeroEditFormView extends XeroView {
     private addNewMultipleChoiceCtrl() {
         if (this.formimg_) {
             let imgrect = this.formimg_.getBoundingClientRect() ;
-            let formctrl = new MultipleChoiceControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+            let formctrl = new MultipleChoiceControl(this, this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
             this.addItemToCurrentSection(formctrl.item) ;
             this.form_ctrls_.push(formctrl) ;
@@ -198,7 +198,7 @@ export class XeroEditFormView extends XeroView {
     private addNewSelectCtrl() {
         if (this.formimg_) {
             let imgrect = this.formimg_.getBoundingClientRect() ;
-            let formctrl = new SelectControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+            let formctrl = new SelectControl(this, this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
             this.addItemToCurrentSection(formctrl.item) ;
             this.form_ctrls_.push(formctrl) ;
@@ -211,7 +211,7 @@ export class XeroEditFormView extends XeroView {
     private addNewTimerCtrl() {
         if (this.formimg_) {
             let imgrect = this.formimg_.getBoundingClientRect() ;
-            let formctrl = new TimerControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+            let formctrl = new TimerControl(this, this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
             this.addItemToCurrentSection(formctrl.item) ;
             this.form_ctrls_.push(formctrl) ;
@@ -253,31 +253,31 @@ export class XeroEditFormView extends XeroView {
             for(let item of section.items) {
                 let formctrl ;
                 if (item.type === 'label') {
-                    formctrl = new LabelControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl = new LabelControl(this, item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
                 else if (item.type === 'text') {
-                    formctrl = new TextControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl = new TextControl(this, item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
                 else if (item.type === 'boolean') {  
-                    formctrl = new BooleanControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl = new BooleanControl(this, item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
                 else if (item.type === 'updown') {
-                    formctrl = new UpDownControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl = new UpDownControl(this, item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
                 else if (item.type === 'choice') {
-                    formctrl = new MultipleChoiceControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl = new MultipleChoiceControl(this, item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
                 else if (item.type === 'select') {
-                    formctrl = new SelectControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl = new SelectControl(this, item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
                 else if (item.type === 'timer') {
-                    formctrl = new TimerControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl = new TimerControl(this, item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
                 else {

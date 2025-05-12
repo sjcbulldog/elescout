@@ -1,5 +1,6 @@
 import { IPCChoiceValue, IPCMultipleChoiceItem } from "../../../../shared/ipcinterfaces";
 import { XeroRect } from "../../../widgets/xerogeom";
+import { XeroView } from "../../xeroview";
 import { EditChoiceDialog } from "../dialogs/editchoicedialog";
 import { EditFormControlDialog } from "../dialogs/editformctrldialog";
 import { FormControl } from "./formctrl";
@@ -33,14 +34,14 @@ export class MultipleChoiceControl extends FormControl {
     private choice_ctrls_ : HTMLInputElement[] = [] ;
     private choice_ctrl_to_value_ : Map<HTMLInputElement, IPCChoiceValue> = new Map() ;
 
-    constructor(tag: string, bounds: XeroRect) {
-        super(MultipleChoiceControl.item_desc_) ;
+    constructor(view: XeroView, tag: string, bounds: XeroRect) {
+        super(view, MultipleChoiceControl.item_desc_) ;
         this.setTag(tag) ;
         this.setBounds(bounds) ;
     }
 
     public copyObject() : FormControl {
-        return new MultipleChoiceControl(this.item.tag, this.bounds()) ;
+        return new MultipleChoiceControl(this.view, this.item.tag, this.bounds()) ;
     }
 
     public updateFromItem(editing: boolean) : void {

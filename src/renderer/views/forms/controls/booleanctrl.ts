@@ -1,5 +1,6 @@
 import { IPCBooleanItem } from "../../../../shared/ipcinterfaces";
 import { XeroRect } from "../../../widgets/xerogeom";
+import { XeroView } from "../../xeroview";
 import { EditBooleanDialog } from "../dialogs/editbooleandialog";
 import { EditFormControlDialog } from "../dialogs/editformctrldialog";
 import { FormControl } from "./formctrl";
@@ -25,14 +26,14 @@ export class BooleanControl extends FormControl {
 
     private input_? : HTMLInputElement ;
 
-    constructor(tag: string, bounds: XeroRect) {
-        super(BooleanControl.item_desc_) ;
+    constructor(view: XeroView, tag: string, bounds: XeroRect) {
+        super(view, BooleanControl.item_desc_) ;
         this.setTag(tag) ;
         this.setBounds(bounds) ;
     }
 
     public copyObject() : FormControl {
-        return new BooleanControl(this.item.tag, this.bounds()) ;
+        return new BooleanControl(this.view, this.item.tag, this.bounds()) ;
     }
 
     public updateFromItem(editing: boolean) : void {

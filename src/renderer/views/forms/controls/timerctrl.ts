@@ -1,7 +1,9 @@
 import { IPCTimerItem } from "../../../../shared/ipcinterfaces";
 import { XeroRect } from "../../../widgets/xerogeom";
+import { XeroView } from "../../xeroview";
 import { EditFormControlDialog } from "../dialogs/editformctrldialog";
 import { EditTimerDialog } from "../dialogs/edittimerdialog";
+import { XeroScoutFormView } from "../scoutformview";
 import { FormControl } from "./formctrl";
 
 export class TimerControl extends FormControl {
@@ -24,18 +26,15 @@ export class TimerControl extends FormControl {
 
     private start_stop_button_? : HTMLButtonElement ;
     private current_time_? : HTMLSpanElement ;
-    private time_value_ : number = 0 ;
-    private running_ : boolean = false ;
-    private timer_? : NodeJS.Timeout ;
 
-    constructor(tag: string, bounds: XeroRect) {
-        super(TimerControl.item_desc_) ;
+    constructor(view: XeroView, tag: string, bounds: XeroRect) {
+        super(view, TimerControl.item_desc_) ;
         this.setTag(tag) ;
         this.setBounds(bounds) ;
     }
 
     public copyObject() : FormControl {
-        return new TimerControl(this.item.tag, this.bounds()) ;
+        return new TimerControl(this.view, this.item.tag, this.bounds()) ;
     }
 
     public updateFromItem(editing: boolean) : void {
@@ -65,31 +64,27 @@ export class TimerControl extends FormControl {
         }
     }
 
-    private timerTick() : void {
-        if (this.running_) {
-            this.time_value_ += 0.1 ;
-            this.displayTimer() ;
-        }
-    }
-
     private startStopTimer() : void {
-        if (this.running_) {
-            clearInterval(this.timer_) ;
-            this.running_ = false ;
-            this.start_stop_button_!.innerText = 'Start' ;
-        }
-        else {
-            this.running_ = true ;
-            this.timer_ = setInterval(() => this.timerTick(), 100) ;
-            this.start_stop_button_!.innerText = 'Stop' ;
+        if (this.view instanceof XeroScoutFormView) {
+            let view = this.view as XeroScoutFormView ;
+            if (view.isTimerRunning(this.item.tag)) {
+                view.stopTimer(this.item.tag) ;
+                this.start_stop_button_!.innerText = 'Start' ;
+            }
+            else {
+                view.startTimer(this.item.tag, this.displayTimer.bind(this)) ;
+                this.start_stop_button_!.innerText = 'Stop' ;
+            }
         }
     }
 
     private displayTimer() : void {
-        if (this.current_time_) {
-            let minutes = Math.floor(this.time_value_ / 60) ;
-            let seconds = Math.floor(this.time_value_ % 60) ;
-            let tenths = Math.floor((this.time_value_ - Math.floor(this.time_value_)) * 10) ;
+        if (this.current_time_ && this.view instanceof XeroScoutFormView) {
+            let view = this.view as XeroScoutFormView ;
+            let value = view.getTimerValue(this.item.tag) ;
+            let minutes = Math.floor(value / 60) ;
+            let seconds = Math.floor(value % 60) ;
+            let tenths = Math.floor((value - Math.floor(value)) * 10) ;
             this.current_time_!.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${tenths}` ;
         }
     }
@@ -130,8 +125,15 @@ export class TimerControl extends FormControl {
         this.start_stop_button_!.innerText = 'Start' ;
         this.start_stop_button_!.addEventListener('click', this.startStopTimer.bind(this)) ;
         this.ctrl.appendChild(this.start_stop_button_!) ;
-
         this.updateFromItem(false) ;
+        
+        if (this.view instanceof XeroScoutFormView) {
+            let view = this.view as XeroScoutFormView ;
+            if (view.isTimerRunning(this.item.tag)) {
+                this.start_stop_button_!.innerText = 'Stop' ;
+                view.setCallback(this.item.tag, this.displayTimer.bind(this)) ;
+            }
+        }
 
         parent.appendChild(this.ctrl) ;
     }
@@ -141,12 +143,20 @@ export class TimerControl extends FormControl {
     }
 
     public getData() : any {
-        return this.time_value_ ;
+        let ret : number | undefined = undefined ;
+
+        if (this.view instanceof XeroScoutFormView) {
+            let view = this.view as XeroScoutFormView ;
+            ret = this.view.getTimerValue(this.item.tag) ;
+        }
+        return ret;
     }
 
     public setData(data: any) : void {
-        if (this.current_time_) {
-            this.time_value_ = data as number ;
+        if (this.current_time_ && this.view instanceof XeroScoutFormView) {
+            let view = this.view as XeroScoutFormView ;
+            let value = data as number ;
+            view.setTimerValue(this.item.tag, value) ;
             this.displayTimer() ;
         }
     }  

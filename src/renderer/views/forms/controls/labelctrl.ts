@@ -1,5 +1,6 @@
 import { IPCLabelItem } from "../../../../shared/ipcinterfaces";
 import { XeroRect } from "../../../widgets/xerogeom";
+import { XeroView } from "../../xeroview";
 import { EditFormControlDialog } from "../dialogs/editformctrldialog";
 import { EditLabelDialog } from "../dialogs/editlabeldialog";
 import { FormControl } from "./formctrl";
@@ -24,14 +25,14 @@ export class LabelControl extends FormControl {
         transparent: true
     } ;
 
-    constructor(tag: string, bounds: XeroRect) {
-        super(LabelControl.item_desc_) ;
+    constructor(view: XeroView, tag: string, bounds: XeroRect) {
+        super(view, LabelControl.item_desc_) ;
         this.setTag(tag) ;
         this.setBounds(bounds) ;
     }
 
     public copyObject() : FormControl {
-        return new LabelControl(this.item.tag, this.bounds()) ;
+        return new LabelControl(this.view, this.item.tag, this.bounds()) ;
     }
 
     public updateFromItem(editing: boolean) : void {

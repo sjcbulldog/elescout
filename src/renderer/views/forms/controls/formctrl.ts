@@ -1,13 +1,20 @@
 import { IPCFormItem } from "../../../../shared/ipcinterfaces";
 import { XeroRect } from "../../../widgets/xerogeom";
+import { XeroView } from "../../xeroview";
 import { EditFormControlDialog } from "../dialogs/editformctrldialog";
 
 export abstract class FormControl {
+    private view_ : XeroView ;
     private item_ : IPCFormItem ;
     private ctrl_? : HTMLElement ;
 
-    constructor(item: IPCFormItem) {
+    constructor(view: XeroView, item: IPCFormItem) {
         this.item_ = item ;
+        this.view_ = view ;
+    }
+
+    public get view() : XeroView {
+        return this.view_ ;
     }
 
     public bounds() : XeroRect {

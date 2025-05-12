@@ -1,6 +1,7 @@
 
 import { IPCSelectItem } from "../../../../shared/ipcinterfaces";
 import { XeroRect } from "../../../widgets/xerogeom";
+import { XeroView } from "../../xeroview";
 import { EditFormControlDialog } from "../dialogs/editformctrldialog";
 import { EditSelectDialog } from "../dialogs/editselectdialog";
 import { FormControl } from "./formctrl";
@@ -29,14 +30,14 @@ export class SelectControl extends FormControl {
         ],
     } ;
 
-    constructor(tag: string, bounds: XeroRect) {
-        super(SelectControl.item_desc_) ;
+    constructor(view: XeroView, tag: string, bounds: XeroRect) {
+        super(view, SelectControl.item_desc_) ;
         this.setTag(tag) ;
         this.setBounds(bounds) ;
     }
 
     public copyObject() : FormControl {
-        return new SelectControl(this.item.tag, this.bounds()) ;
+        return new SelectControl(this.view, this.item.tag, this.bounds()) ;
     }
 
     public updateFromItem(editing: boolean) : void {

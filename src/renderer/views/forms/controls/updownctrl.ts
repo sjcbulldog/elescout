@@ -1,5 +1,6 @@
 import { IPCUpDownItem } from "../../../../shared/ipcinterfaces";
 import { XeroRect } from "../../../widgets/xerogeom";
+import { XeroView } from "../../xeroview";
 import { EditFormControlDialog } from "../dialogs/editformctrldialog";
 import { EditUpDownControlDialog } from "../dialogs/editupdowndialog";
 import { FormControl } from "./formctrl";
@@ -30,14 +31,14 @@ export class UpDownControl extends FormControl {
     private count_? : HTMLSpanElement ;
     private count_value_ : number = 0 ;
     
-    constructor(tag: string, bounds: XeroRect) {
-        super(UpDownControl.item_desc_) ;
+    constructor(view: XeroView, tag: string, bounds: XeroRect) {
+        super(view, UpDownControl.item_desc_) ;
         this.setTag(tag) ;
         this.setBounds(bounds) ;
     }
 
     public copyObject() : FormControl {
-        return new UpDownControl(this.item.tag, this.bounds()) ;
+        return new UpDownControl(this.view, this.item.tag, this.bounds()) ;
     }
 
     public updateFromItem(editing: boolean) : void {
