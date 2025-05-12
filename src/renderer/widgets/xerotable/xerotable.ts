@@ -245,6 +245,29 @@ export class XeroTable extends XeroWidget {
         cell.style.fontStyle = this.options_.headerFont!.fontStyle! ;
     }
 
+    public sort(col: number | string, up: boolean) {
+        let colno : number ;
+
+        if (typeof col === 'string') {
+            colno = this.columns_.findIndex((c) => c.field === col) ;
+        }
+        else {
+            colno = col ;
+        }
+
+        if (colno >= 0) {
+            let start = Date.now() ;
+            this.model_.sort(this.columns_[colno].field, up, this.columns_[colno].sortFunc) ;
+            let elapsed = Date.now() - start ;
+            console.log(`XeroTable: Sort took ${elapsed}ms`) ;
+
+            start = Date.now() ;
+            this.putAllData(true) ;        
+            elapsed = Date.now() - start ;
+            console.log(`XeroTable: PutAllData took ${elapsed}ms`) ;
+        }
+    }
+
     private sortColumn(col: number) : void {
         if (this.sort_col_ == col) {
             this.columns_[col].toggleSort() ;
