@@ -18,7 +18,7 @@ export class BooleanControl extends FormControl {
         fontSize: 36,
         fontWeight: 'normal',
         fontStyle: 'normal',
-        datatype: 'none',
+        datatype: 'boolean',
         transparent: true,
         accent: 'lightgreen',
     }

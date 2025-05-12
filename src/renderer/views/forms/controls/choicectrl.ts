@@ -18,7 +18,7 @@ export class MultipleChoiceControl extends FormControl {
         fontSize: 36,
         fontWeight: 'normal',
         fontStyle: 'normal',
-        datatype: 'none',
+        datatype: 'string',
         transparent: true,
         radiosize : 20,
         orientation: 'vertical',

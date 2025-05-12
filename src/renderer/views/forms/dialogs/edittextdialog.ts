@@ -63,7 +63,7 @@ export class EditTextDialog extends EditFormControlDialog {
             let item = this.formctrl_.item as IPCTextItem ;
 
             item.tag = this.tag_.value ;
-            item.datatype = this.data_type_.value ;
+            item.datatype = this.data_type_.value as 'string' | 'integer' | 'real' ;
             item.placeholder = this.placeholder_.value ;
             item.fontFamily = this.font_name_.value ;
             item.fontSize = parseInt(this.font_size_.value) ;

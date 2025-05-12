@@ -46,16 +46,16 @@ export class XeroAssignTablets extends XeroView {
         this.placeTablets();
     }
 
-    private createTabletsAvailable() : [HTMLElement, HTMLElement] {
+    private createTabletsAvailabel() : [HTMLElement, HTMLElement] {
         let div = document.createElement('div');
 
         let span = document.createElement('span');
-        span.className = "xero-assign-tablets-available-span";
-        span.innerText = 'Available';
+        span.className = "xero-assign-tablets-availabel-span";
+        span.innerText = 'Availabel';
         div.append(span);
 
         let availholder = document.createElement('div');
-        availholder.className = "xero-assign-tablets-available-holder";
+        availholder.className = "xero-assign-tablets-availabel-holder";
         div.append(availholder);
 
         return [div, availholder] ;
@@ -245,9 +245,9 @@ export class XeroAssignTablets extends XeroView {
         this.tabletdiv_.className = "xero-assign-tablets-tablet-div";
         this.assign_tablets_div_.append(this.tabletdiv_);
 
-        col = this.createTabletsAvailable();
+        col = this.createTabletsAvailabel();
         this.availbletablets_ = col[1] ;
-        this.availbletablets_.className = "xero-assign-tablets-available";
+        this.availbletablets_.className = "xero-assign-tablets-availabel";
         this.tabletdiv_.append(col[0]) ;
 
         col = this.createMatchTablets();

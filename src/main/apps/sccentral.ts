@@ -180,7 +180,7 @@ export class SCCentral extends SCBase {
 			.then((up) => {
 				if (!up) {
 					this.ba_ = undefined;
-					this.sendToRenderer('send-app-status', { right: 'Blue Alliance not available - trying again' }) ;
+					this.sendToRenderer('send-app-status', { right: 'Blue Alliance not availabel - trying again' }) ;
 					this.tryAgain() ;
 				} else {
 					this.sendToRenderer('send-app-status', { right: 'Blue Alliance connected' }) ;
@@ -1031,7 +1031,7 @@ export class SCCentral extends SCBase {
 	}
 
 	public sendEventData(): void {
-		if (this.project_ && this.isBAAvailable()) {
+		if (this.project_ && this.isBAAvailabel()) {
 			this.ba_?.getEvents()
 				.then((frcevs: BAEvent[]) => {
 					this.baevents_ = frcevs;
@@ -1052,7 +1052,7 @@ export class SCCentral extends SCBase {
 		} else {
 			dialog.showErrorBox(
 				'Load Blue Alliance Event',
-				'The Blue Alliance site is not available'
+				'The Blue Alliance site is not availabel'
 			);
 			this.setView('info') ;
 		}
@@ -1067,10 +1067,10 @@ export class SCCentral extends SCBase {
 	}
 
 	public async loadBaEventData(key: string): Promise<void> {
-		if (!this.isBAAvailable()) {
+		if (!this.isBAAvailabel()) {
 			dialog.showErrorBox(
 				'Load Blue Alliance Event',
-				'The Blue Alliance site is not available.'
+				'The Blue Alliance site is not availabel.'
 			);
 			return;
 		}
@@ -1175,8 +1175,8 @@ export class SCCentral extends SCBase {
 			return;
 		}
 
-		if (!this.isBAAvailable()) {
-			let html = "The Blue Alliance site is not available.";
+		if (!this.isBAAvailabel()) {
+			let html = "The Blue Alliance site is not availabel.";
 			this.sendToRenderer("set-status-visible", true);
 			this.sendToRenderer("set-status-title", "Error Importing Match Data");
 			this.sendToRenderer("set-status-html", html);
@@ -1224,8 +1224,8 @@ export class SCCentral extends SCBase {
 			return;
 		}
 
-		if (!this.isBAAvailable()) {
-			let html = "The Statbotics site is not available.";
+		if (!this.isBAAvailabel()) {
+			let html = "The Statbotics site is not availabel.";
 			this.sendToRenderer("set-status-visible", true);
 			this.sendToRenderer("set-status-title", "Error Importing Match Data");
 			this.sendToRenderer("set-status-html", html);
@@ -1284,7 +1284,7 @@ export class SCCentral extends SCBase {
 		return ret;
 	}
 
-	private isBAAvailable(): boolean {
+	private isBAAvailabel(): boolean {
 		return this.ba_ !== undefined && !this.baloading_;
 	}
 
@@ -1559,7 +1559,7 @@ export class SCCentral extends SCBase {
 
 	private setFormView(view: string) {
 		this.lastformview_ = view ;
-		this.setView('form-view', view);
+		this.setView('form-scout', view);
 	}
 
 	private setFormEdit(name: string) {
@@ -1754,7 +1754,7 @@ export class SCCentral extends SCBase {
 	}
 
 	private loadBAEvent() {
-		if (this.isBAAvailable()) {
+		if (this.isBAAvailabel()) {
 			this.ba_?.getEvents()
 				.then((frcevs) => {
 					this.sendToRenderer("send-event-data", frcevs);

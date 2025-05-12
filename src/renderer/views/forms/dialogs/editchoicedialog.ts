@@ -5,6 +5,7 @@ import { XeroTable, XeroTableColumnDef } from "../../../widgets/xerotable/xerota
 
 export class EditChoiceDialog extends EditFormControlDialog {
     private table_? : XeroTable ;
+    private data_type_?: HTMLSpanElement ;
 
     constructor(formctrl: FormControl) {
         super('Edit Multiple Choice', formctrl) ;
@@ -20,10 +21,17 @@ export class EditChoiceDialog extends EditFormControlDialog {
         pdiv.appendChild(div) ;
 
         this.populateTag(div) ;
+
+        this.data_type_ = document.createElement('span') ;
+        this.data_type_.className = 'xero-popup-form-edit-dialog-label' ;
+        this.data_type_.innerText = 'Data Type: ' + item.datatype ;
+        div.appendChild(this.data_type_) ;
+
         this.populateOrientation(div, item.orientation) ;
         this.populateColors(div) ;
         await this.populateFontSelector(div) ;
         this.populateChoices(div) ;
+        this.data_type_!.innerText = 'Data Type: ' + this.deduceDataType(this.table_!.getColumnData(1)) ;        
     }
 
     private populateChoices(div: HTMLElement) : void {
@@ -79,6 +87,7 @@ export class EditChoiceDialog extends EditFormControlDialog {
 
         this.table_.setParent(tdiv) ;
         this.table_.on('table-ready', this.tableReady.bind(this)) ;
+        this.table_.on('cell-changed', this.tableCellChanged.bind(this)) ;
 
         let btndiv = document.createElement('div') ;
         btndiv.className = 'xero-popup-form-edit-dialog-choice-button-div' ;
@@ -104,6 +113,8 @@ export class EditChoiceDialog extends EditFormControlDialog {
     private deleteChoice() : void {
         let row = this.table_!.getSelectedRow() ;
         this.table_!.deleteRow(row) ;
+
+        this.data_type_!.innerText = 'Data Type: ' + this.deduceDataType(this.table_!.getColumnData(1)) ;
     }
 
     private addChoice() : void {
@@ -113,6 +124,12 @@ export class EditChoiceDialog extends EditFormControlDialog {
                 value: 'new_value',
             }
         ) ;
+
+        this.data_type_!.innerText = 'Data Type: ' + this.deduceDataType(this.table_!.getColumnData(1)) ;
+    }
+
+    private tableCellChanged() : void {
+        this.data_type_!.innerText = 'Data Type: ' + this.deduceDataType(this.table_!.getColumnData(1)) ;
     }
 
     protected extractData() : void {
@@ -125,6 +142,7 @@ export class EditChoiceDialog extends EditFormControlDialog {
         item.fontWeight = this.font_weight_!.value ;
         item.fontStyle = this.font_style_!.value ;
         item.orientation = this.orientation_!.value as 'horizontal' | 'vertical' ;
+        item.datatype = this.deduceDataType(this.table_!.getColumnData(1)) ;
 
         item.choices = [] ;
         for (let i = 0 ; i < this.table_!.getRowCount(); ++i) {

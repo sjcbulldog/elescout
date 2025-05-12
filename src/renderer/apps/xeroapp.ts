@@ -11,6 +11,7 @@ import { XeroStatusWindow } from "../widgets/xerostatus";
 import { XeroWidget } from "../widgets/xerowidget";
 import { XeroAssignTablets } from "../views/assigntablets";
 import { XeroEditFormView } from "../views/forms/editformview";
+import { XeroScoutFormView } from "../views/forms/scoutformview";
 
 document.addEventListener('DOMContentLoaded', function () {
     let mainapp = new XeroApp() ;
@@ -85,5 +86,6 @@ export class XeroApp extends XeroMainProcessInterface {
         this.registerView('select-event', XeroSelectEvent) ;
         this.registerView('assign-tablets', XeroAssignTablets) ;
         this.registerView('form-edit', XeroEditFormView) ;
+        this.registerView('form-scout', XeroScoutFormView) ;
     }
 }

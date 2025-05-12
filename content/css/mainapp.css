@@ -180,7 +180,7 @@ body {
     justify-content: center;    
  }
 
- .xero-assign-tablets-available {
+ .xero-assign-tablets-availabel {
     min-width: 200px ;
     border: 2px solid black ;
     min-height: 350px;
@@ -225,11 +225,11 @@ body {
     font-weight: bolder;
 }
 
-.xero-assign-tablets-available-holder {
+.xero-assign-tablets-availabel-holder {
     height: 100%;
 }
 
-.xero-assign-tablets-available-span {
+.xero-assign-tablets-availabel-span {
     text-align: center;
     width: 100%;
     display: block;    

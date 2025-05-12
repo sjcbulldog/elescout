@@ -101,6 +101,13 @@ export class XeroTable extends XeroWidget {
         return this.model_.getRowData(row) ;
     }
 
+    public getColumnData(cols: number) : any[] {
+        if (cols < 0 || cols >= this.columns_.length) {
+            throw new Error('XeroTable: Column out of range') ;
+        }
+        return this.model_.getColData(this.columns_[cols].field) ;
+    }
+
     public addRow(data: any) : void {
         this.model_.addRow(data) ;
 
@@ -464,6 +471,13 @@ export class XeroTable extends XeroWidget {
             this.editing_cell_ = false ;
             const cell = this.table_rows_.children[row].children[col] as HTMLDivElement ;
             this.model_.setData(row, this.columns_[col].field, cell.innerText) ;
+
+            this.emit('cell-changed', {
+                row: row, 
+                col: col, 
+                cell: cell,
+                value: cell.innerText
+            }) ;
         }
     }
 

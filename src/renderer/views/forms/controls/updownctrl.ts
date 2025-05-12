@@ -19,7 +19,7 @@ export class UpDownControl extends FormControl {
         fontSize: 36,
         fontWeight: 'normal',
         fontStyle: 'normal',
-        datatype: 'none',
+        datatype: 'integer',
         transparent: true,
         minvalue: 0,
         maxvalue: 20,
@@ -119,12 +119,6 @@ export class UpDownControl extends FormControl {
         }
     }
 
-    private initCount() {
-        let item = this.item as IPCUpDownItem ;
-        this.count_value_ = item.minvalue ;
-        this.displayCount() ;
-    }
-
     private displayCount() {
         if (this.count_) {
             this.count_.innerText = this.count_value_.toString() ;
@@ -132,50 +126,68 @@ export class UpDownControl extends FormControl {
     }
 
     public createForEdit(parent: HTMLElement) : void  {
+        let item = this.item as IPCUpDownItem ;
         this.ctrl = document.createElement('div') ;
         this.setClassList(this.ctrl, 'edit') ;
 
         this.upbutton_ = document.createElement('button') ;
         this.setClassList(this.upbutton_, 'edit', 'button') ;
         this.upbutton_.innerHTML = '&#x25B2;' ;
-        this.upbutton_.addEventListener('click', this.countUp.bind(this)) ;
         this.upbutton_.disabled = true ;
-        this.ctrl.appendChild(this.upbutton_) ;
 
         this.count_ = document.createElement('span') ;
         this.setClassList(this.count_, 'edit', 'count') ;
         this.count_.innerText = '0' ; 
-        this.ctrl.appendChild(this.count_) ;
 
         this.downbutton_ = document.createElement('button') ;
         this.setClassList(this.upbutton_, 'edit', 'button') ;
         this.downbutton_.innerHTML = '&#x25BC;' ;
-        this.downbutton_.addEventListener('click', this.countDown.bind(this)) ;
         this.downbutton_.disabled = true ;
-        this.ctrl.appendChild(this.downbutton_) ;      
+
+        if (item.orientation === 'horizontal') {
+            this.ctrl.appendChild(this.downbutton_) ;
+            this.ctrl.appendChild(this.count_) ;
+            this.ctrl.appendChild(this.upbutton_) ;
+        }
+        else {
+            this.ctrl.appendChild(this.upbutton_) ;
+            this.ctrl.appendChild(this.count_) ;
+            this.ctrl.appendChild(this.downbutton_) ;
+        }
 
         this.updateFromItem(true) ;
         parent.appendChild(this.ctrl) ;
     }
     
     public createForScouting(parent: HTMLElement) : void {
+        let item = this.item as IPCUpDownItem ;
         this.ctrl = document.createElement('div') ;
         this.setClassList(this.ctrl, 'scout') ;
 
         this.upbutton_ = document.createElement('button') ;
         this.setClassList(this.upbutton_, 'scout', 'button') ;
+        this.upbutton_.innerHTML = '&#x25B2;' ;
         this.upbutton_.addEventListener('click', this.countUp.bind(this)) ;
-        this.ctrl.appendChild(this.upbutton_) ;
 
         this.count_ = document.createElement('span') ;
         this.setClassList(this.count_, 'scout', 'count') ;
         this.count_.innerText = '0' ;   
-        this.ctrl.appendChild(this.count_) ;
 
         this.downbutton_ = document.createElement('button') ;
         this.setClassList(this.downbutton_, 'scout', 'button') ;
+        this.downbutton_.innerHTML = '&#x25BC;' ;        
         this.downbutton_.addEventListener('click', this.countDown.bind(this)) ;
-        this.ctrl.appendChild(this.downbutton_) ;
+
+        if (item.orientation === 'horizontal') {
+            this.ctrl.appendChild(this.downbutton_) ;
+            this.ctrl.appendChild(this.count_) ;
+            this.ctrl.appendChild(this.upbutton_) ;
+        }
+        else {
+            this.ctrl.appendChild(this.upbutton_) ;
+            this.ctrl.appendChild(this.count_) ;
+            this.ctrl.appendChild(this.downbutton_) ;
+        }
 
         this.updateFromItem(false) ;
         parent.appendChild(this.ctrl) ;

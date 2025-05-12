@@ -44,6 +44,26 @@ export class XeroTableDataModel {
         return this.filtered_data_[rowIndex];
     }
 
+    public getColData(field: string) {
+        let colData = [] ;
+        for (let i = 0; i < this.filtered_data_.length; i++) {
+            let rowData = this.filtered_data_[i];
+            let fieldParts = field.split('.');
+            let obj = rowData;
+            for (let j = 0; j < fieldParts.length; j++) {
+                if (!(fieldParts[j] in obj)) {
+                    throw new Error(`Field ${field} does not exist.`);
+                }
+                obj = obj[fieldParts[j]];
+                if (obj === undefined || obj === null) {
+                    break;
+                }
+            }
+            colData.push(obj);
+        }
+        return colData;
+    }
+
     public filter(filter: (data: any) => boolean): void {
         this.filtered_data_ = this.data_.filter(filter);
     }

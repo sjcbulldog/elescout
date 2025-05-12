@@ -2,21 +2,21 @@
 /*
  * Edit form view related styles
  */
-.xero-form-edit-view {
+.xero-form-view {
     display: flex;
     flex-direction: column;
     height: 100%;
     position: relative;
 }
 
-.xero-form-edit-title {
+.xero-form-title {
     text-align: center;
     font-size: 1.5em;
     font-weight: bold;
     flex-grow: 0;
 }
 
-.xero-form-edit-tab {
+.xero-form-tab {
     border: 1px solid #ccc;
     background-color:   rgba(211, 211, 211, 0.74) ;
     flex-grow: 0;
@@ -64,7 +64,7 @@
     border-radius: 6px;
 }
 
-.xero-form-edit-form {
+.xero-form-form {
     flex-grow: 1;
     z-index: 1;
 }
@@ -82,13 +82,10 @@
     text-align: center;
 }
 
-.xero-form-edit-lable {
+.xero-form-edit-label {
     z-index: 1000;
 }
 
-.xero-form-scout-lable {
-    z-index: 1000;
-}
 
 /* 
  * Edit form 'text' control view related styles
@@ -129,7 +126,6 @@
     justify-content: center;
     text-align: center;   
     z-index: 1000;
-    pointer-events: none;
     text-align: center;
     width: 100%;
     height: 100%;
@@ -137,6 +133,7 @@
 
 .xero-form-edit-boolean-checkbox {
     z-index: 1000;
+    pointer-events: none;    
 }
 
 .xero-form-scout-boolean-checkbox {
@@ -161,7 +158,7 @@
 }
 
 .xero-form-edit-updown-button {
-    pointer-events: none;
+    z-index: 1000;
 }
 
 .xero-form-scout-updown-button {
@@ -180,6 +177,10 @@
 }
 
 .xero-form-edit-updown-count {
+    z-index: 1000;
+}
+
+.xero-form-scout-updown-count {
     z-index: 1000;
 }
 
@@ -298,4 +299,43 @@
 
 .xero-form-scout-choice-separator {
     z-index: 1000;
+}
+
+/* 
+ * Edit form 'select' control view related styles
+ */
+.xero-form-select {
+    z-index: 1000;
+}
+
+.xero-form-edit-select {
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.xero-form-scout-select {
+    z-index: 1000;
+}
+
+/*
+ * Edit form 'timer' control view related styles
+ */
+.xero-form-timer {
+    z-index: 1000;
+}
+
+.xero-form-edit-timer {
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.xero-form-scout-timer {
+    z-index: 1000;
+}
+
+.xero-form-timer-button {
+    border: 2px solid black;
+    border-radius: 10px;    
+    box-shadow: 10px 5px 5px lightgray;
+    margin-left: 10px;
 }

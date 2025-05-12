@@ -12,6 +12,9 @@ import { FormObject } from "./formobj";
 import { UpDownControl } from "./controls/updownctrl";
 import { BooleanControl } from "./controls/booleanctrl";
 import { MultipleChoiceControl } from "./controls/choicectrl";
+import { SelectControl } from "./controls/selectctrl";
+import { TimerControl } from "./controls/timerctrl";
+import { XeroLogger } from "../../utils/xerologger";
 
 type DragState = 'none' | 'ulcorner' | 'lrcorner' | 'urcorner' | 'llcorner' | 'right' | 'left' | 'top' | 'bottom' | 'move' | 'all' ;
 
@@ -63,7 +66,7 @@ export class XeroEditFormView extends XeroView {
     private mouusedownbind_? : (e: MouseEvent) => void ;
 
     constructor(app: XeroApp, type: any) {
-        super(app, 'xero-form-edit-view') ;
+        super(app, 'xero-form-view') ;
 
         this.type_ = type ;
         this.registerCallback('send-form', this.formCallback.bind(this));
@@ -81,9 +84,10 @@ export class XeroEditFormView extends XeroView {
             new PopupMenuItem('Up/Down Field', this.addNewUpDownCtrl.bind(this)),
             new PopupMenuItem('Boolean Field', this.addNewBooleanCtrl.bind(this)),
             new PopupMenuItem('Multiple Choice', this.addNewMultipleChoiceCtrl.bind(this)),
-            // new PopupMenuItem('Select', this.addNewSelectCtrl.bind(this)),
+            new PopupMenuItem('Select', this.addNewSelectCtrl.bind(this)),
+            new PopupMenuItem('Timer', this.addNewTimerCtrl.bind(this)),
         ]
-        this.ctrl_menu_ = new XeroPopupMenu('main', ctrlitems) ;
+        this.ctrl_menu_ = new XeroPopupMenu('controls', ctrlitems) ;
     }
 
     findItemByTag(name: string) {
@@ -191,13 +195,31 @@ export class XeroEditFormView extends XeroView {
         }
     } 
 
-    private editdone(changed: boolean) {
-        if (changed) {
-            this.modified() ;
-        }
+    private addNewSelectCtrl() {
+        if (this.formimg_) {
+            let imgrect = this.formimg_.getBoundingClientRect() ;
+            let formctrl = new SelectControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
 
-        this.edit_dialog_ = undefined ;
-    }
+            this.addItemToCurrentSection(formctrl.item) ;
+            this.form_ctrls_.push(formctrl) ;
+
+            formctrl.createForEdit(this.elem) ;
+            this.modified() ;  
+        }
+    } 
+
+    private addNewTimerCtrl() {
+        if (this.formimg_) {
+            let imgrect = this.formimg_.getBoundingClientRect() ;
+            let formctrl = new TimerControl(this.getUniqueTagName(), new XeroRect(0, imgrect.top, 250, 50)) ;
+
+            this.addItemToCurrentSection(formctrl.item) ;
+            this.form_ctrls_.push(formctrl) ;
+
+            formctrl.createForEdit(this.elem) ;
+            this.modified() ;  
+        }
+    }     
 
     private formCallback(args: any) {
         this.initDisplay() ;
@@ -250,10 +272,18 @@ export class XeroEditFormView extends XeroView {
                     formctrl = new MultipleChoiceControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
                     formctrl.update(item) ;
                 }
-                // else if (item.type === 'select') {
-                //     formctrl = new SelectFormControl(this.editdone.bind(this), item.tag, item.x, item.y, item.width, item.height) ;
-                //     formctrl.update(item) ;
-                // }
+                else if (item.type === 'select') {
+                    formctrl = new SelectControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === 'timer') {
+                    formctrl = new TimerControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else {
+                    let logger = XeroLogger.getInstance() ;
+                    logger.warn(`XeroEditFormView: unknown form control type ${item.type}`) ;
+                }
 
                 if (formctrl) {
                     this.form_ctrls_.push(formctrl) ;
@@ -415,17 +445,17 @@ export class XeroEditFormView extends XeroView {
         this.reset() ;
 
         this.titlediv_ = document.createElement('div') ;
-        this.titlediv_.className = 'xero-form-edit-title' ;
+        this.titlediv_.className = 'xero-form-title' ;
         let tname = this.type_.charAt(0).toUpperCase() + this.type_.slice(1) ;
         this.titlediv_.innerText = tname + ' Form' ;
         this.elem.append(this.titlediv_) ;
 
         this.bardiv_ = document.createElement('div') ;
-        this.bardiv_.className = 'xero-form-edit-tab' ;
+        this.bardiv_.className = 'xero-form-tab' ;
         this.elem.append(this.bardiv_) ;
 
         this.formimg_ = document.createElement('img') ;
-        this.formimg_.className = 'xero-form-edit-form' ;
+        this.formimg_.className = 'xero-form-form' ;
         this.formimg_.style.pointerEvents = 'none' ;
         this.elem.style.userSelect = 'none' ;
         this.elem.append(this.formimg_) ;

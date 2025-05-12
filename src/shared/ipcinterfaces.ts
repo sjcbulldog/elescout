@@ -14,7 +14,8 @@ export interface IPCTabletDefn {
     purpose: string | undefined;
 }
 
-type IPCFormControlType = 'label' | 'text' | 'boolean' | 'updown' | 'choice' | 'select' ;
+export type IPCFormControlType = 'label' | 'text' | 'boolean' | 'updown' | 'choice' | 'select' | 'timer' ;
+export type IPCDataType = 'string' | 'integer' | 'real' | 'boolean' | 'none' ;
 
 export interface IPCFormItem {
     type: IPCFormControlType ;
@@ -30,7 +31,7 @@ export interface IPCFormItem {
     color: string ;
     background: string ;
     transparent: boolean ;
-    datatype: string ;
+    datatype: IPCDataType ;
 }
 
 export interface IPCLabelItem extends IPCFormItem {
@@ -70,6 +71,9 @@ export interface IPCMultipleChoiceItem extends IPCChoicesItem {
 }
 
 export interface IPCSelectItem extends IPCChoicesItem {
+}
+
+export interface IPCTimerItem extends IPCFormItem {
 }
 
 export interface IPCSection {

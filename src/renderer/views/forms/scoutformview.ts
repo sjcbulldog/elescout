@@ -1,0 +1,206 @@
+import { XeroApp } from "../../apps/xeroapp";
+import { XeroRect } from "../../widgets/xerogeom";
+import { XeroView } from "../xeroview";
+import { BooleanControl } from "./controls/booleanctrl";
+import { MultipleChoiceControl } from "./controls/choicectrl";
+import { FormControl } from "./controls/formctrl";
+import { LabelControl } from "./controls/labelctrl";
+import { SelectControl } from "./controls/selectctrl";
+import { TextControl } from "./controls/textctrl";
+import { TimerControl } from "./controls/timerctrl";
+import { UpDownControl } from "./controls/updownctrl";
+import { FormObject } from "./formobj";
+
+export class XeroScoutFormView extends XeroView {
+    static buttonClassUnselected = 'xero-form-tab-button-unselected' ;
+    static buttonClassSelected = 'xero-form-tab-button-selected' ;
+
+    private nameToImageMap_: Map<string, string> = new Map<string, string>() ;    
+    private form_? : FormObject ;
+    private type_: string ;
+    private currentSectionIndex_: number = -1 ;
+
+    private titlediv_? : HTMLDivElement ;
+    private bardiv_? : HTMLDivElement ;
+    private formimg_? : HTMLImageElement ;
+    private form_ctrls_: FormControl[] = [] ;
+
+    public constructor(app: XeroApp, type: any) {
+        super(app, 'xero-form-view');
+
+        this.type_ = type;
+
+        this.registerCallback('send-form', this.formCallback.bind(this));
+        this.registerCallback('send-image-data', this.receiveImageData.bind(this)) ;    
+        this.request('get-form', this.type_);        
+    }
+
+    private formCallback(args: any) : void {
+        this.initDisplay() ;
+
+        this.form_ = new FormObject(args.form.json) ;
+        if (this.form_) {
+                // Make sure we have the images for the sections.
+            this.updateImages() ;
+            this.formViewUpdateTabBar() ;
+            this.setCurrentSectionByIndex(0) ;
+        }        
+    }
+
+    private formViewUpdateTabBar() {
+        if (this.bardiv_ && this.form_) {
+            this.bardiv_.innerHTML = '' ;
+            let index = 0 ;
+            for(let section of this.form_.sections) {
+                let button = document.createElement('div') ;
+                button.innerText = section.name ;
+                button.className = XeroScoutFormView.buttonClassUnselected ;
+                button.id = section + '-button' ;
+                button.section_index = index++ ;
+                button.addEventListener('click', this.formViewSelectButton.bind(this)) ;
+                this.bardiv_.append(button) ;
+            }  
+        }
+        return this.bardiv_ ;
+    }    
+
+    private formViewSelectButton(event: MouseEvent) {
+        if (this.bardiv_ && this.form_) {
+            if (this.currentSectionIndex_ !== -1) {
+                this.bardiv_.children[this.currentSectionIndex_].className = XeroScoutFormView.buttonClassUnselected ;
+            }
+
+            let index = Array.prototype.indexOf.call(this.bardiv_.children, event.target) ;
+            if (index !== -1) {
+                this.setCurrentSectionByIndex(index) ;
+            }
+        }
+    }    
+
+    private initDisplay() {
+        this.reset() ;
+
+        this.titlediv_ = document.createElement('div') ;
+        this.titlediv_.className = 'xero-form-title' ;
+        let tname = this.type_.charAt(0).toUpperCase() + this.type_.slice(1) ;
+        this.titlediv_.innerText = tname + ' Form' ;
+        this.elem.append(this.titlediv_) ;
+
+        this.bardiv_ = document.createElement('div') ;
+        this.bardiv_.className = 'xero-form-tab' ;
+        this.elem.append(this.bardiv_) ;
+
+        this.formimg_ = document.createElement('img') ;
+        this.formimg_.className = 'xero-form-form' ;
+        this.formimg_.style.pointerEvents = 'none' ;
+        this.elem.style.userSelect = 'none' ;
+        this.elem.append(this.formimg_) ;
+    }
+
+    private receiveImageData(args: any) : void {
+        let name = args.name ;
+        let data = args.data ;
+
+        this.nameToImageMap_.set(name, data) ;
+
+        if (this.form_ && this.form_.sections && this.form_.sections.length !== 0) {
+            let section = this.form_.sections[this.currentSectionIndex_] ;
+            if (section.image === name) {
+                this.updateSectionDisplay() ;
+            }
+        }  
+    }
+
+    private updateSectionDisplay() {
+        if (this.form_ && this.formimg_) {
+            let imname = this.form_.sections[this.currentSectionIndex_].image ;
+            let data = this.nameToImageMap_.get(imname) ;
+            this.formimg_.src = `data:image/jpg;base64,${data}`
+            this.updateControls() ;
+        }
+    }
+
+    private removeExistingControls() {
+        for(let entry of this.form_ctrls_) {
+            if (entry.ctrl) {
+                if (this.elem.contains(entry.ctrl)) {
+                    this.elem.removeChild(entry.ctrl) ;
+                }
+            }
+        }
+        this.form_ctrls_ = [] ;
+    }    
+
+    private setCurrentSectionByIndex(sectionIndex: number) : boolean {
+        if (!this.form_ || sectionIndex < 0 || sectionIndex >= this.form_.sections.length) {
+            return false ;
+        }
+
+        if (this.bardiv_) {
+            this.currentSectionIndex_ = sectionIndex ;
+            this.bardiv_.children[this.currentSectionIndex_]!.className = XeroScoutFormView.buttonClassSelected ;
+            this.updateSectionDisplay() ;
+        }
+        return true ;
+    }
+
+    updateImages() {
+        if (this.form_) {
+            this.form_.resetImages() ;
+            for(let image of this.form_.images) {
+                this.request('get-image-data', image) ;
+            }
+        }  
+    }    
+
+    private updateControls() {
+        if (!this.form_) {
+            return ;
+        }
+
+        this.removeExistingControls() ;
+
+        let section = this.form_.sections[this.currentSectionIndex_] ;
+        if (section.items) {
+            for(let item of section.items) {
+                let formctrl ;
+                if (item.type === 'label') {
+                    formctrl = new LabelControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === 'text') {
+                    formctrl = new TextControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === 'boolean') {  
+                    formctrl = new BooleanControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === 'updown') {
+                    formctrl = new UpDownControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === 'choice') {
+                    formctrl = new MultipleChoiceControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === 'select') {
+                    formctrl = new SelectControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else if (item.type === 'timer') {
+                    formctrl = new TimerControl(item.tag, new XeroRect(item.x, item.y, item.width, item.height)) ;
+                    formctrl.update(item) ;
+                }
+                else {
+                    console.log('Unknown form control type: ', item.type) ;
+                }
+
+                if (formctrl) {
+                    this.form_ctrls_.push(formctrl) ;
+                    formctrl.createForScouting(this.elem) ;
+                }
+            }
+        }
+    }    
+}
