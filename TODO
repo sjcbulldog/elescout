@@ -4,24 +4,22 @@ GitHub Issues
 All
 ---
 Image relative control coordinates
-Web based syncing
-Integer text entry field
-Real text entry field
+WiFi based syncing
+Status is not working
 
 Central
 -------
-Provide access to max, min, stddev for numeric match data
-View: dataset mgr 
-      - add/remove icons
-      - search for fields
+View: team status view
+View: team database view
+      add conditional formatting
+View: match status view
+View: match database view
+      add contitional formatting
+View: dataset mgr view
 View: picklist editor 
-      - resize columns does not work
 View: multi team view 
-      - adapt to new dataset model
 View: team graph 
-      - adapt to new dataset model
 View: spider graph 
-      - adapt to new dataset model
 View: formula manager
       - understand functions, operator, etc.
 
@@ -31,10 +29,11 @@ Scout
 - test syncing w/ cable
 - test syncing w/ wi-fi
 
-Broader
+Design
 -------
-Create a web server to act as a connection point between the various machines
-Create an IOS based scouting program for the scouting end
+Have the scouting tablet and the central tablet work via talking to a common
+web server via rest APIs.  For the stands mode, sync with a server running on the
+central machine.  Have a wifi mode where it runs on a server running in my office
 
 Attributions
 ------------
