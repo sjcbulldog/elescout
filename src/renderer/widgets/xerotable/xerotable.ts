@@ -22,6 +22,7 @@ export interface XeroTableColumnDef {
     sortable? : boolean ;
     sortFunc? : (a: any, b: any) => number ;
     editable?: boolean ;
+    cellformatter?: (cell: HTMLElement) => void ;
 }
 
 export interface XeroTableOptions {
@@ -72,11 +73,11 @@ export class XeroTable extends XeroWidget {
       
         this.createColumns(options.columns)
             .then(() => {
-                this.updateTable() ;
-            })
-            .then(() => {
-                this.initialColumnWidths() ;
-                this.emit('table-ready') ;
+                this.updateTable()
+                .then(() => {
+                    this.initialColumnWidths() ;
+                    this.emit('table-ready') ;
+                })
             })
             .catch((err) => {
                 this.emit('table-error', err) ;
@@ -271,6 +272,10 @@ export class XeroTable extends XeroWidget {
         const cell = this.table_rows_.children[row].children[col] as HTMLDivElement ;
         const colobj = this.columns_[col] ;
         cell.innerText = this.getCellText(row, col) ;
+
+        if (colobj.cellformatter) {
+            colobj.cellformatter(cell) ;
+        }
     }
 
     private dblClickCell(row: number, col: number, ev: Event) : void {

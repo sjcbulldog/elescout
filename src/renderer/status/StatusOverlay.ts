@@ -1,21 +1,22 @@
 import { XeroWidget } from "../widgets/xerowidget";
 
 export class StatusOverlay extends XeroWidget {
-    private static status_width_ = 640;
-    private static status_height_ = 480;
+    private static status_height_ = 300;
 
-    private hidden_: boolean = false;
     private text_msg_: string = '';
     private title_msg_: string = '';
 
-    private close_button_?: HTMLButtonElement ;
     private title_div_?: HTMLDivElement ;
     private title_ ?: HTMLSpanElement ;
     private close_ ?: HTMLSpanElement ;
     private text_ ?: HTMLSpanElement ;
 
-    public constructor() {
+    private parent_ : XeroWidget ;
+
+    public constructor(parent: XeroWidget) {
         super('div', 'xero-status-overlay');
+
+        this.parent_ = parent ;
 
         this.registerCallback('set-status-visible', this.setVisible.bind(this));
         this.registerCallback('set-status-text', this.setText.bind(this, false));
@@ -43,7 +44,8 @@ export class StatusOverlay extends XeroWidget {
         this.elem.appendChild(this.text_);
 
         let body = document.body ;
-        body.appendChild(this.elem);
+        body.appendChild(this.elem) ;
+
         this.setVisible(false);
     }
 
@@ -72,16 +74,15 @@ export class StatusOverlay extends XeroWidget {
 
     public setVisible(args: any) {
         if (args) {
-            let body = document.body ;
-            let left = (body.clientWidth - StatusOverlay.status_width_) / 2 ;
-            let top = (body.clientHeight - StatusOverlay.status_height_) / 2 ;
-
             this.elem.classList.add('xero-status-overlay-visible');
             this.elem.classList.remove('xero-status-overlay-hidden');
-            this.elem.style.left = `${left}px` ;
-            this.elem.style.top = `${top}px` ;
-            this.elem.style.width = `${StatusOverlay.status_width_} px` ;
-            this.elem.style.height = `${StatusOverlay.status_height_} px` ;
+
+            let bounds = this.parent_.elem.getBoundingClientRect() ;
+
+            this.elem.style.left = `${bounds.left}px` ;
+            this.elem.style.top = `${bounds.bottom - StatusOverlay.status_height_}px`
+            this.elem.style.width = `${bounds.width}px` ;
+            this.elem.style.height = `${StatusOverlay.status_height_}px` ;
         }
         else {
             this.elem.classList.remove('xero-status-overlay-visible');

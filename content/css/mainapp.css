@@ -394,3 +394,13 @@ xero-status-overlay-close-visible {
     border: 1px solid black;
     font-size: 18px;
 }
+
+.xero-team-status {
+    width: 100%;
+    height: 100%;
+}
+
+.xero-teamstatus-view {
+    width: 100%;
+    height: 100%;
+}

@@ -29,7 +29,7 @@ export class XeroApp extends XeroMainProcessInterface {
     private right_view_pane_ : XeroWidget ;
     private current_view_ : XeroView | undefined ;
 
-    private status_overlay_ : StatusOverlay = new StatusOverlay() ;
+    private status_overlay_ : StatusOverlay ;
 
     constructor() {
         super() ;
@@ -39,6 +39,8 @@ export class XeroApp extends XeroMainProcessInterface {
         this.right_view_pane_ = new XeroWidget('div', "xero-view-pane") ;
         this.splitter_ = new XeroSplitter("horizontal", this.left_nav_pane_, this.right_view_pane_) ;
         this.splitter_.setSplit(5) ;
+
+        this.status_overlay_ = new StatusOverlay(this.right_view_pane_) ;
 
         this.status_ = new XeroStatusWindow(this.splitter_) ;
         this.status_.setParent(body) ;

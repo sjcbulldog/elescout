@@ -18,6 +18,10 @@ export class XeroTableColumn {
         this.def_ = def ;
     }
 
+    public get cellformatter() : ((cell: HTMLElement) => void) | undefined {
+        return this.def_.cellformatter ? this.def_.cellformatter : undefined ;
+    }
+
     public get editable() : boolean {
         return this.def_.editable ? this.def_.editable : false ;
     }

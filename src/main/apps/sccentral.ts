@@ -803,7 +803,6 @@ export class SCCentral extends SCBase {
 		this.sendToRenderer('send-team-status', ret);
 	}
 
-
 	private keyToTeamNumber(key: string) {
 		let ret: number = -1;
 		let m1 = /^frc[0-9]+$/;
