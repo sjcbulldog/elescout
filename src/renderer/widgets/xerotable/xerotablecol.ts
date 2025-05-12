@@ -30,6 +30,10 @@ export class XeroTableColumn {
         return this.def_.sortable ? this.def_.sortable : false ;
     }
 
+    public get record() : boolean {
+        return this.def_.record ? this.def_.record : false ;
+    }
+
     public get sortFunc() : ((a: any, b: any) => number) | undefined {
         return this.def_.sortFunc ? this.def_.sortFunc : undefined ;
     }

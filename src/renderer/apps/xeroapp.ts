@@ -15,6 +15,8 @@ import { XeroScoutFormView } from "../views/forms/scoutformview";
 import { XeroTeamStatus } from "../views/teamstatus";
 import { XeroMatchStatus } from "../views/matchstatus";
 import { StatusOverlay } from "../status/StatusOverlay";
+import { XeroTeamDatabaseView } from "../views/teamdbview";
+import { XeroMatchDatabaseView } from "../views/matchdbview";
 
 document.addEventListener('DOMContentLoaded', function () {
     let mainapp = new XeroApp() ;
@@ -95,6 +97,8 @@ export class XeroApp extends XeroMainProcessInterface {
         this.registerView('form-edit', XeroEditFormView) ;
         this.registerView('form-scout', XeroScoutFormView) ;
         this.registerView('team-status', XeroTeamStatus) ;
+        this.registerView('team-db', XeroTeamDatabaseView) ;
         this.registerView('match-status', XeroMatchStatus) ;
+        this.registerView('match-db', XeroMatchDatabaseView) ;
     }
 }

@@ -71,8 +71,9 @@ export class XeroMatchStatus extends XeroView {
         this.table_ = new XeroTable({
             data: args,
             rowHeight: 30,
+            sortcolumn: 0,
             columns: [
-                { title: 'Type', field: 'comp_level', sortable: true, sortFunc: this.sortMatchFunc.bind(this) },
+                { title: 'Type', field: 'comp_level', record: true, sortable: true, sortFunc: this.sortMatchFunc.bind(this) },
                 { title: 'Match', field: 'match_number'},
                 { title: 'Set', field: 'set_number'},
 
@@ -119,11 +120,6 @@ export class XeroMatchStatus extends XeroView {
         }) ;
 
         this.table_.setParent(this.main_div_) ;
-        this.table_.on('table-ready', this.tableReady.bind(this)) ;
-    }
-
-    private tableReady() {
-        this.table_!.sort('comp_level', true) ;
     }
 
     private cellFormatter(cell: HTMLElement) {

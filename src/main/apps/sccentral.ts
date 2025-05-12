@@ -1522,9 +1522,9 @@ export class SCCentral extends SCBase {
 				this.setView('match-status');
 			}
 		} else if (cmd === SCCentral.viewMatchDB) {
-			this.setView("matchdb");
+			this.setView("match-db");
 		} else if (cmd === SCCentral.viewTeamDB) {
-			this.setView("teamdb");
+			this.setView("team-db");
 		} else if (cmd === SCCentral.viewTeamGraph) {
 			this.setView("teamgraph");
 		} else if (cmd === SCCentral.viewFormulas) {

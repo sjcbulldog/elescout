@@ -31,8 +31,6 @@ function createWindow() : void {
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'main', 'preload.js'),
-            devTools: true,
-            sandbox: true,
         },
         title: "XeroScout"
     };

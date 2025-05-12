@@ -91,11 +91,11 @@ export class XeroTableDataModel {
         }
     }   
 
-    private sortFunc(field: string, up: boolean, sort: ((a: any, b: any) => number) | undefined, a: any, b: any): number {
+    private sortFunc(field: string, record: boolean, up: boolean, sort: ((a: any, b: any) => number) | undefined, a: any, b: any): number {
         let ret = 0 ;
         
-        let aval = this.getFieldValue(a, field) ;
-        let bval = this.getFieldValue(b, field) ;
+        let aval = record ? a : this.getFieldValue(a, field) ;
+        let bval = record ? b : this.getFieldValue(b, field) ;
 
         if (sort) {
             ret = sort(aval, bval) ;
@@ -122,13 +122,11 @@ export class XeroTableDataModel {
             ret = -ret ;
         }
 
-        console.log(`sort ${field} '${aval}' '${bval}' ${ret}`) ;
-
         return ret ;
     }
 
-    public sort(field: string, up: boolean, sort?: (a: any, b: any) => number): void {
-        this.filtered_data_.sort(this.sortFunc.bind(this, field, up, sort)) ;
+    public sort(field: string, record: boolean, up: boolean, sort?: (a: any, b: any) => number): void {
+        this.filtered_data_.sort(this.sortFunc.bind(this, field, record, up, sort)) ;
     }
 
     private getFieldValue(obj: any, field: string): any {

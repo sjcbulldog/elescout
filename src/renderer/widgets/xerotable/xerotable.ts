@@ -20,6 +20,7 @@ export interface XeroTableColumnDef {
     dblClick? : boolean ;
     singleClick? : boolean ;
     sortable? : boolean ;
+    record? : boolean ;
     sortFunc? : (a: any, b: any) => number ;
     editable?: boolean ;
     cellformatter?: (cell: HTMLElement) => void ;
@@ -36,6 +37,7 @@ export interface XeroTableOptions {
     columnPadding?: number ;
     cellPadding: number ;
     rowsSelectable?: boolean ;
+    sortcolumn?: number | string ;
 }
 
 export class XeroTable extends XeroWidget {
@@ -48,6 +50,7 @@ export class XeroTable extends XeroWidget {
     private sort_col_ : number = -1 ;
     private selected_row_ : number = -1 ;
     private editing_cell_ : boolean = false ;
+    private start_time_?: number ;
  
     constructor(options: XeroTableOptions) {
         super('div', 'xero-table') ;
@@ -75,6 +78,9 @@ export class XeroTable extends XeroWidget {
             .then(() => {
                 this.updateTable()
                 .then(() => {
+                    if (options.sortcolumn) {
+                        this.sort(options.sortcolumn, true) ;
+                    }
                     this.initialColumnWidths() ;
                     this.emit('table-ready') ;
                 })
@@ -220,18 +226,37 @@ export class XeroTable extends XeroWidget {
         }
     }
 
-    private async putAllData(skipHeaders?: boolean) : Promise<void> {
-        for (let i = 0; i < this.model_.rowCount(); i++) {
-            for (let j = 0; j < this.columns_.length; j++) {
-                this.putData(i, j) ;
-            }
-        }
+    private hideTable() : void {
+        this.table_container_.style.display = 'none' ;
+    }
 
-        if (!skipHeaders) {
-            for(let col = 0; col < this.columns_.length; col++) {
-                this.updateColumnHeader(col) ;
+    private showTable() : void {
+        this.table_container_.style.display = 'block' ;
+    }
+
+    private async putAllData(skipHeaders?: boolean) : Promise<void> {
+        let ret = new Promise<void>((resolve, reject) => {
+            this.startTiming() ;
+            this.hideTable() ;
+            for (let i = 0; i < this.model_.rowCount(); i++) {
+                this.startTiming() ;
+                for (let j = 0; j < this.columns_.length; j++) {
+                    this.putData(i, j) ;
+                }
             }
-        }
+
+            if (!skipHeaders) {
+                this.startTiming() ;
+                for(let col = 0; col < this.columns_.length; col++) {
+                    this.updateColumnHeader(col) ;
+                }
+            }
+
+            this.showTable() ;
+            this.endTiming('putAllData') ;
+            resolve() ;
+        }) ;
+        return ret ;
     }
 
     private updateColumnHeader(col: number) : void {
@@ -256,15 +281,8 @@ export class XeroTable extends XeroWidget {
         }
 
         if (colno >= 0) {
-            let start = Date.now() ;
-            this.model_.sort(this.columns_[colno].field, up, this.columns_[colno].sortFunc) ;
-            let elapsed = Date.now() - start ;
-            console.log(`XeroTable: Sort took ${elapsed}ms`) ;
-
-            start = Date.now() ;
+            this.model_.sort(this.columns_[colno].field, this.columns_[colno].record, up, this.columns_[colno].sortFunc) ;
             this.putAllData(true) ;        
-            elapsed = Date.now() - start ;
-            console.log(`XeroTable: PutAllData took ${elapsed}ms`) ;
         }
     }
 
@@ -281,7 +299,7 @@ export class XeroTable extends XeroWidget {
             this.sort_col_ = col ;
             this.table_headers_.children[this.sort_col_].className = 'xero-table-header-cell-sortable-selected' ;
         }
-        this.model_.sort(this.columns_[col].field, this.columns_[col].sortUp, this.columns_[col].sortFunc) ;
+        this.model_.sort(this.columns_[col].field, this.columns_[col].record, this.columns_[col].sortUp, this.columns_[col].sortFunc) ;
         this.putAllData(true) ;
     }
 
@@ -541,4 +559,17 @@ export class XeroTable extends XeroWidget {
             col.setWidth() ;
         }
     }    
+
+    private startTiming() : void {
+        this.start_time_ = Date.now() ;
+    }
+
+    private endTiming(name: string, restart?: boolean) {
+        let elapsed = Date.now() - this.start_time_! ;
+        console.log(`Elapsted Time: ${name} = ${elapsed}`) ;
+
+        if (restart) {
+            this.startTiming() ;
+        }
+    }
 }

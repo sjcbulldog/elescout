@@ -21,6 +21,7 @@ export class XeroTeamStatus extends XeroView {
         this.table_ = new XeroTable({
             data: args,
             rowHeight: 30,
+            sortcolumn: 0,
             columns: [
                 { title: 'Number', field: 'number', sortable: true },
                 { title: 'Name', field: 'teamname', sortable: true },
