@@ -344,3 +344,53 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     border-radius: 5px;
 }
+
+.xero-status-overlay {
+    z-index: 1000;
+    position: absolute;
+    box-shadow: 10px 5px 5px lightgray;
+    background-color: white;
+}
+
+.xero-status-overlay-visible {
+    display: flex;
+    flex-direction: column;
+}
+
+.xero-status-overlay-hidden {
+    display: none ;
+}
+
+.xero-status-overlay-title-div {
+    flex-grow: 0;
+    font-size: 24px;
+    font-weight: bold;
+    background-color: lightgrey ;
+    display: flex;
+    flex-direction: row;
+    border: 1px solid black;
+}
+
+.xero-status-overlay-title {
+    flex-grow: 1;
+}
+
+.xero-status-overlay-close {
+    flex-grow: 0;
+    cursor: pointer;
+    border: 1px solid black;
+}
+
+xero-status-overlay-close-visible {
+    display: block;
+}
+
+.xero-status-overlay-close-hidden {
+    display: none;
+}
+
+.xero-status-overlay-text {
+    flex-grow:1;
+    border: 1px solid black;
+    font-size: 18px;
+}

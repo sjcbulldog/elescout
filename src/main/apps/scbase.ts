@@ -15,6 +15,7 @@ import * as crypto from "crypto";
 import settings from "electron-settings";
 import { ImageManager } from "../imagemgr";
 import { IPCSetView } from "../../shared/ipcinterfaces";
+import { StatusOverlay } from "../../renderer/status/StatusOverlay";
 
 export enum XeroAppType {
   None,
@@ -48,7 +49,6 @@ export abstract class SCBase {
     this.win_ = win;
     this.appdir_ = path.join(os.homedir(), SCBase.appdirName);
     this.content_dir_ = path.join(process.cwd(), 'content') ;
-
     this.image_mgr_ = new ImageManager(type, type === 'server' ? path.join(this.content_dir_, 'images') : undefined) ;
 
     if (!fs.existsSync(this.appdir_)) {

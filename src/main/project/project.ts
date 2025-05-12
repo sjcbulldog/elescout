@@ -465,12 +465,12 @@ export class Project {
                 }
                 else {
                     if (callback) {
-                        callback('Received OPR, DPR, and CCWMS data.<br>') ;
+                        callback(' received data.<br>') ;
                         callback('Inserting data into XeroScout2 database ... ');
                     }
                     await this.data_mgr_!.processOPRData(opr) ;
                     if (callback) {
-                        callback('Inserted OPR/DPR/CCWMS data into database.<br>') ;
+                        callback('done.<br>') ;
                     }
                 }
                 resolve() ;
@@ -510,13 +510,13 @@ export class Project {
                 }
                 else {
                     if (callback) {
-                        callback('received ranking data.<br>') ;
+                        callback('received data.<br>') ;
                         callback('Inserting data into XeroScout2 database ... ');
                     }
                     await 
                     await this.data_mgr_!.processRankings(rankings.rankings) ;
                     if (callback) {
-                        callback('inserted ranking data into database.<br>') ;
+                        callback('done.<br>') ;
                     }
                 }
                 resolve() ;

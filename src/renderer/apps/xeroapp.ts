@@ -12,6 +12,9 @@ import { XeroWidget } from "../widgets/xerowidget";
 import { XeroAssignTablets } from "../views/assigntablets";
 import { XeroEditFormView } from "../views/forms/editformview";
 import { XeroScoutFormView } from "../views/forms/scoutformview";
+import { XeroTeamStatus } from "../views/teamstatus";
+import { XeroMatchStatus } from "../views/matchstatus";
+import { StatusOverlay } from "../status/StatusOverlay";
 
 document.addEventListener('DOMContentLoaded', function () {
     let mainapp = new XeroApp() ;
@@ -25,6 +28,8 @@ export class XeroApp extends XeroMainProcessInterface {
     private left_nav_pane_ : XeroNav ;
     private right_view_pane_ : XeroWidget ;
     private current_view_ : XeroView | undefined ;
+
+    private status_overlay_ : StatusOverlay = new StatusOverlay() ;
 
     constructor() {
         super() ;
@@ -87,5 +92,7 @@ export class XeroApp extends XeroMainProcessInterface {
         this.registerView('assign-tablets', XeroAssignTablets) ;
         this.registerView('form-edit', XeroEditFormView) ;
         this.registerView('form-scout', XeroScoutFormView) ;
+        this.registerView('team-status', XeroTeamStatus) ;
+        this.registerView('match-status', XeroMatchStatus) ;
     }
 }

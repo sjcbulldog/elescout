@@ -1,3 +1,6 @@
+import Papa from "papaparse";
+import * as fs from "fs";
+import * as path from "path";
 import { SCBase, XeroAppType, XeroVersion } from "./scbase";
 import { BlueAlliance } from "../extnet/ba";
 import { Project } from "../project/project";
@@ -19,9 +22,6 @@ import { ManualMatchData } from "../project/matchmgr";
 import { GraphInfo, GraphConfig } from "../project/graphmgr";
 import { GraphData } from "../comms/graphifc";
 import { PickList, ProjPickListColConfig, ProjPicklistNotes } from "../project/picklistmgr";
-import Papa from "papaparse";
-import * as fs from "fs";
-import * as path from "path";
 import { FormManager } from "../project/formmgr";
 import { DataValue } from "../model/datavalue";
 import { Expr } from "../expr/expr";
@@ -1187,7 +1187,7 @@ export class SCCentral extends SCBase {
 		let fev: BAEvent | undefined = this.project_?.info?.frcev_;
 		if (fev) {
 			this.sendToRenderer("set-status-visible", true);
-			this.sendToRenderer("set-status-title","Loading match data for event '" + fev.name + "'");
+			this.sendToRenderer("set-status-title","Loading match data") ;
 			this.msg_ = "";
 			this.sendToRenderer("set-status-html","Requesting match data from the Blue Alliance ...");
 			this.project_!.loadExternalBAData(
@@ -1510,7 +1510,7 @@ export class SCCentral extends SCBase {
 					"Scouting schedule not generated yet"
 				);
 			} else {
-				this.setView("teamstatus");
+				this.setView("team-status");
 			}
 		} else if (cmd === SCCentral.viewMatchStatus) {
 			if (!this.project_?.tablet_mgr_?.hasMatchAssignments()) {
@@ -1520,7 +1520,7 @@ export class SCCentral extends SCBase {
 					"Scouting schedule not generated yet"
 				);
 			} else {
-				this.setView('matchstatus');
+				this.setView('match-status');
 			}
 		} else if (cmd === SCCentral.viewMatchDB) {
 			this.setView("matchdb");
