@@ -16,7 +16,6 @@ import { FormInfo } from "../comms/formifc";
 import { OneScoutResult, ScoutingData } from "../comms/resultsifc";
 import { DataSet, MatchSet } from "../project/datasetmgr";
 import { TabletData } from "../project/tabletmgr";
-import { ProjColConfig } from "../project/datamgr";
 import { TeamNickNameNumber } from "../project/teammgr";
 import { ManualMatchData } from "../project/matchmgr";
 import { GraphInfo, GraphConfig } from "../project/graphmgr";
@@ -25,6 +24,7 @@ import { PickList, ProjPickListColConfig, ProjPicklistNotes } from "../project/p
 import { FormManager } from "../project/formmgr";
 import { DataValue } from "../model/datavalue";
 import { Expr } from "../expr/expr";
+import { IPCProjColumnsConfig } from "../../shared/ipcinterfaces";
 
 export interface GraphDataRequest {
 	ds: string,
@@ -928,11 +928,11 @@ export class SCCentral extends SCBase {
 		}
 	}
 
-	public setMatchColConfig(data: ProjColConfig) {
+	public setMatchColConfig(data: IPCProjColumnsConfig) {
 		this.project_?.data_mgr_?.setMatchColConfig(data);
 	}
 
-	public setTeamColConfig(data:ProjColConfig) {
+	public setTeamColConfig(data:IPCProjColumnsConfig) {
 		this.project_?.data_mgr_?.setTeamColConfig(data);
 	}
 

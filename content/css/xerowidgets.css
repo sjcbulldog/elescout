@@ -53,16 +53,16 @@
   flex-grow: 0 ;
 }
 
-.xero-table-rows {
+.xero-table-cols {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex-grow: 1 ;
   overflow: auto;
 }
 
-.xero-table-row {
+.xero-table-col {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
 }
 
 .xero-table-header-cell {

@@ -9,22 +9,12 @@ import { BAMatch, BAOprData, BARankingData, BATeam } from "../extnet/badata";
 import { ColumnDesc } from "../model/datamodel";
 import { MatchSet } from "./datasetmgr";
 import { DataValue } from "../model/datavalue";
+import { IPCProjColumnsConfig } from "../../shared/ipcinterfaces";
 
-export interface ProjectOneColCfg {
-    name: string,
-    width: number,
-    hidden: boolean,
-}
-
-export interface ProjColConfig
-{
-    columns: ProjectOneColCfg[],
-    frozenColumnCount: number,
-} ;
 
 export class DataInfo {
-    public matchdb_col_config_? : ProjColConfig ;       // List of hidden columns in match data
-    public teamdb_col_config_? : ProjColConfig ;        // List of hidden columns in team data
+    public matchdb_col_config_? : IPCProjColumnsConfig ;       // List of hidden columns in match data
+    public teamdb_col_config_? : IPCProjColumnsConfig ;        // List of hidden columns in team data
     public scouted_team_: number[] = [] ;               // The list of teams that have scouting data
     public scouted_match_: string[] = [] ;              // The list of matches that have scouring data
     public team_db_cols_ : ColumnDesc[] = [] ;            // The list of fields from the team form currently in the database
@@ -236,12 +226,12 @@ export class DataManager extends Manager {
 
     // #region match related methods
     
-    public setMatchColConfig(data: ProjColConfig) {
+    public setMatchColConfig(data: IPCProjColumnsConfig) {
         this.info_.matchdb_col_config_ = data ;
         this.write() ;
     }  
 
-    public getMatchColConfig() : ProjColConfig | undefined {
+    public getMatchColConfig() : IPCProjColumnsConfig | undefined {
         return this.info_.matchdb_col_config_ ;
     }
 
@@ -266,12 +256,12 @@ export class DataManager extends Manager {
 
 
     // #region team related methods
-    public setTeamColConfig(data: ProjColConfig) {
+    public setTeamColConfig(data: IPCProjColumnsConfig) {
         this.info_.teamdb_col_config_ = data ;
         this.write() ;
     }
 
-    public getTeamColConfig() : ProjColConfig | undefined {
+    public getTeamColConfig() : IPCProjColumnsConfig | undefined {
         return this.info_.teamdb_col_config_ ;
     }
     

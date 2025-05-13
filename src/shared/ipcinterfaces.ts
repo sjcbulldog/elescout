@@ -87,3 +87,16 @@ export interface IPCForm {
     sections: IPCSection[] ;
     images: string[] ;
 }
+
+
+export interface IPCProjectColumnCfg {
+    name: string,
+    width: number,
+    hidden: boolean,
+}
+
+export interface IPCProjColumnsConfig
+{
+    columns: IPCProjectColumnCfg[],
+    frozenColumnCount: number,
+} ;

@@ -23,7 +23,7 @@ export interface XeroTableColumnDef {
     record? : boolean ;
     sortFunc? : (a: any, b: any) => number ;
     editable?: boolean ;
-    cellformatter?: (cell: HTMLElement) => void ;
+    cellFormatter?: (cell: HTMLElement) => void ;
 }
 
 export interface XeroTableOptions {
@@ -37,7 +37,7 @@ export interface XeroTableOptions {
     columnPadding?: number ;
     cellPadding: number ;
     rowsSelectable?: boolean ;
-    sortcolumn?: number | string ;
+    initialSortColumn?: number | string ;
 }
 
 export class XeroTable extends XeroWidget {
@@ -46,11 +46,13 @@ export class XeroTable extends XeroWidget {
     private options_: XeroTableOptions ;
     private table_container_ : HTMLDivElement ;
     private table_headers_ : HTMLDivElement ;
-    private table_rows_ : HTMLDivElement ;
+    private table_cols_ : HTMLDivElement ;
     private sort_col_ : number = -1 ;
     private selected_row_ : number = -1 ;
     private editing_cell_ : boolean = false ;
     private start_time_?: number ;
+    private defer_layout_ : boolean = false ;
+    private need_layout_ : boolean = false ;
  
     constructor(options: XeroTableOptions) {
         super('div', 'xero-table') ;
@@ -64,9 +66,9 @@ export class XeroTable extends XeroWidget {
         this.table_headers_.className = 'xero-table-headers' ;
         this.table_container_.appendChild(this.table_headers_) ;
 
-        this.table_rows_ = document.createElement('div') ;
-        this.table_rows_.className = 'xero-table-rows' ;
-        this.table_container_.appendChild(this.table_rows_) ;
+        this.table_cols_ = document.createElement('div') ;
+        this.table_cols_.className = 'xero-table-cols' ;
+        this.table_container_.appendChild(this.table_cols_) ;
 
         if (!options) {
             throw new Error('XeroTable: No options provided') ;
@@ -78,8 +80,8 @@ export class XeroTable extends XeroWidget {
             .then(() => {
                 this.updateTable()
                 .then(() => {
-                    if (options.sortcolumn) {
-                        this.sort(options.sortcolumn, true) ;
+                    if (options.initialSortColumn!== undefined) {
+                        this.sort(options.initialSortColumn, true) ;
                     }
                     this.initialColumnWidths() ;
                     this.emit('table-ready') ;
@@ -118,7 +120,6 @@ export class XeroTable extends XeroWidget {
     public addRow(data: any) : void {
         this.model_.addRow(data) ;
 
-        // TODO: make this more efficient
         this.updateTable()
         .then(() => {
             this.emit('table-updated') ;
@@ -130,24 +131,31 @@ export class XeroTable extends XeroWidget {
         }) ;
     }
 
+    private getCell(row: number, col: number) : HTMLDivElement {
+        if (row < 0 || row >= this.model_.rowCount()) {
+            throw new Error('XeroTable: Row out of range') ;
+        }
+
+        if (col < 0 || col >= this.columns_.length) {
+            throw new Error('XeroTable: Column out of range') ;
+        }
+
+        return this.table_cols_.children[col].children[row] as HTMLDivElement ;
+    }
+
     public deleteRow(row: number) : void {
         if (row < 0 || row >= this.model_.rowCount()) {
             throw new Error('XeroTable: Row out of range') ;
         }
 
-        if (this.selected_row_ === row) {
-            for(let i = 0; i < this.columns_.length; i++) {
-                const cell = this.table_rows_.children[this.selected_row_].children[i] as HTMLDivElement ;
-                cell.classList.remove('xero-table-cell-rowselected') ;
-            }
-            this.selected_row_ = -1 ;
+        for(let i = 0; i < this.columns_.length; i++) {
+            let cell = this.getCell(row, i) ;
+            this.table_cols_.children[i].removeChild(cell) ;
         }
-        this.model_.removeRow(row) ;
-        this.table_rows_.removeChild(this.table_rows_.children[row]) ;
     } ;
 
     public setFilter(filter: (data: any) => boolean) : void {
-        this.table_rows_.innerHTML = '' ;
+        this.table_cols_.innerHTML = '' ;
         this.model_.filter(filter) ;
         this.updateTable()
         .then(() => {
@@ -211,7 +219,7 @@ export class XeroTable extends XeroWidget {
 
         if (this.selected_row_ >= 0) {
             for(let i = 0; i < this.columns_.length; i++) {
-                const cell = this.table_rows_.children[this.selected_row_].children[i] as HTMLDivElement ;
+                let cell = this.getCell(this.selected_row_, i) ;
                 cell.classList.remove('xero-table-cell-rowselected') ;
             }
             this.selected_row_ = -1 ;
@@ -220,7 +228,7 @@ export class XeroTable extends XeroWidget {
         this.selected_row_ = row ;
         if (this.selected_row_ >= 0) {
             for(let i = 0; i < this.columns_.length; i++) {
-                const cell = this.table_rows_.children[this.selected_row_].children[i] as HTMLDivElement ;
+                let cell = this.getCell(this.selected_row_, i) ;
                 cell.classList.add('xero-table-cell-rowselected') ;
             }
         }
@@ -231,7 +239,7 @@ export class XeroTable extends XeroWidget {
     }
 
     private showTable() : void {
-        this.table_container_.style.display = 'block' ;
+        this.table_container_.style.display = 'flex' ;
     }
 
     private async putAllData(skipHeaders?: boolean) : Promise<void> {
@@ -310,7 +318,7 @@ export class XeroTable extends XeroWidget {
     }
 
     private putData(row: number, col: number) {
-        const cell = this.table_rows_.children[row].children[col] as HTMLDivElement ;
+        const cell = this.getCell(row, col) ;
         const colobj = this.columns_[col] ;
         cell.innerText = this.getCellText(row, col) ;
 
@@ -343,6 +351,11 @@ export class XeroTable extends XeroWidget {
     }
 
     public updateLayout() : void {
+        if (this.defer_layout_) {
+            this.need_layout_ = true ;
+            return ;
+        }
+
         //
         // Find the width of the colums and table
         // and set the width of the table to the sum of the columns
@@ -353,10 +366,8 @@ export class XeroTable extends XeroWidget {
             let elem = this.table_headers_.children[col] as HTMLDivElement ;
             elem.style.width = colobj.width + 'px' ;
 
-            for(let row = 0; row < this.table_rows_.children.length; row++) {
-                const cell = this.table_rows_.children[row].children[col] as HTMLDivElement ;
-                cell.style.width = colobj.width + 'px' ;
-            }
+            elem = this.table_cols_.children[col] as HTMLDivElement ;
+            elem.style.width = colobj.width + 'px' ;
         }
     }
 
@@ -447,18 +458,17 @@ export class XeroTable extends XeroWidget {
         return ret ;
     }
 
-    private async creatRowCells() : Promise<void> {
+    private async createDataCells() : Promise<void> {
         let ret = new Promise<void>((resolve, reject) => {
-            let y = this.table_container_.clientTop || 0 ;
-            this.table_rows_.innerHTML = '' ;
-            for(let row = 0 ; row < this.model_.rowCount(); row++) {
-                let left : number = this.table_container_.clientLeft || 0 ;
-                let rowelem = document.createElement('div') ;
-                rowelem.className = 'xero-table-row' ;
-                this.table_rows_.appendChild(rowelem) ;
+            this.table_cols_.innerHTML = '' ;
 
-                for(let col = 0 ; col < this.columns_.length; col++) {
-                    const colobj = this.columns_[col] ;
+            for(let col = 0 ; col < this.columns_.length; col++) {
+                let colobj = this.columns_[col] ;
+                let coldiv = document.createElement('div') ;
+                coldiv.className = 'xero-table-col' ;
+                coldiv.style.width = colobj.width + 'px' ;
+
+                for(let row = 0 ; row < this.model_.rowCount(); row++) {
                     const cell = document.createElement('div') ;
                     cell.className = 'xero-table-cell' ;
                     cell.style.paddingLeft = this.options_.cellPadding! + 'px' ;
@@ -494,13 +504,10 @@ export class XeroTable extends XeroWidget {
                     cell.style.color = this.options_.cellFont!.fontColor! ;
                     cell.style.fontWeight = this.options_.cellFont!.fontWeight! ;
                     cell.style.fontStyle = this.options_.cellFont!.fontStyle! ;
-                    rowelem.appendChild(cell) ;
-
-                    left += colobj.width ;
+                    coldiv.appendChild(cell) ;
                 }
 
-                this.table_rows_.appendChild(rowelem) ;
-                y += this.options_.rowHeight! ;
+                this.table_cols_.appendChild(coldiv) ;
             }
 
             resolve() ;
@@ -515,7 +522,7 @@ export class XeroTable extends XeroWidget {
     private endContentEdit(row: number, col: number, ev: Event) : void {
         if (this.editing_cell_) {
             this.editing_cell_ = false ;
-            const cell = this.table_rows_.children[row].children[col] as HTMLDivElement ;
+            const cell = this.getCell(row, col) ;
             this.model_.setData(row, this.columns_[col].field, cell.innerText) ;
 
             this.emit('cell-changed', {
@@ -531,7 +538,7 @@ export class XeroTable extends XeroWidget {
         let ret = new Promise<void>((resolve, reject) => {
             this.createHeadersCells()
             .then(() => {
-                this.creatRowCells()
+                this.createDataCells()
                 .then(() => {
                     resolve() ;
                 })
@@ -554,10 +561,27 @@ export class XeroTable extends XeroWidget {
         }
     }
 
+    private deferLayout() : void {
+        this.defer_layout_ = true ; 
+        this.need_layout_ = false ;
+    }
+
+    private startLayout() : void {
+        this.defer_layout_ = false ;
+        if (this.need_layout_) {
+            this.updateLayout() ;
+            this.need_layout_ = false ;
+        }
+    }
+
     private initialColumnWidths() : void {
+        this.hideTable() ;
+        this.deferLayout() ;
         for(let col of this.columns_) {
             col.setWidth() ;
         }
+        this.showTable() ;
+        this.startLayout() ;
     }    
 
     private startTiming() : void {

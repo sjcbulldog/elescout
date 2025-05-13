@@ -21,12 +21,12 @@ export class XeroTeamStatus extends XeroView {
         this.table_ = new XeroTable({
             data: args,
             rowHeight: 30,
-            sortcolumn: 0,
+            initialSortColumn: 0,
             columns: [
                 { title: 'Number', field: 'number', sortable: true },
                 { title: 'Name', field: 'teamname', sortable: true },
                 { title: 'Tablet', field: 'tablet' },
-                { title: 'Status', field: 'status' , cellformatter: this.cellFormatter.bind(this) },
+                { title: 'Status', field: 'status' , cellFormatter: this.cellFormatter.bind(this) },
             ],
             cellPadding: 5,
             columnPadding: 5,

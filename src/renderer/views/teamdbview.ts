@@ -3,6 +3,6 @@ import { DatabaseView } from "./dbview";
 
 export class XeroTeamDatabaseView extends DatabaseView {
     public constructor(app: XeroApp, clname: string) {
-        super(app, clname, 'team') ;
+        super(app, 'xero-team-db-view', 'team') ;
     }
 }

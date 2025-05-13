@@ -398,7 +398,7 @@ export abstract class EditFormControlDialog extends XeroDialog {
         }
 
         if (type === undefined) {
-            type = 'float' ;
+            type = 'real' ;
             for (let i = 0; i < data.length; i++) {
                 if (isNaN(parseFloat(data[i]))) {
                     type = undefined ;

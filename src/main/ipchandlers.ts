@@ -7,9 +7,9 @@ import { GraphDataRequest } from "./apps/sccentral";
 import { DataSet } from "./project/datasetmgr";
 import { TeamNickNameNumber } from "./project/teammgr";
 import { TabletData } from "./project/tabletmgr";
-import { ProjColConfig } from "./project/datamgr";
 import { GraphConfig } from "./project/graphmgr";
 import { ProjPickListColConfig, ProjPicklistNotes} from "./project/picklistmgr";
+import { IPCProjColumnsConfig } from "../shared/ipcinterfaces";
 
 // get-info-data
 export async function getInfoData(cmd: string, ...args: any[]) {
@@ -560,7 +560,7 @@ export async function sendMatchColConfig(cmd: string, ...args: any[]) {
         scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
         if (args.length === 1 && typeof args[0] === 'object') {
-            central.setMatchColConfig(args[0] as ProjColConfig) ;
+            central.setMatchColConfig(args[0] as IPCProjColumnsConfig) ;
         }
         else {
             scappbase.logger_.error({ message: 'renderer -> main invalid args', args: {cmd: cmd, cmdargs: args}});     
@@ -574,7 +574,7 @@ export async function sendTeamColConfig(cmd: string, ...args: any[]) {
         scappbase.logger_.silly({ message: 'renderer -> main', args: {cmd: cmd, cmdargs: args}});
         let central : SCCentral = scappbase as SCCentral ;
         if (args.length === 1 && typeof args[0] === 'object') {
-            central.setTeamColConfig(args[0] as ProjColConfig) ;
+            central.setTeamColConfig(args[0] as IPCProjColumnsConfig) ;
         }
         else {
             scappbase.logger_.error({ message: 'renderer -> main invalid args', args: {cmd: cmd, cmdargs: args}});     

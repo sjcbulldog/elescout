@@ -9,6 +9,10 @@ export class DataValue {
         this.type = type;
     }
 
+    public get value() : any {
+        return this.value_ ;
+    }
+
     public equals(other: DataValue): boolean {  
         if (this.type !== other.type) {
             return false;

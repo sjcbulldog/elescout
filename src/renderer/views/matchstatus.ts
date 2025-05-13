@@ -71,7 +71,7 @@ export class XeroMatchStatus extends XeroView {
         this.table_ = new XeroTable({
             data: args,
             rowHeight: 30,
-            sortcolumn: 0,
+            initialSortColumn: 0,
             columns: [
                 { title: 'Type', field: 'comp_level', record: true, sortable: true, sortFunc: this.sortMatchFunc.bind(this) },
                 { title: 'Match', field: 'match_number'},
@@ -79,27 +79,27 @@ export class XeroMatchStatus extends XeroView {
 
                 { title: 'Blue 1', field: 'blue1'},
                 { title: 'Blue Tablet 1', field: 'bluetab1'},
-                { title: 'Blue 1 Status', field: 'bluest1', cellformatter: this.cellFormatter.bind(this)},
+                { title: 'Blue 1 Status', field: 'bluest1', cellFormatter: this.cellFormatter.bind(this)},
 
                 { title: 'Blue 2', field: 'blue2'},
                 { title: 'Blue Tablet 2', field: 'bluetab2'},
-                { title: 'Blue 2 Status', field: 'bluest2', cellformatter: this.cellFormatter.bind(this)},
+                { title: 'Blue 2 Status', field: 'bluest2', cellFormatter: this.cellFormatter.bind(this)},
 
                 { title: 'Blue 3', field: 'blue3'},
                 { title: 'Blue Tablet 3', field: 'bluetab3'},
-                { title: 'Blue 3 Status', field: 'bludst3', cellformatter: this.cellFormatter.bind(this)},
+                { title: 'Blue 3 Status', field: 'bludst3', cellFormatter: this.cellFormatter.bind(this)},
 
                 { title: 'Red 1', field: 'red1'},
                 { title: 'Red Tablet 1', field: 'redtab1'},
-                { title: 'Red 1 Status', field: 'redst1', cellformatter: this.cellFormatter.bind(this)},
+                { title: 'Red 1 Status', field: 'redst1', cellFormatter: this.cellFormatter.bind(this)},
 
                 { title: 'Red 2', field: 'red2'},
                 { title: 'Red Tablet 2', field: 'redtab2'},
-                { title: 'Red 2 Status', field: 'redst2', cellformatter: this.cellFormatter.bind(this)},
+                { title: 'Red 2 Status', field: 'redst2', cellFormatter: this.cellFormatter.bind(this)},
 
                 { title: 'Red 3', field: 'red3'},
                 { title: 'Red Tablet 3', field: 'redtab3'},
-                { title: 'Red 3 Status', field: 'redst3', cellformatter: this.cellFormatter.bind(this)},
+                { title: 'Red 3 Status', field: 'redst3', cellFormatter: this.cellFormatter.bind(this)},
             ],
             cellPadding: 5,
             columnPadding: 5,
